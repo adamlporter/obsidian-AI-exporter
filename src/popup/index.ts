@@ -1,0 +1,198 @@
+/**
+ * Popup Settings Script
+ * Manages extension settings UI
+ */
+
+import { getSettings, saveSettings } from '../lib/storage';
+import type { ExtensionSettings, TemplateOptions } from '../lib/types';
+
+// DOM Elements
+const elements = {
+  apiKey: document.getElementById('apiKey') as HTMLInputElement,
+  port: document.getElementById('port') as HTMLInputElement,
+  vaultPath: document.getElementById('vaultPath') as HTMLInputElement,
+  messageFormat: document.getElementById('messageFormat') as HTMLSelectElement,
+  userCallout: document.getElementById('userCallout') as HTMLInputElement,
+  assistantCallout: document.getElementById('assistantCallout') as HTMLInputElement,
+  includeId: document.getElementById('includeId') as HTMLInputElement,
+  includeTitle: document.getElementById('includeTitle') as HTMLInputElement,
+  includeTags: document.getElementById('includeTags') as HTMLInputElement,
+  includeSource: document.getElementById('includeSource') as HTMLInputElement,
+  includeDates: document.getElementById('includeDates') as HTMLInputElement,
+  includeMessageCount: document.getElementById('includeMessageCount') as HTMLInputElement,
+  testBtn: document.getElementById('testBtn') as HTMLButtonElement,
+  saveBtn: document.getElementById('saveBtn') as HTMLButtonElement,
+  status: document.getElementById('status') as HTMLDivElement,
+};
+
+/**
+ * Initialize popup
+ */
+async function initialize(): Promise<void> {
+  try {
+    const settings = await getSettings();
+    populateForm(settings);
+    setupEventListeners();
+  } catch (error) {
+    showStatus('Failed to load settings', 'error');
+    console.error('[G2O Popup] Init error:', error);
+  }
+}
+
+/**
+ * Populate form with current settings
+ */
+function populateForm(settings: ExtensionSettings): void {
+  elements.apiKey.value = settings.obsidianApiKey || '';
+  elements.port.value = String(settings.obsidianPort || 27123);
+  elements.vaultPath.value = settings.vaultPath || '';
+
+  const { templateOptions } = settings;
+  elements.messageFormat.value = templateOptions.messageFormat || 'callout';
+  elements.userCallout.value = templateOptions.userCalloutType || 'QUESTION';
+  elements.assistantCallout.value = templateOptions.assistantCalloutType || 'NOTE';
+
+  elements.includeId.checked = templateOptions.includeId ?? true;
+  elements.includeTitle.checked = templateOptions.includeTitle ?? true;
+  elements.includeTags.checked = templateOptions.includeTags ?? true;
+  elements.includeSource.checked = templateOptions.includeSource ?? true;
+  elements.includeDates.checked = templateOptions.includeDates ?? true;
+  elements.includeMessageCount.checked = templateOptions.includeMessageCount ?? true;
+}
+
+/**
+ * Setup event listeners
+ */
+function setupEventListeners(): void {
+  elements.saveBtn.addEventListener('click', handleSave);
+  elements.testBtn.addEventListener('click', handleTest);
+
+  // Enable/disable callout inputs based on message format
+  elements.messageFormat.addEventListener('change', () => {
+    const isCallout = elements.messageFormat.value === 'callout';
+    elements.userCallout.disabled = !isCallout;
+    elements.assistantCallout.disabled = !isCallout;
+  });
+}
+
+/**
+ * Collect settings from form
+ */
+function collectSettings(): ExtensionSettings {
+  const templateOptions: TemplateOptions = {
+    messageFormat: elements.messageFormat.value as 'callout' | 'plain' | 'blockquote',
+    userCalloutType: elements.userCallout.value || 'QUESTION',
+    assistantCalloutType: elements.assistantCallout.value || 'NOTE',
+    includeId: elements.includeId.checked,
+    includeTitle: elements.includeTitle.checked,
+    includeTags: elements.includeTags.checked,
+    includeSource: elements.includeSource.checked,
+    includeDates: elements.includeDates.checked,
+    includeMessageCount: elements.includeMessageCount.checked,
+  };
+
+  return {
+    obsidianApiKey: elements.apiKey.value.trim(),
+    obsidianPort: parseInt(elements.port.value, 10) || 27123,
+    vaultPath: elements.vaultPath.value.trim(),
+    templateOptions,
+  };
+}
+
+/**
+ * Handle save button click
+ */
+async function handleSave(): Promise<void> {
+  elements.saveBtn.disabled = true;
+  clearStatus();
+
+  try {
+    const settings = collectSettings();
+
+    // Validate required fields
+    if (!settings.obsidianApiKey) {
+      showStatus('API key is required', 'error');
+      elements.saveBtn.disabled = false;
+      return;
+    }
+
+    if (settings.obsidianPort < 1024 || settings.obsidianPort > 65535) {
+      showStatus('Port must be between 1024 and 65535', 'error');
+      elements.saveBtn.disabled = false;
+      return;
+    }
+
+    await saveSettings(settings);
+    showStatus('Settings saved successfully!', 'success');
+  } catch (error) {
+    showStatus('Failed to save settings', 'error');
+    console.error('[G2O Popup] Save error:', error);
+  } finally {
+    elements.saveBtn.disabled = false;
+  }
+}
+
+/**
+ * Handle test connection button click
+ */
+async function handleTest(): Promise<void> {
+  elements.testBtn.disabled = true;
+  clearStatus();
+  showStatus('Testing connection...', 'info');
+
+  try {
+    // First save current settings
+    const settings = collectSettings();
+
+    if (!settings.obsidianApiKey) {
+      showStatus('Please enter an API key first', 'warning');
+      elements.testBtn.disabled = false;
+      return;
+    }
+
+    // Temporarily save settings for the test
+    await saveSettings(settings);
+
+    // Send test connection message to background script
+    const response = await new Promise<{ success: boolean; error?: string }>((resolve, reject) => {
+      chrome.runtime.sendMessage({ action: 'testConnection' }, result => {
+        if (chrome.runtime.lastError) {
+          reject(new Error(chrome.runtime.lastError.message));
+          return;
+        }
+        resolve(result as { success: boolean; error?: string });
+      });
+    });
+
+    if (response.success) {
+      showStatus('Connection successful! ✅', 'success');
+    } else {
+      showStatus(response.error || 'Connection failed', 'error');
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Connection test failed';
+    showStatus(message, 'error');
+    console.error('[G2O Popup] Test error:', error);
+  } finally {
+    elements.testBtn.disabled = false;
+  }
+}
+
+/**
+ * Show status message
+ */
+function showStatus(message: string, type: 'success' | 'error' | 'warning' | 'info'): void {
+  elements.status.textContent = message;
+  elements.status.className = `status ${type}`;
+}
+
+/**
+ * Clear status message
+ */
+function clearStatus(): void {
+  elements.status.textContent = '';
+  elements.status.className = 'status';
+}
+
+// Initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', initialize);

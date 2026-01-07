@@ -1,0 +1,29 @@
+{
+  "name": "gemini2obsidian",
+  "version": "0.1.0",
+  "description": "Chrome Extension to save Gemini AI conversations to Obsidian",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "lint": "eslint src --ext .ts,.tsx",
+    "format": "prettier --write \"src/**/*.{ts,tsx,css,html}\"",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "turndown": "^7.1.2"
+  },
+  "devDependencies": {
+    "@crxjs/vite-plugin": "^2.0.0-beta.23",
+    "@types/chrome": "^0.0.268",
+    "@types/turndown": "^5.0.4",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.0",
+    "eslint": "^8.56.0",
+    "@typescript-eslint/eslint-plugin": "^6.19.0",
+    "@typescript-eslint/parser": "^6.19.0",
+    "prettier": "^3.2.0"
+  },
+  "author": "",
+  "license": "MIT"
+}
