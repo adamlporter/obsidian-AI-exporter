@@ -4,8 +4,14 @@
  */
 
 import { ObsidianApiClient, getErrorMessage, isObsidianApiError } from '../lib/obsidian-api';
-import { getSettings } from '../lib/storage';
+import { getSettings, migrateSettings } from '../lib/storage';
 import type { ExtensionMessage, ObsidianNote, SaveResponse, ExtensionSettings } from '../lib/types';
+
+// Run settings migration on service worker startup (C-01)
+// Note: top-level await not available in service workers, use .catch() for error handling
+migrateSettings().catch(error => {
+  console.error('[G2O Background] Settings migration failed:', error);
+});
 
 /**
  * Handle incoming messages from content script and popup
