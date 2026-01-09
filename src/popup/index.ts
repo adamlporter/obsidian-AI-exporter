@@ -5,6 +5,11 @@
 
 import { getSettings, saveSettings } from '../lib/storage';
 import type { ExtensionSettings, TemplateOptions } from '../lib/types';
+import {
+  validateCalloutType,
+  validateVaultPath,
+  validateApiKey,
+} from '../lib/validation';
 
 // DOM Elements
 const elements = {
@@ -101,6 +106,7 @@ function collectSettings(): ExtensionSettings {
 
 /**
  * Handle save button click
+ * Input validation using security utilities (NEW-03)
  */
 async function handleSave(): Promise<void> {
   elements.saveBtn.disabled = true;
@@ -109,18 +115,46 @@ async function handleSave(): Promise<void> {
   try {
     const settings = collectSettings();
 
-    // Validate required fields
-    if (!settings.obsidianApiKey) {
-      showStatus('API key is required', 'error');
+    // Validate API key (NEW-03)
+    try {
+      settings.obsidianApiKey = validateApiKey(settings.obsidianApiKey);
+    } catch (error) {
+      showStatus(
+        error instanceof Error ? error.message : 'Invalid API key',
+        'error'
+      );
       elements.saveBtn.disabled = false;
       return;
     }
 
+    // Validate port
     if (settings.obsidianPort < 1024 || settings.obsidianPort > 65535) {
       showStatus('Port must be between 1024 and 65535', 'error');
       elements.saveBtn.disabled = false;
       return;
     }
+
+    // Validate vault path (NEW-03)
+    try {
+      settings.vaultPath = validateVaultPath(settings.vaultPath);
+    } catch (error) {
+      showStatus(
+        error instanceof Error ? error.message : 'Invalid vault path',
+        'error'
+      );
+      elements.saveBtn.disabled = false;
+      return;
+    }
+
+    // Validate callout types (NEW-03)
+    settings.templateOptions.userCalloutType = validateCalloutType(
+      settings.templateOptions.userCalloutType,
+      'QUESTION'
+    );
+    settings.templateOptions.assistantCalloutType = validateCalloutType(
+      settings.templateOptions.assistantCalloutType,
+      'NOTE'
+    );
 
     await saveSettings(settings);
     showStatus('Settings saved successfully!', 'success');

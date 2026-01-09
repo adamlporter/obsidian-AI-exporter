@@ -1,21 +1,19 @@
 {
   "manifest_version": 3,
   "name": "Gemini to Obsidian",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Save Gemini AI conversations to Obsidian via Local REST API",
   "icons": {
     "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
-  "permissions": [
-    "storage",
-    "activeTab"
-  ],
-  "host_permissions": [
-    "https://gemini.google.com/*",
-    "http://127.0.0.1:27123/*"
-  ],
+  "permissions": ["storage", "activeTab"],
+  "host_permissions": ["https://gemini.google.com/*", "http://127.0.0.1:27123/*"],
+  "content_security_policy": {
+    "extension_pages": "default-src 'self'; script-src 'self'; object-src 'none'; style-src 'self' 'unsafe-inline'"
+  },
   "background": {
     "service_worker": "src/background/index.ts",
     "type": "module"

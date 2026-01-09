@@ -4,6 +4,7 @@
  */
 
 import { BaseExtractor } from './base';
+import { sanitizeHtml } from '../../lib/sanitize';
 import type { ExtractionResult, ConversationMessage } from '../../lib/types';
 
 /**
@@ -218,34 +219,35 @@ export class GeminiExtractor extends BaseExtractor {
 
   /**
    * Extract model response content (HTML for markdown conversion)
+   * All HTML is sanitized via DOMPurify to prevent XSS (NEW-01)
    */
   private extractModelResponseContent(element: Element): string {
     // Primary: .markdown.markdown-main-panel
     const markdownEl = element.querySelector('.markdown.markdown-main-panel');
     if (markdownEl) {
-      return markdownEl.innerHTML;
+      return sanitizeHtml(markdownEl.innerHTML);
     }
 
     // Fallback: .markdown-main-panel
     const mainPanel = element.querySelector('.markdown-main-panel');
     if (mainPanel) {
-      return mainPanel.innerHTML;
+      return sanitizeHtml(mainPanel.innerHTML);
     }
 
     // Fallback: message-content .markdown
     const messageContent = element.querySelector('message-content .markdown');
     if (messageContent) {
-      return messageContent.innerHTML;
+      return sanitizeHtml(messageContent.innerHTML);
     }
 
     // Fallback: .model-response-text
     const responseText = element.querySelector('.model-response-text');
     if (responseText) {
-      return responseText.innerHTML;
+      return sanitizeHtml(responseText.innerHTML);
     }
 
     // Final fallback: element's HTML
-    return element.innerHTML;
+    return sanitizeHtml(element.innerHTML);
   }
 
   /**
