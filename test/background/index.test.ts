@@ -502,5 +502,66 @@ describe('background/index', () => {
       await vi.waitFor(() => expect(sendResponse).toHaveBeenCalled());
       expect(sendResponse).toHaveBeenCalledWith({ success: false, error: 'API key not configured' });
     });
+
+    it('handles getFile errors gracefully', async () => {
+      mockClient.getFile.mockRejectedValue(new Error('Network timeout'));
+
+      const sendResponse = vi.fn();
+      capturedListener(
+        { action: 'getExistingFile', fileName: 'test.md' },
+        validSender as chrome.runtime.MessageSender,
+        sendResponse
+      );
+
+      await vi.waitFor(() => expect(sendResponse).toHaveBeenCalled());
+      expect(sendResponse).toHaveBeenCalledWith({ success: false, error: 'Network timeout' });
+    });
+  });
+
+  describe('testConnection error handling', () => {
+    const validSender = { url: `chrome-extension://${chrome.runtime.id}/popup.html` };
+
+    it('handles ObsidianApiError with specific message', async () => {
+      const apiError = { status: 401, message: 'Invalid API key' };
+      mockClient.testConnection.mockRejectedValue(apiError);
+
+      const sendResponse = vi.fn();
+      capturedListener(
+        { action: 'testConnection' },
+        validSender as chrome.runtime.MessageSender,
+        sendResponse
+      );
+
+      await vi.waitFor(() => expect(sendResponse).toHaveBeenCalled());
+      expect(sendResponse).toHaveBeenCalledWith({ success: false, error: 'Invalid API key' });
+    });
+
+    it('handles generic errors with getErrorMessage', async () => {
+      mockClient.testConnection.mockRejectedValue(new Error('Connection refused'));
+
+      const sendResponse = vi.fn();
+      capturedListener(
+        { action: 'testConnection' },
+        validSender as chrome.runtime.MessageSender,
+        sendResponse
+      );
+
+      await vi.waitFor(() => expect(sendResponse).toHaveBeenCalled());
+      expect(sendResponse).toHaveBeenCalledWith({ success: false, error: 'Connection refused' });
+    });
+
+    it('handles unknown error types', async () => {
+      mockClient.testConnection.mockRejectedValue('string error');
+
+      const sendResponse = vi.fn();
+      capturedListener(
+        { action: 'testConnection' },
+        validSender as chrome.runtime.MessageSender,
+        sendResponse
+      );
+
+      await vi.waitFor(() => expect(sendResponse).toHaveBeenCalled());
+      expect(sendResponse).toHaveBeenCalledWith({ success: false, error: 'An unknown error occurred' });
+    });
   });
 });

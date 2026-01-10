@@ -233,5 +233,94 @@ describe('GeminiExtractor', () => {
       expect(result.data?.url).toContain('gemini.google.com');
       expect(result.data?.url).toContain('abc123def456');
     });
+
+    it('includes warning when no user messages found', async () => {
+      setGeminiLocation('abc123def456');
+      // Create DOM with only assistant messages
+      loadFixture(`
+        <div class="app-container">
+          <div class="conversation-container">
+            <model-response class="selected">
+              <div class="markdown markdown-main-panel">
+                <p>This is an assistant message</p>
+              </div>
+            </model-response>
+          </div>
+        </div>
+      `);
+
+      const result = await extractor.extract();
+
+      expect(result.success).toBe(true);
+      expect(result.warnings).toBeDefined();
+      expect(result.warnings).toContain('No user messages found');
+    });
+
+    it('includes warning when no assistant messages found', async () => {
+      setGeminiLocation('abc123def456');
+      // Create DOM with only user messages
+      loadFixture(`
+        <div class="app-container">
+          <div class="conversation-container">
+            <user-query class="selected">
+              <div class="query-text">
+                <span class="query-text-line">User question only</span>
+              </div>
+            </user-query>
+          </div>
+        </div>
+      `);
+
+      const result = await extractor.extract();
+
+      expect(result.success).toBe(true);
+      expect(result.warnings).toBeDefined();
+      expect(result.warnings).toContain('No assistant messages found');
+    });
+
+    it('handles extraction errors gracefully', async () => {
+      setGeminiLocation('abc123def456');
+      const html = createGeminiConversationDOM([
+        { role: 'user', content: 'Hello' },
+        { role: 'assistant', content: 'Hi' },
+      ]);
+      loadFixture(`<div class="app-container">${html}</div>`);
+
+      // Mock extractMessages to throw an error
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      vi.spyOn(extractor, 'extractMessages').mockImplementation(() => {
+        throw new Error('DOM parsing failed');
+      });
+
+      const result = await extractor.extract();
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('DOM parsing failed');
+      expect(consoleSpy).toHaveBeenCalledWith('[G2O] Extraction error:', expect.any(Error));
+
+      consoleSpy.mockRestore();
+    });
+
+    it('handles unknown extraction errors', async () => {
+      setGeminiLocation('abc123def456');
+      const html = createGeminiConversationDOM([
+        { role: 'user', content: 'Hello' },
+        { role: 'assistant', content: 'Hi' },
+      ]);
+      loadFixture(`<div class="app-container">${html}</div>`);
+
+      // Mock extractMessages to throw a non-Error object
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      vi.spyOn(extractor, 'extractMessages').mockImplementation(() => {
+        throw 'string error';
+      });
+
+      const result = await extractor.extract();
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Unknown extraction error');
+
+      consoleSpy.mockRestore();
+    });
   });
 });

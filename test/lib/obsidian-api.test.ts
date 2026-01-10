@@ -219,6 +219,38 @@ describe('ObsidianApiClient', () => {
       expect(exists).toBe(false);
     });
   });
+
+  describe('AbortSignal.timeout fallback', () => {
+    it('uses fallback when AbortSignal.timeout is not available', async () => {
+      // Save original AbortSignal.timeout
+      const originalTimeout = AbortSignal.timeout;
+
+      // Remove AbortSignal.timeout to trigger fallback
+      // @ts-expect-error - intentionally removing for test
+      delete AbortSignal.timeout;
+
+      // Re-import the module to use the fallback path
+      vi.resetModules();
+      const { ObsidianApiClient: FreshClient } = await import('../../src/lib/obsidian-api');
+
+      const freshMockFetch = vi.fn().mockResolvedValue({ ok: true });
+      vi.stubGlobal('fetch', freshMockFetch);
+
+      const freshClient = new FreshClient(27123, 'test-key');
+      await freshClient.testConnection();
+
+      // Verify fetch was called with an AbortSignal
+      expect(freshMockFetch).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          signal: expect.any(AbortSignal),
+        })
+      );
+
+      // Restore AbortSignal.timeout
+      AbortSignal.timeout = originalTimeout;
+    });
+  });
 });
 
 describe('isObsidianApiError', () => {
