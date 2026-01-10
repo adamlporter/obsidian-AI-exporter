@@ -15,12 +15,12 @@ export default defineConfig({
         'src/lib/types.ts',    // Type definitions only
         'src/popup/index.ts',  // P5 - exclude until Phase 5
       ],
-      // Phase 3 thresholds (65%) - update as coverage improves
+      // Phase 4 thresholds (75%) - update as coverage improves
       thresholds: {
-        statements: 65,
-        branches: 60,
-        functions: 60,
-        lines: 65,
+        statements: 75,
+        branches: 68,
+        functions: 75,
+        lines: 75,
       },
     },
   },
