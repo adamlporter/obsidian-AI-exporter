@@ -1,0 +1,217 @@
+{
+  "extName": {
+    "message": "Obsidian AI Exporter",
+    "description": "Extension name shown in browser"
+  },
+  "extDescription": {
+    "message": "Export AI conversations from Gemini to Obsidian via Local REST API",
+    "description": "Extension description shown in browser and store"
+  },
+
+  "ui_syncButton": {
+    "message": "Sync to Obsidian",
+    "description": "Text on the floating sync button"
+  },
+  "ui_syncing": {
+    "message": "Syncing...",
+    "description": "Text shown while syncing"
+  },
+
+  "settings_title": {
+    "message": "Settings",
+    "description": "Settings page title"
+  },
+  "settings_apiKey": {
+    "message": "Obsidian API Key",
+    "description": "Label for API key input"
+  },
+  "settings_apiKeyPlaceholder": {
+    "message": "Enter your Local REST API key",
+    "description": "Placeholder for API key input"
+  },
+  "settings_port": {
+    "message": "Port",
+    "description": "Label for port input"
+  },
+  "settings_vaultPath": {
+    "message": "Vault Path",
+    "description": "Label for vault path input"
+  },
+  "settings_vaultPathPlaceholder": {
+    "message": "e.g., AI/Gemini",
+    "description": "Placeholder for vault path input"
+  },
+  "settings_messageFormat": {
+    "message": "Message Format",
+    "description": "Label for message format select"
+  },
+  "settings_format_callout": {
+    "message": "Callout (Recommended)",
+    "description": "Callout format option"
+  },
+  "settings_format_blockquote": {
+    "message": "Blockquote",
+    "description": "Blockquote format option"
+  },
+  "settings_format_plain": {
+    "message": "Plain",
+    "description": "Plain format option"
+  },
+  "settings_userCallout": {
+    "message": "User Callout Type",
+    "description": "Label for user callout type"
+  },
+  "settings_assistantCallout": {
+    "message": "Assistant Callout Type",
+    "description": "Label for assistant callout type"
+  },
+  "settings_frontmatter": {
+    "message": "Frontmatter Options",
+    "description": "Section title for frontmatter options"
+  },
+  "settings_includeId": {
+    "message": "Include ID",
+    "description": "Checkbox label for include ID"
+  },
+  "settings_includeTitle": {
+    "message": "Include Title",
+    "description": "Checkbox label for include title"
+  },
+  "settings_includeTags": {
+    "message": "Include Tags",
+    "description": "Checkbox label for include tags"
+  },
+  "settings_includeSource": {
+    "message": "Include Source & URL",
+    "description": "Checkbox label for include source"
+  },
+  "settings_includeDates": {
+    "message": "Include Dates",
+    "description": "Checkbox label for include dates"
+  },
+  "settings_includeMessageCount": {
+    "message": "Include Message Count",
+    "description": "Checkbox label for include message count"
+  },
+  "settings_testConnection": {
+    "message": "Test Connection",
+    "description": "Test connection button text"
+  },
+  "settings_save": {
+    "message": "Save Settings",
+    "description": "Save button text"
+  },
+  "settings_showApiKey": {
+    "message": "Show API key",
+    "description": "Tooltip for show API key button"
+  },
+  "settings_hideApiKey": {
+    "message": "Hide API key",
+    "description": "Tooltip for hide API key button"
+  },
+
+  "toast_success_created": {
+    "message": "Created: $FILE$",
+    "description": "Success message when file is created",
+    "placeholders": {
+      "file": {
+        "content": "$1",
+        "example": "conversation-abc123.md"
+      }
+    }
+  },
+  "toast_success_updated": {
+    "message": "Updated: $FILE$",
+    "description": "Success message when file is updated",
+    "placeholders": {
+      "file": {
+        "content": "$1",
+        "example": "conversation-abc123.md"
+      }
+    }
+  },
+  "toast_error_noApiKey": {
+    "message": "Please configure your Obsidian API key in the extension settings",
+    "description": "Error when API key is not set"
+  },
+  "toast_error_connectionFailed": {
+    "message": "Cannot connect to Obsidian. Is it running?",
+    "description": "Error when connection fails"
+  },
+  "toast_error_extractionFailed": {
+    "message": "Failed to extract conversation",
+    "description": "Error when extraction fails"
+  },
+  "toast_error_saveFailed": {
+    "message": "Failed to save: $ERROR$",
+    "description": "Error when save fails",
+    "placeholders": {
+      "error": {
+        "content": "$1",
+        "example": "Network error"
+      }
+    }
+  },
+  "toast_info_extracting": {
+    "message": "Extracting conversation...",
+    "description": "Info message during extraction"
+  },
+  "toast_info_saving": {
+    "message": "Saving to Obsidian...",
+    "description": "Info message during save"
+  },
+  "toast_warning_partial": {
+    "message": "Some content may not have been extracted",
+    "description": "Warning when partial extraction"
+  },
+
+  "error_invalidApiKey": {
+    "message": "Invalid API key format",
+    "description": "Error for invalid API key"
+  },
+  "error_apiKeyTooShort": {
+    "message": "API key is too short (minimum 16 characters)",
+    "description": "Error for short API key"
+  },
+  "error_apiKeyRequired": {
+    "message": "API key is required",
+    "description": "Error when API key is empty"
+  },
+  "error_invalidVaultPath": {
+    "message": "Vault path contains invalid characters",
+    "description": "Error for invalid vault path"
+  },
+  "error_pathTraversal": {
+    "message": "Path traversal detected in vault path",
+    "description": "Error for path traversal attempt"
+  },
+  "error_vaultPathTooLong": {
+    "message": "Vault path is too long (max 200 characters)",
+    "description": "Error for long vault path"
+  },
+  "error_connectionTimeout": {
+    "message": "Connection timed out. Please check your settings.",
+    "description": "Error for connection timeout"
+  },
+  "error_obsidianNotRunning": {
+    "message": "Obsidian REST API is not running. Please ensure Obsidian is open and the Local REST API plugin is enabled.",
+    "description": "Error when Obsidian is not running"
+  },
+  "error_invalidPort": {
+    "message": "Port must be between 1024 and 65535",
+    "description": "Error for invalid port"
+  },
+
+  "status_connectionSuccess": {
+    "message": "Connection successful!",
+    "description": "Success status for connection test"
+  },
+  "status_settingsSaved": {
+    "message": "Settings saved successfully!",
+    "description": "Success status for settings save"
+  },
+  "status_testing": {
+    "message": "Testing connection...",
+    "description": "Status while testing connection"
+  }
+}

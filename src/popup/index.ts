@@ -11,6 +11,57 @@ import {
   validateApiKey,
 } from '../lib/validation';
 
+/**
+ * Get localized message with fallback
+ */
+function getMessage(key: string, substitutions?: string | string[]): string {
+  try {
+    const message = chrome.i18n.getMessage(key, substitutions);
+    return message || key;
+  } catch {
+    return key;
+  }
+}
+
+/**
+ * Initialize i18n for all elements with data-i18n attributes
+ */
+function initializeI18n(): void {
+  // Translate elements with data-i18n attribute
+  document.querySelectorAll('[data-i18n]').forEach(element => {
+    const key = element.getAttribute('data-i18n');
+    if (key) {
+      const message = getMessage(key);
+      if (message && message !== key) {
+        element.textContent = message;
+      }
+    }
+  });
+
+  // Translate placeholders with data-i18n-placeholder attribute
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(element => {
+    const key = element.getAttribute('data-i18n-placeholder');
+    if (key && element instanceof HTMLInputElement) {
+      const message = getMessage(key);
+      if (message && message !== key) {
+        element.placeholder = message;
+      }
+    }
+  });
+
+  // Update document title
+  const titleElement = document.querySelector('title');
+  if (titleElement) {
+    const key = titleElement.getAttribute('data-i18n');
+    if (key) {
+      const message = getMessage(key);
+      if (message && message !== key) {
+        document.title = message;
+      }
+    }
+  }
+}
+
 // DOM Elements
 const elements = {
   apiKey: document.getElementById('apiKey') as HTMLInputElement,
@@ -35,11 +86,12 @@ const elements = {
  */
 async function initialize(): Promise<void> {
   try {
+    initializeI18n();
     const settings = await getSettings();
     populateForm(settings);
     setupEventListeners();
   } catch (error) {
-    showStatus('Failed to load settings', 'error');
+    showStatus(getMessage('toast_error_connectionFailed'), 'error');
     console.error('[G2O Popup] Init error:', error);
   }
 }
@@ -78,6 +130,41 @@ function setupEventListeners(): void {
     elements.userCallout.disabled = !isCallout;
     elements.assistantCallout.disabled = !isCallout;
   });
+
+  // Setup API key visibility toggle
+  setupApiKeyToggle();
+}
+
+/**
+ * Setup API key visibility toggle button
+ */
+function setupApiKeyToggle(): void {
+  const apiKeyInput = elements.apiKey;
+  const container = apiKeyInput.parentElement;
+  if (!container) return;
+
+  // Wrap input in container for positioning
+  container.classList.add('api-key-container');
+
+  const toggleBtn = document.createElement('button');
+  toggleBtn.type = 'button';
+  toggleBtn.className = 'api-key-toggle';
+  toggleBtn.textContent = '👁️';
+  toggleBtn.title = getMessage('settings_showApiKey');
+
+  toggleBtn.addEventListener('click', () => {
+    if (apiKeyInput.type === 'password') {
+      apiKeyInput.type = 'text';
+      toggleBtn.textContent = '🙈';
+      toggleBtn.title = getMessage('settings_hideApiKey');
+    } else {
+      apiKeyInput.type = 'password';
+      toggleBtn.textContent = '👁️';
+      toggleBtn.title = getMessage('settings_showApiKey');
+    }
+  });
+
+  container.appendChild(toggleBtn);
 }
 
 /**
@@ -129,7 +216,7 @@ async function handleSave(): Promise<void> {
 
     // Validate port
     if (settings.obsidianPort < 1024 || settings.obsidianPort > 65535) {
-      showStatus('Port must be between 1024 and 65535', 'error');
+      showStatus(getMessage('error_invalidPort'), 'error');
       elements.saveBtn.disabled = false;
       return;
     }
@@ -157,9 +244,9 @@ async function handleSave(): Promise<void> {
     );
 
     await saveSettings(settings);
-    showStatus('Settings saved successfully!', 'success');
+    showStatus(getMessage('status_settingsSaved'), 'success');
   } catch (error) {
-    showStatus('Failed to save settings', 'error');
+    showStatus(getMessage('toast_error_saveFailed', 'Unknown error'), 'error');
     console.error('[G2O Popup] Save error:', error);
   } finally {
     elements.saveBtn.disabled = false;
@@ -172,14 +259,14 @@ async function handleSave(): Promise<void> {
 async function handleTest(): Promise<void> {
   elements.testBtn.disabled = true;
   clearStatus();
-  showStatus('Testing connection...', 'info');
+  showStatus(getMessage('status_testing'), 'info');
 
   try {
     // First save current settings
     const settings = collectSettings();
 
     if (!settings.obsidianApiKey) {
-      showStatus('Please enter an API key first', 'warning');
+      showStatus(getMessage('toast_error_noApiKey'), 'warning');
       elements.testBtn.disabled = false;
       return;
     }
@@ -199,12 +286,12 @@ async function handleTest(): Promise<void> {
     });
 
     if (response.success) {
-      showStatus('Connection successful! ✅', 'success');
+      showStatus(getMessage('status_connectionSuccess'), 'success');
     } else {
-      showStatus(response.error || 'Connection failed', 'error');
+      showStatus(response.error || getMessage('toast_error_connectionFailed'), 'error');
     }
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Connection test failed';
+    const message = error instanceof Error ? error.message : getMessage('toast_error_connectionFailed');
     showStatus(message, 'error');
     console.error('[G2O Popup] Test error:', error);
   } finally {
