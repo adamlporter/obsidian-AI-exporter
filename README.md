@@ -1,6 +1,9 @@
-# Gemini to Obsidian
+# Obsidian AI Exporter
 
-Chrome Extension that exports Google Gemini AI conversations to Obsidian via the Local REST API.
+Chrome Extension that exports AI conversations from Google Gemini to Obsidian via the Local REST API.
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Chrome Web Store](https://img.shields.io/badge/Chrome-Extension-blue)](https://chrome.google.com/webstore)
 
 ## Features
 
@@ -9,10 +12,11 @@ Chrome Extension that exports Google Gemini AI conversations to Obsidian via the
 - **Obsidian callouts**: Formatted output with `[!QUESTION]` and `[!NOTE]` callouts
 - **YAML frontmatter**: Metadata including title, source, URL, dates, and tags
 - **Configurable**: Customizable vault path, template options, and frontmatter fields
+- **Localized**: English and Japanese UI support
 
 ## Requirements
 
-- Google Chrome (or Chromium-based browser)
+- Google Chrome 88+ (or Chromium-based browser)
 - [Obsidian](https://obsidian.md/)
 - [Obsidian Local REST API](https://github.com/coddingtonbear/obsidian-local-rest-api) plugin
 
@@ -96,6 +100,12 @@ npm run lint
 
 # Format code
 npm run format
+
+# Run tests
+npm test
+
+# Run tests with coverage
+npm run test:coverage
 ```
 
 ## Architecture
@@ -119,13 +129,21 @@ Obsidian Local REST API (127.0.0.1:27123)
 
 ## Security
 
-v0.2.0 includes security hardening:
-
 - **Secure storage**: API key stored in `chrome.storage.local` (not synced)
 - **Input validation**: Message content and filenames validated
+- **Path traversal protection**: Vault paths sanitized against directory traversal attacks
 - **Sender verification**: Only trusted origins can send messages
 - **CSP**: Content Security Policy configured for extension pages
 - **YAML escaping**: Frontmatter values properly escaped
+
+## Privacy
+
+This extension:
+- Does **not** collect or transmit your data to external servers
+- Only communicates with your local Obsidian instance (127.0.0.1)
+- Stores API key locally in your browser (not synced to cloud)
+
+See our [Privacy Policy](https://yourusername.github.io/gemini2obsidian/privacy.html) for details.
 
 ## License
 
