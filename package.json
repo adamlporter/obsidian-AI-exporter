@@ -1,28 +1,38 @@
 {
-  "name": "gemini2obsidian",
-  "version": "0.1.0",
-  "description": "Chrome Extension to save Gemini AI conversations to Obsidian",
+  "name": "obsidian-ai-exporter",
+  "version": "0.3.0",
+  "description": "Chrome Extension to export AI conversations from Gemini to Obsidian",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
-    "lint": "eslint src --ext .ts,.tsx",
+    "lint": "eslint src/",
     "format": "prettier --write \"src/**/*.{ts,tsx,css,html}\"",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "dompurify": "^3.0.0",
     "turndown": "^7.1.2"
   },
   "devDependencies": {
     "@crxjs/vite-plugin": "^2.0.0-beta.23",
     "@types/chrome": "^0.0.268",
+    "@types/dompurify": "^3.0.0",
+    "@types/jsdom": "^27.0.0",
     "@types/turndown": "^5.0.4",
-    "typescript": "^5.3.3",
-    "vite": "^5.0.0",
-    "eslint": "^8.56.0",
     "@typescript-eslint/eslint-plugin": "^6.19.0",
     "@typescript-eslint/parser": "^6.19.0",
-    "prettier": "^3.2.0"
+    "@vitest/coverage-v8": "^4.0.16",
+    "eslint": "^8.56.0",
+    "jsdom": "^27.4.0",
+    "prettier": "^3.2.0",
+    "typescript": "^5.3.3",
+    "vite": "^6.2.0",
+    "vite-plugin-static-copy": "^3.1.4",
+    "vitest": "^4.0.16"
   },
   "author": "",
   "license": "MIT"

@@ -13,7 +13,65 @@ import {
   showWarningToast,
   showToast,
 } from './ui';
+import { sendMessage } from '../lib/messaging';
 import type { ExtensionSettings, SaveResponse, ObsidianNote } from '../lib/types';
+
+/**
+ * Throttle function (NEW-06)
+ * Executes immediately on first call, then blocks for `limit` ms
+ */
+function throttle<T extends (...args: unknown[]) => void>(
+  fn: T,
+  limit: number
+): (...args: Parameters<T>) => void {
+  let inThrottle = false;
+  return (...args: Parameters<T>) => {
+    if (!inThrottle) {
+      fn(...args);
+      inThrottle = true;
+      setTimeout(() => (inThrottle = false), limit);
+    }
+  };
+}
+
+/**
+ * Wait for conversation container to appear (L-03)
+ * Uses MutationObserver instead of fixed timeout
+ */
+function waitForConversationContainer(): Promise<void> {
+  return new Promise((resolve) => {
+    // Check if already exists
+    const existing = document.querySelector(
+      '.conversation-container, [class*="conversation"]'
+    );
+    if (existing) {
+      resolve();
+      return;
+    }
+
+    // Use MutationObserver to watch for container
+    const observer = new MutationObserver((_mutations, obs) => {
+      const container = document.querySelector(
+        '.conversation-container, [class*="conversation"]'
+      );
+      if (container) {
+        obs.disconnect();
+        resolve();
+      }
+    });
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+    });
+
+    // Fallback timeout: 10 seconds
+    setTimeout(() => {
+      observer.disconnect();
+      resolve();
+    }, 10000);
+  });
+}
 
 // Initialize when DOM is ready
 if (document.readyState === 'loading') {
@@ -25,7 +83,7 @@ if (document.readyState === 'loading') {
 /**
  * Initialize the content script
  */
-function initialize(): void {
+async function initialize(): Promise<void> {
   console.info('[G2O] Content script initializing on:', window.location.href);
 
   // Only run on Gemini conversation pages
@@ -34,11 +92,13 @@ function initialize(): void {
     return;
   }
 
-  // Wait a bit for the page to fully load dynamic content
-  setTimeout(() => {
-    injectSyncButton(handleSync);
-    console.info('[G2O] Sync button injected');
-  }, 1000);
+  // Wait for conversation container (L-03)
+  await waitForConversationContainer();
+
+  // Apply throttle to sync handler (NEW-06)
+  const throttledHandleSync = throttle(handleSync, 1000);
+  injectSyncButton(throttledHandleSync);
+  console.info('[G2O] Sync button injected');
 }
 
 /**
@@ -49,11 +109,13 @@ async function handleSync(): Promise<void> {
   setButtonLoading(true);
 
   try {
-    // Get settings first
+    // Get settings first (L-01: use type-safe messaging)
     const settings = await getSettings();
 
     if (!settings.obsidianApiKey) {
-      showErrorToast('Please configure your Obsidian API key in the extension settings');
+      showErrorToast(
+        'Please configure your Obsidian API key in the extension settings'
+      );
       setButtonLoading(false);
       return;
     }
@@ -90,7 +152,7 @@ async function handleSync(): Promise<void> {
 
     // Show warnings if any
     if (validation.warnings.length > 0) {
-      validation.warnings.forEach(warning => {
+      validation.warnings.forEach((warning) => {
         console.warn('[G2O] Warning:', warning);
       });
     }
@@ -127,59 +189,34 @@ async function handleSync(): Promise<void> {
     }
   } catch (error) {
     console.error('[G2O] Sync error:', error);
-    showErrorToast(error instanceof Error ? error.message : 'An unexpected error occurred');
+    showErrorToast(
+      error instanceof Error ? error.message : 'An unexpected error occurred'
+    );
   } finally {
     setButtonLoading(false);
   }
 }
 
 /**
- * Get extension settings from background script
+ * Get extension settings from background script (L-01)
+ * Uses type-safe messaging utility
  */
-async function getSettings(): Promise<ExtensionSettings> {
-  return new Promise((resolve, reject) => {
-    chrome.runtime.sendMessage({ action: 'getSettings' }, response => {
-      if (chrome.runtime.lastError) {
-        reject(new Error(chrome.runtime.lastError.message));
-        return;
-      }
-      resolve(response as ExtensionSettings);
-    });
-  });
+function getSettings(): Promise<ExtensionSettings> {
+  return sendMessage({ action: 'getSettings' });
 }
 
 /**
- * Test connection to Obsidian
+ * Test connection to Obsidian (L-01)
+ * Uses type-safe messaging utility
  */
-async function testConnection(): Promise<{ success: boolean; error?: string }> {
-  return new Promise((resolve, reject) => {
-    chrome.runtime.sendMessage({ action: 'testConnection' }, response => {
-      if (chrome.runtime.lastError) {
-        reject(new Error(chrome.runtime.lastError.message));
-        return;
-      }
-      resolve(response as { success: boolean; error?: string });
-    });
-  });
+function testConnection(): Promise<{ success: boolean; error?: string }> {
+  return sendMessage({ action: 'testConnection' });
 }
 
 /**
- * Save note to Obsidian via background script
+ * Save note to Obsidian via background script (L-01)
+ * Uses type-safe messaging utility
  */
-async function saveToObsidian(note: ObsidianNote): Promise<SaveResponse> {
-  return new Promise((resolve, reject) => {
-    chrome.runtime.sendMessage(
-      {
-        action: 'saveToObsidian',
-        data: note,
-      },
-      response => {
-        if (chrome.runtime.lastError) {
-          reject(new Error(chrome.runtime.lastError.message));
-          return;
-        }
-        resolve(response as SaveResponse);
-      }
-    );
-  });
+function saveToObsidian(note: ObsidianNote): Promise<SaveResponse> {
+  return sendMessage({ action: 'saveToObsidian', data: note });
 }

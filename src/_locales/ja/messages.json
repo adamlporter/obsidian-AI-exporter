@@ -1,0 +1,160 @@
+{
+  "extName": {
+    "message": "Obsidian AI Exporter"
+  },
+  "extDescription": {
+    "message": "Gemini の AI 会話を Obsidian へエクスポート（Local REST API 経由）"
+  },
+
+  "ui_syncButton": {
+    "message": "Obsidian に同期"
+  },
+  "ui_syncing": {
+    "message": "同期中..."
+  },
+
+  "settings_title": {
+    "message": "設定"
+  },
+  "settings_apiKey": {
+    "message": "Obsidian API キー"
+  },
+  "settings_apiKeyPlaceholder": {
+    "message": "Local REST API のキーを入力"
+  },
+  "settings_port": {
+    "message": "ポート"
+  },
+  "settings_vaultPath": {
+    "message": "保存先パス"
+  },
+  "settings_vaultPathPlaceholder": {
+    "message": "例: AI/Gemini"
+  },
+  "settings_messageFormat": {
+    "message": "メッセージ形式"
+  },
+  "settings_format_callout": {
+    "message": "コールアウト（推奨）"
+  },
+  "settings_format_blockquote": {
+    "message": "引用ブロック"
+  },
+  "settings_format_plain": {
+    "message": "プレーン"
+  },
+  "settings_userCallout": {
+    "message": "ユーザーのコールアウト種類"
+  },
+  "settings_assistantCallout": {
+    "message": "アシスタントのコールアウト種類"
+  },
+  "settings_frontmatter": {
+    "message": "フロントマター設定"
+  },
+  "settings_includeId": {
+    "message": "ID を含める"
+  },
+  "settings_includeTitle": {
+    "message": "タイトルを含める"
+  },
+  "settings_includeTags": {
+    "message": "タグを含める"
+  },
+  "settings_includeSource": {
+    "message": "ソースと URL を含める"
+  },
+  "settings_includeDates": {
+    "message": "日付を含める"
+  },
+  "settings_includeMessageCount": {
+    "message": "メッセージ数を含める"
+  },
+  "settings_testConnection": {
+    "message": "接続テスト"
+  },
+  "settings_save": {
+    "message": "設定を保存"
+  },
+  "settings_showApiKey": {
+    "message": "API キーを表示"
+  },
+  "settings_hideApiKey": {
+    "message": "API キーを隠す"
+  },
+
+  "toast_success_created": {
+    "message": "作成しました: $FILE$",
+    "placeholders": {
+      "file": { "content": "$1" }
+    }
+  },
+  "toast_success_updated": {
+    "message": "更新しました: $FILE$",
+    "placeholders": {
+      "file": { "content": "$1" }
+    }
+  },
+  "toast_error_noApiKey": {
+    "message": "拡張機能の設定で Obsidian API キーを設定してください"
+  },
+  "toast_error_connectionFailed": {
+    "message": "Obsidian に接続できません。起動していますか？"
+  },
+  "toast_error_extractionFailed": {
+    "message": "会話の抽出に失敗しました"
+  },
+  "toast_error_saveFailed": {
+    "message": "保存に失敗しました: $ERROR$",
+    "placeholders": {
+      "error": { "content": "$1" }
+    }
+  },
+  "toast_info_extracting": {
+    "message": "会話を抽出中..."
+  },
+  "toast_info_saving": {
+    "message": "Obsidian に保存中..."
+  },
+  "toast_warning_partial": {
+    "message": "一部のコンテンツが抽出できなかった可能性があります"
+  },
+
+  "error_invalidApiKey": {
+    "message": "API キーの形式が無効です"
+  },
+  "error_apiKeyTooShort": {
+    "message": "API キーが短すぎます（16文字以上必要）"
+  },
+  "error_apiKeyRequired": {
+    "message": "API キーは必須です"
+  },
+  "error_invalidVaultPath": {
+    "message": "保存先パスに無効な文字が含まれています"
+  },
+  "error_pathTraversal": {
+    "message": "保存先パスにパストラバーサルが検出されました"
+  },
+  "error_vaultPathTooLong": {
+    "message": "保存先パスが長すぎます（最大200文字）"
+  },
+  "error_connectionTimeout": {
+    "message": "接続がタイムアウトしました。設定を確認してください。"
+  },
+  "error_obsidianNotRunning": {
+    "message": "Obsidian REST API が起動していません。Obsidian を開き、Local REST API プラグインが有効になっていることを確認してください。"
+  },
+  "error_invalidPort": {
+    "message": "ポートは 1024 から 65535 の間で指定してください"
+  },
+
+  "status_connectionSuccess": {
+    "message": "接続に成功しました！"
+  },
+  "status_settingsSaved": {
+    "message": "設定を保存しました！"
+  },
+  "status_testing": {
+    "message": "接続をテスト中..."
+  }
+}

@@ -8,6 +8,7 @@ import type {
   ValidationResult,
   ConversationMessage,
 } from '../../lib/types';
+import { generateHash } from '../../lib/hash';
 
 /**
  * Abstract base class for conversation extractors
@@ -73,14 +74,8 @@ export abstract class BaseExtractor implements IConversationExtractor {
   /**
    * Generate a hash from content for deduplication
    */
-  protected generateHash(content: string): string {
-    let hash = 0;
-    for (let i = 0; i < content.length; i++) {
-      const char = content.charCodeAt(i);
-      hash = (hash << 5) - hash + char;
-      hash = hash & hash;
-    }
-    return Math.abs(hash).toString(16).padStart(8, '0');
+  protected generateHashValue(content: string): string {
+    return generateHash(content);
   }
 
   /**

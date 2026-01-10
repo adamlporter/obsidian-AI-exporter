@@ -63,13 +63,28 @@ export interface NoteFrontmatter {
 }
 
 /**
- * Extension settings stored in chrome.storage
+ * セキュア設定（local storage用）
+ * API Keyなどの機密データはsyncではなくlocalに保存
  */
-export interface ExtensionSettings {
+export interface SecureSettings {
   obsidianApiKey: string;
+}
+
+/**
+ * 同期設定（sync storage用）
+ * 非機密データはデバイス間同期可能
+ */
+export interface SyncSettings {
   obsidianPort: number;
   vaultPath: string;
   templateOptions: TemplateOptions;
+}
+
+/**
+ * Extension settings stored in chrome.storage
+ * SecureSettingsとSyncSettingsの統合インターフェース
+ */
+export interface ExtensionSettings extends SecureSettings, SyncSettings {
   openaiApiKey?: string;
   enableAutoTags?: boolean;
 }

@@ -3,6 +3,18 @@
  * Floating button, toast notifications, loading states
  */
 
+/**
+ * Get localized message with fallback
+ */
+function getMessage(key: string, substitutions?: string | string[]): string {
+  try {
+    const message = chrome.i18n.getMessage(key, substitutions);
+    return message || key;
+  } catch {
+    return key;
+  }
+}
+
 // CSS styles for UI components
 const STYLES = `
   #g2o-sync-button {
@@ -163,7 +175,7 @@ export function injectSyncButton(onClick: () => void): HTMLButtonElement {
   button.id = 'g2o-sync-button';
   button.innerHTML = `
     <span class="icon">📥</span>
-    <span class="text">Sync to Obsidian</span>
+    <span class="text">${getMessage('ui_syncButton')}</span>
   `;
 
   button.addEventListener('click', onClick);
@@ -186,11 +198,11 @@ export function setButtonLoading(loading: boolean): void {
 
   if (loading) {
     if (icon) icon.outerHTML = '<div class="spinner"></div>';
-    if (text) text.textContent = 'Syncing...';
+    if (text) text.textContent = getMessage('ui_syncing');
   } else {
     const spinner = button.querySelector('.spinner');
     if (spinner) spinner.outerHTML = '<span class="icon">📥</span>';
-    if (text) text.textContent = 'Sync to Obsidian';
+    if (text) text.textContent = getMessage('ui_syncButton');
   }
 }
 
@@ -251,8 +263,8 @@ function escapeHtml(text: string): string {
  * Show success toast with file info
  */
 export function showSuccessToast(fileName: string, isNewFile: boolean): void {
-  const action = isNewFile ? 'Created' : 'Updated';
-  showToast(`${action}: ${fileName}`, 'success', 5000);
+  const messageKey = isNewFile ? 'toast_success_created' : 'toast_success_updated';
+  showToast(getMessage(messageKey, fileName), 'success', 5000);
 }
 
 /**

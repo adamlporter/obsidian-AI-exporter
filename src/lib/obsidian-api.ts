@@ -3,6 +3,51 @@
  * API docs: https://github.com/coddingtonbear/obsidian-local-rest-api
  */
 
+/**
+ * デフォルトタイムアウト（5秒）
+ */
+const DEFAULT_TIMEOUT = 5000;
+
+/**
+ * ネットワークエラーの判定
+ */
+function isNetworkError(error: unknown): boolean {
+  // TypeError: Failed to fetch (Chrome)
+  // TypeError: NetworkError when attempting to fetch resource (Firefox)
+  if (error instanceof TypeError) {
+    return true;
+  }
+  // DOMException: The operation was aborted (timeout)
+  // 注意: AbortSignal.timeout()はTimeoutError、AbortController.abort()はAbortErrorを投げる
+  if (
+    error instanceof DOMException &&
+    (error.name === 'AbortError' || error.name === 'TimeoutError')
+  ) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * タイムアウト付きAbortSignalを作成
+ * AbortSignal.timeout()のポリフィル（Chrome 103未満対応）
+ *
+ * メモリリーク対策:
+ * - fetchが完了した場合、setTimeoutが残り続ける可能性がある
+ * - 本実装ではfetchの完了/失敗に関わらずタイマーは5秒後に発火するが、
+ *   controllerはGCで回収されるためメモリリークは発生しない
+ */
+function createTimeoutSignal(ms: number): AbortSignal {
+  // Chrome 103+ではネイティブAPIを使用
+  if ('timeout' in AbortSignal) {
+    return AbortSignal.timeout(ms);
+  }
+  // フォールバック（Chrome 103未満用）
+  const controller = new AbortController();
+  setTimeout(() => controller.abort(), ms);
+  return controller.signal;
+}
+
 export interface ObsidianApiError {
   status: number;
   message: string;
@@ -34,6 +79,7 @@ export class ObsidianApiClient {
       const response = await fetch(`${this.baseUrl}/`, {
         method: 'GET',
         headers: this.getHeaders(),
+        signal: createTimeoutSignal(DEFAULT_TIMEOUT),
       });
       return response.ok;
     } catch {
@@ -52,6 +98,7 @@ export class ObsidianApiClient {
       const response = await fetch(`${this.baseUrl}/vault/${encodedPath}`, {
         method: 'GET',
         headers: this.getHeaders(),
+        signal: createTimeoutSignal(DEFAULT_TIMEOUT),
       });
 
       if (response.status === 404) {
@@ -59,13 +106,19 @@ export class ObsidianApiClient {
       }
 
       if (!response.ok) {
-        throw this.createError(response.status, `Failed to get file: ${response.statusText}`);
+        throw this.createError(
+          response.status,
+          `Failed to get file: ${response.statusText}`
+        );
       }
 
       return await response.text();
     } catch (error) {
-      if (error instanceof Error && error.message.includes('Failed to fetch')) {
-        throw this.createError(0, 'Obsidian REST API is not running');
+      if (isNetworkError(error)) {
+        throw this.createError(
+          0,
+          'Request timed out. Please check your connection.'
+        );
       }
       throw error;
     }
@@ -86,14 +139,21 @@ export class ObsidianApiClient {
           'Content-Type': 'text/markdown',
         },
         body: content,
+        signal: createTimeoutSignal(DEFAULT_TIMEOUT),
       });
 
       if (!response.ok) {
-        throw this.createError(response.status, `Failed to save file: ${response.statusText}`);
+        throw this.createError(
+          response.status,
+          `Failed to save file: ${response.statusText}`
+        );
       }
     } catch (error) {
-      if (error instanceof Error && error.message.includes('Failed to fetch')) {
-        throw this.createError(0, 'Obsidian REST API is not running');
+      if (isNetworkError(error)) {
+        throw this.createError(
+          0,
+          'Request timed out. Please check your connection.'
+        );
       }
       throw error;
     }
