@@ -5,11 +5,7 @@
 
 import { getSettings, saveSettings } from '../lib/storage';
 import type { ExtensionSettings, TemplateOptions } from '../lib/types';
-import {
-  validateCalloutType,
-  validateVaultPath,
-  validateApiKey,
-} from '../lib/validation';
+import { validateCalloutType, validateVaultPath, validateApiKey } from '../lib/validation';
 
 /**
  * Get localized message with fallback
@@ -206,10 +202,7 @@ async function handleSave(): Promise<void> {
     try {
       settings.obsidianApiKey = validateApiKey(settings.obsidianApiKey);
     } catch (error) {
-      showStatus(
-        error instanceof Error ? error.message : 'Invalid API key',
-        'error'
-      );
+      showStatus(error instanceof Error ? error.message : 'Invalid API key', 'error');
       elements.saveBtn.disabled = false;
       return;
     }
@@ -225,10 +218,7 @@ async function handleSave(): Promise<void> {
     try {
       settings.vaultPath = validateVaultPath(settings.vaultPath);
     } catch (error) {
-      showStatus(
-        error instanceof Error ? error.message : 'Invalid vault path',
-        'error'
-      );
+      showStatus(error instanceof Error ? error.message : 'Invalid vault path', 'error');
       elements.saveBtn.disabled = false;
       return;
     }
@@ -291,7 +281,8 @@ async function handleTest(): Promise<void> {
       showStatus(response.error || getMessage('toast_error_connectionFailed'), 'error');
     }
   } catch (error) {
-    const message = error instanceof Error ? error.message : getMessage('toast_error_connectionFailed');
+    const message =
+      error instanceof Error ? error.message : getMessage('toast_error_connectionFailed');
     showStatus(message, 'error');
     console.error('[G2O Popup] Test error:', error);
   } finally {

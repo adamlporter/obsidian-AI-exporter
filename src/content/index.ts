@@ -39,11 +39,9 @@ function throttle<T extends (...args: unknown[]) => void>(
  * Uses MutationObserver instead of fixed timeout
  */
 function waitForConversationContainer(): Promise<void> {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     // Check if already exists
-    const existing = document.querySelector(
-      '.conversation-container, [class*="conversation"]'
-    );
+    const existing = document.querySelector('.conversation-container, [class*="conversation"]');
     if (existing) {
       resolve();
       return;
@@ -51,9 +49,7 @@ function waitForConversationContainer(): Promise<void> {
 
     // Use MutationObserver to watch for container
     const observer = new MutationObserver((_mutations, obs) => {
-      const container = document.querySelector(
-        '.conversation-container, [class*="conversation"]'
-      );
+      const container = document.querySelector('.conversation-container, [class*="conversation"]');
       if (container) {
         obs.disconnect();
         resolve();
@@ -113,9 +109,7 @@ async function handleSync(): Promise<void> {
     const settings = await getSettings();
 
     if (!settings.obsidianApiKey) {
-      showErrorToast(
-        'Please configure your Obsidian API key in the extension settings'
-      );
+      showErrorToast('Please configure your Obsidian API key in the extension settings');
       setButtonLoading(false);
       return;
     }
@@ -152,7 +146,7 @@ async function handleSync(): Promise<void> {
 
     // Show warnings if any
     if (validation.warnings.length > 0) {
-      validation.warnings.forEach((warning) => {
+      validation.warnings.forEach(warning => {
         console.warn('[G2O] Warning:', warning);
       });
     }
@@ -189,9 +183,7 @@ async function handleSync(): Promise<void> {
     }
   } catch (error) {
     console.error('[G2O] Sync error:', error);
-    showErrorToast(
-      error instanceof Error ? error.message : 'An unexpected error occurred'
-    );
+    showErrorToast(error instanceof Error ? error.message : 'An unexpected error occurred');
   } finally {
     setButtonLoading(false);
   }

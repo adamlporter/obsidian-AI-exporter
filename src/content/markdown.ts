@@ -3,7 +3,12 @@
  */
 
 import TurndownService from 'turndown';
-import type { ConversationData, ObsidianNote, NoteFrontmatter, TemplateOptions } from '../lib/types';
+import type {
+  ConversationData,
+  ObsidianNote,
+  NoteFrontmatter,
+  TemplateOptions,
+} from '../lib/types';
 import { generateHash } from '../lib/hash';
 
 // Initialize Turndown with custom rules
@@ -17,11 +22,8 @@ const turndown = new TurndownService({
 
 // Custom rule for code blocks with language detection
 turndown.addRule('codeBlocks', {
-  filter: (node) => {
-    return (
-      node.nodeName === 'PRE' &&
-      node.querySelector('code') !== null
-    );
+  filter: node => {
+    return node.nodeName === 'PRE' && node.querySelector('code') !== null;
   },
   replacement: (content, node) => {
     const codeElement = (node as HTMLElement).querySelector('code');
@@ -39,10 +41,10 @@ turndown.addRule('codeBlocks', {
 
 // Custom rule for inline code
 turndown.addRule('inlineCode', {
-  filter: (node) => {
+  filter: node => {
     return node.nodeName === 'CODE' && node.parentNode?.nodeName !== 'PRE';
   },
-  replacement: (content) => {
+  replacement: content => {
     return `\`${content}\``;
   },
 });
@@ -99,9 +101,7 @@ turndown.addRule('tables', {
  */
 export function htmlToMarkdown(html: string): string {
   // Clean up HTML before conversion
-  const cleaned = html
-    .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/&nbsp;/g, ' ');
+  const cleaned = html.replace(/<br\s*\/?>/gi, '\n').replace(/&nbsp;/g, ' ');
 
   return turndown.turndown(cleaned);
 }
@@ -167,10 +167,7 @@ function formatMessage(
 /**
  * Convert conversation data to Obsidian note
  */
-export function conversationToNote(
-  data: ConversationData,
-  options: TemplateOptions
-): ObsidianNote {
+export function conversationToNote(data: ConversationData, options: TemplateOptions): ObsidianNote {
   const now = new Date().toISOString();
 
   // Generate frontmatter
