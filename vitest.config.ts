@@ -12,15 +12,15 @@ export default defineConfig({
       include: ['src/**/*.ts'],
       exclude: [
         'src/**/*.d.ts',
-        'src/popup/index.ts',  // UI integration
+        'src/lib/types.ts',    // Type definitions only
+        'src/popup/index.ts',  // P5 - exclude until Phase 5
       ],
-      // Coverage thresholds relaxed for initial release
-      // TODO: Increase as more tests are added
+      // Phase 1 thresholds (30%) - update as coverage improves
       thresholds: {
-        statements: 5,
-        branches: 5,
-        functions: 5,
-        lines: 5,
+        statements: 30,
+        branches: 30,
+        functions: 30,
+        lines: 30,
       },
     },
   },
