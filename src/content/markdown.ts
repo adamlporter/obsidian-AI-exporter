@@ -4,6 +4,7 @@
 
 import TurndownService from 'turndown';
 import type { ConversationData, ObsidianNote, NoteFrontmatter, TemplateOptions } from '../lib/types';
+import { generateHash } from '../lib/hash';
 
 // Initialize Turndown with custom rules
 const turndown = new TurndownService({
@@ -123,13 +124,7 @@ export function generateFileName(title: string, conversationId: string): string 
  * Generate content hash for deduplication
  */
 export function generateContentHash(content: string): string {
-  let hash = 0;
-  for (let i = 0; i < content.length; i++) {
-    const char = content.charCodeAt(i);
-    hash = (hash << 5) - hash + char;
-    hash = hash & hash;
-  }
-  return Math.abs(hash).toString(16).padStart(8, '0');
+  return generateHash(content);
 }
 
 /**

@@ -23,8 +23,18 @@ export default [
         HTMLButtonElement: 'readonly',
         HTMLInputElement: 'readonly',
         HTMLSelectElement: 'readonly',
+        HTMLDivElement: 'readonly',
+        HTMLTableElement: 'readonly',
         Element: 'readonly',
-        NodeListOf: 'readonly'
+        NodeListOf: 'readonly',
+        Document: 'readonly',
+        Node: 'readonly',
+        URL: 'readonly',
+        MutationObserver: 'readonly',
+        AbortController: 'readonly',
+        AbortSignal: 'readonly',
+        DOMException: 'readonly',
+        HeadersInit: 'readonly'
       }
     },
     plugins: {
