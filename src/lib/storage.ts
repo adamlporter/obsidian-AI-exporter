@@ -6,12 +6,7 @@
  * - storage.sync: Non-sensitive settings - synced across devices
  */
 
-import type {
-  ExtensionSettings,
-  SecureSettings,
-  SyncSettings,
-  TemplateOptions,
-} from './types';
+import type { ExtensionSettings, SecureSettings, SyncSettings, TemplateOptions } from './types';
 
 const DEFAULT_TEMPLATE_OPTIONS: TemplateOptions = {
   includeId: true,
@@ -55,12 +50,9 @@ export async function getSettings(): Promise<ExtensionSettings> {
 
     return {
       obsidianApiKey:
-        localResult.secureSettings?.obsidianApiKey ??
-        DEFAULT_SECURE_SETTINGS.obsidianApiKey,
-      obsidianPort:
-        syncResult.settings?.obsidianPort ?? DEFAULT_SYNC_SETTINGS.obsidianPort,
-      vaultPath:
-        syncResult.settings?.vaultPath ?? DEFAULT_SYNC_SETTINGS.vaultPath,
+        localResult.secureSettings?.obsidianApiKey ?? DEFAULT_SECURE_SETTINGS.obsidianApiKey,
+      obsidianPort: syncResult.settings?.obsidianPort ?? DEFAULT_SYNC_SETTINGS.obsidianPort,
+      vaultPath: syncResult.settings?.vaultPath ?? DEFAULT_SYNC_SETTINGS.vaultPath,
       templateOptions: {
         ...DEFAULT_TEMPLATE_OPTIONS,
         ...syncResult.settings?.templateOptions,
@@ -78,9 +70,7 @@ export async function getSettings(): Promise<ExtensionSettings> {
  * Separates secure settings (API Key) to local storage
  * and non-sensitive settings to sync storage.
  */
-export async function saveSettings(
-  settings: Partial<ExtensionSettings>
-): Promise<void> {
+export async function saveSettings(settings: Partial<ExtensionSettings>): Promise<void> {
   try {
     const current = await getSettings();
 
@@ -156,10 +146,7 @@ export async function migrateSettings(): Promise<void> {
     }
   } catch (error) {
     // On migration failure, keep sync intact and retry on next startup
-    console.error(
-      '[G2O] Migration failed, will retry on next startup:',
-      error
-    );
+    console.error('[G2O] Migration failed, will retry on next startup:', error);
     // Don't throw - existing functionality should continue working
   }
 }
@@ -173,9 +160,7 @@ export interface SyncInfo {
   contentHash: string;
 }
 
-export async function getLastSync(
-  conversationId: string
-): Promise<SyncInfo | null> {
+export async function getLastSync(conversationId: string): Promise<SyncInfo | null> {
   try {
     const result = await chrome.storage.local.get('lastSync');
     const lastSync = result.lastSync || {};
@@ -189,10 +174,7 @@ export async function getLastSync(
 /**
  * Save last sync info for a conversation
  */
-export async function saveLastSync(
-  conversationId: string,
-  info: SyncInfo
-): Promise<void> {
+export async function saveLastSync(conversationId: string, info: SyncInfo): Promise<void> {
   try {
     const result = await chrome.storage.local.get('lastSync');
     const lastSync = result.lastSync || {};

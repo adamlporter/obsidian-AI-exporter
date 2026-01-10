@@ -1,130 +1,128 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title data-i18n="extName">Obsidian AI Exporter</title>
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-  <div class="container">
-    <header class="header">
-      <h1>
-        <span class="logo">📥</span>
-        <span data-i18n="extName">Obsidian AI Exporter</span>
-      </h1>
-      <p class="subtitle" data-i18n="extDescription">Export AI conversations to Obsidian</p>
-    </header>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title data-i18n="extName">Obsidian AI Exporter</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <header class="header">
+        <h1>
+          <span class="logo">📥</span>
+          <span data-i18n="extName">Obsidian AI Exporter</span>
+        </h1>
+        <p class="subtitle" data-i18n="extDescription">Export AI conversations to Obsidian</p>
+      </header>
 
-    <main class="settings">
-      <section class="section">
-        <h2 data-i18n="settings_title">Settings</h2>
+      <main class="settings">
+        <section class="section">
+          <h2 data-i18n="settings_title">Settings</h2>
 
-        <div class="form-group">
-          <label for="apiKey" data-i18n="settings_apiKey">API Key</label>
-          <input
-            type="password"
-            id="apiKey"
-            data-i18n-placeholder="settings_apiKeyPlaceholder"
-            placeholder="Enter your Local REST API key"
-            autocomplete="off"
-          >
-          <p class="help">From Obsidian → Settings → Local REST API</p>
-        </div>
-
-        <div class="form-row">
           <div class="form-group">
-            <label for="port" data-i18n="settings_port">Port</label>
+            <label for="apiKey" data-i18n="settings_apiKey">API Key</label>
             <input
-              type="number"
-              id="port"
-              value="27123"
-              min="1024"
-              max="65535"
-            >
+              type="password"
+              id="apiKey"
+              data-i18n-placeholder="settings_apiKeyPlaceholder"
+              placeholder="Enter your Local REST API key"
+              autocomplete="off"
+            />
+            <p class="help">From Obsidian → Settings → Local REST API</p>
           </div>
 
-          <div class="form-group flex-grow">
-            <label for="vaultPath" data-i18n="settings_vaultPath">Vault Path</label>
-            <input
-              type="text"
-              id="vaultPath"
-              data-i18n-placeholder="settings_vaultPathPlaceholder"
-              placeholder="AI/Gemini"
-            >
+          <div class="form-row">
+            <div class="form-group">
+              <label for="port" data-i18n="settings_port">Port</label>
+              <input type="number" id="port" value="27123" min="1024" max="65535" />
+            </div>
+
+            <div class="form-group flex-grow">
+              <label for="vaultPath" data-i18n="settings_vaultPath">Vault Path</label>
+              <input
+                type="text"
+                id="vaultPath"
+                data-i18n-placeholder="settings_vaultPathPlaceholder"
+                placeholder="AI/Gemini"
+              />
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section class="section">
-        <h2 data-i18n="settings_messageFormat">Message Format</h2>
+        <section class="section">
+          <h2 data-i18n="settings_messageFormat">Message Format</h2>
 
-        <div class="form-group">
-          <label for="messageFormat" data-i18n="settings_messageFormat">Message Format</label>
-          <select id="messageFormat">
-            <option value="callout" data-i18n="settings_format_callout">Callout (Recommended)</option>
-            <option value="blockquote" data-i18n="settings_format_blockquote">Blockquote</option>
-            <option value="plain" data-i18n="settings_format_plain">Plain Markdown</option>
-          </select>
-        </div>
-
-        <div class="form-row">
           <div class="form-group">
-            <label for="userCallout" data-i18n="settings_userCallout">User Callout</label>
-            <input type="text" id="userCallout" value="QUESTION">
+            <label for="messageFormat" data-i18n="settings_messageFormat">Message Format</label>
+            <select id="messageFormat">
+              <option value="callout" data-i18n="settings_format_callout">
+                Callout (Recommended)
+              </option>
+              <option value="blockquote" data-i18n="settings_format_blockquote">Blockquote</option>
+              <option value="plain" data-i18n="settings_format_plain">Plain Markdown</option>
+            </select>
           </div>
-          <div class="form-group">
-            <label for="assistantCallout" data-i18n="settings_assistantCallout">Assistant Callout</label>
-            <input type="text" id="assistantCallout" value="NOTE">
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="userCallout" data-i18n="settings_userCallout">User Callout</label>
+              <input type="text" id="userCallout" value="QUESTION" />
+            </div>
+            <div class="form-group">
+              <label for="assistantCallout" data-i18n="settings_assistantCallout"
+                >Assistant Callout</label
+              >
+              <input type="text" id="assistantCallout" value="NOTE" />
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section class="section">
-        <h2 data-i18n="settings_frontmatter">Frontmatter Fields</h2>
-        <div class="checkbox-grid">
-          <label class="checkbox-label">
-            <input type="checkbox" id="includeId" checked>
-            <span data-i18n="settings_includeId">ID</span>
-          </label>
-          <label class="checkbox-label">
-            <input type="checkbox" id="includeTitle" checked>
-            <span data-i18n="settings_includeTitle">Title</span>
-          </label>
-          <label class="checkbox-label">
-            <input type="checkbox" id="includeTags" checked>
-            <span data-i18n="settings_includeTags">Tags</span>
-          </label>
-          <label class="checkbox-label">
-            <input type="checkbox" id="includeSource" checked>
-            <span data-i18n="settings_includeSource">Source & URL</span>
-          </label>
-          <label class="checkbox-label">
-            <input type="checkbox" id="includeDates" checked>
-            <span data-i18n="settings_includeDates">Dates</span>
-          </label>
-          <label class="checkbox-label">
-            <input type="checkbox" id="includeMessageCount" checked>
-            <span data-i18n="settings_includeMessageCount">Message Count</span>
-          </label>
-        </div>
-      </section>
-    </main>
+        <section class="section">
+          <h2 data-i18n="settings_frontmatter">Frontmatter Fields</h2>
+          <div class="checkbox-grid">
+            <label class="checkbox-label">
+              <input type="checkbox" id="includeId" checked />
+              <span data-i18n="settings_includeId">ID</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="includeTitle" checked />
+              <span data-i18n="settings_includeTitle">Title</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="includeTags" checked />
+              <span data-i18n="settings_includeTags">Tags</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="includeSource" checked />
+              <span data-i18n="settings_includeSource">Source & URL</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="includeDates" checked />
+              <span data-i18n="settings_includeDates">Dates</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="includeMessageCount" checked />
+              <span data-i18n="settings_includeMessageCount">Message Count</span>
+            </label>
+          </div>
+        </section>
+      </main>
 
-    <footer class="actions">
-      <button id="testBtn" class="btn secondary">
-        <span class="btn-icon">🔌</span>
-        <span data-i18n="settings_testConnection">Test Connection</span>
-      </button>
-      <button id="saveBtn" class="btn primary">
-        <span class="btn-icon">💾</span>
-        <span data-i18n="settings_save">Save Settings</span>
-      </button>
-    </footer>
+      <footer class="actions">
+        <button id="testBtn" class="btn secondary">
+          <span class="btn-icon">🔌</span>
+          <span data-i18n="settings_testConnection">Test Connection</span>
+        </button>
+        <button id="saveBtn" class="btn primary">
+          <span class="btn-icon">💾</span>
+          <span data-i18n="settings_save">Save Settings</span>
+        </button>
+      </footer>
 
-    <div id="status" class="status" role="status" aria-live="polite"></div>
-  </div>
+      <div id="status" class="status" role="status" aria-live="polite"></div>
+    </div>
 
-  <script type="module" src="index.ts"></script>
-</body>
+    <script type="module" src="index.ts"></script>
+  </body>
 </html>

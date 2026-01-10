@@ -25,7 +25,7 @@ export function sendMessage<K extends keyof MessageResponseMap>(
   message: ExtensionMessage & { action: K }
 ): Promise<MessageResponseMap[K]> {
   return new Promise((resolve, reject) => {
-    chrome.runtime.sendMessage(message, (response) => {
+    chrome.runtime.sendMessage(message, response => {
       if (chrome.runtime.lastError) {
         reject(new Error(chrome.runtime.lastError.message ?? 'Unknown error'));
         return;

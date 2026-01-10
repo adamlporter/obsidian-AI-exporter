@@ -82,9 +82,7 @@ export abstract class BaseExtractor implements IConversationExtractor {
    * Sanitize text content
    */
   protected sanitizeText(text: string): string {
-    return text
-      .replace(/\s+/g, ' ')
-      .trim();
+    return text.replace(/\s+/g, ' ').trim();
   }
 
   /**

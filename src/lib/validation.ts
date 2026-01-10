@@ -41,17 +41,12 @@ export type CalloutType = (typeof ALLOWED_CALLOUT_TYPES)[number];
 /**
  * calloutタイプのバリデーション
  */
-export function validateCalloutType(
-  type: string,
-  defaultType: CalloutType
-): CalloutType {
+export function validateCalloutType(type: string, defaultType: CalloutType): CalloutType {
   const normalized = type.toUpperCase().trim();
   if (ALLOWED_CALLOUT_TYPES.includes(normalized as CalloutType)) {
     return normalized as CalloutType;
   }
-  console.warn(
-    `[G2O] Invalid callout type "${type}", using default "${defaultType}"`
-  );
+  console.warn(`[G2O] Invalid callout type "${type}", using default "${defaultType}"`);
   return defaultType;
 }
 
@@ -92,9 +87,7 @@ export function validateApiKey(key: string): string {
   // Obsidian REST API は SHA-256 ハッシュ（64文字の16進数）を生成
   // ただし、ユーザーが手動で設定した場合も考慮して柔軟に対応
   if (trimmed.length !== 64) {
-    console.warn(
-      `[G2O] API key length is ${trimmed.length}, expected 64 (SHA-256 hex)`
-    );
+    console.warn(`[G2O] API key length is ${trimmed.length}, expected 64 (SHA-256 hex)`);
   }
 
   // 16進数形式のバリデーション（警告のみ、ブロックしない）

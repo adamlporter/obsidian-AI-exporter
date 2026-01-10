@@ -3,23 +3,14 @@
  * Handles HTTP communication with Obsidian REST API
  */
 
-import {
-  ObsidianApiClient,
-  getErrorMessage,
-  isObsidianApiError,
-} from '../lib/obsidian-api';
+import { ObsidianApiClient, getErrorMessage, isObsidianApiError } from '../lib/obsidian-api';
 import { getSettings, migrateSettings } from '../lib/storage';
 import { escapeYamlValue, escapeYamlListItem } from '../lib/yaml-utils';
-import type {
-  ExtensionMessage,
-  ObsidianNote,
-  SaveResponse,
-  ExtensionSettings,
-} from '../lib/types';
+import type { ExtensionMessage, ObsidianNote, SaveResponse, ExtensionSettings } from '../lib/types';
 
 // Run settings migration on service worker startup (C-01)
 // Note: top-level await not available in service workers, use .catch() for error handling
-migrateSettings().catch((error) => {
+migrateSettings().catch(error => {
   console.error('[G2O Background] Settings migration failed:', error);
 });
 
@@ -45,7 +36,7 @@ function validateSender(sender: chrome.runtime.MessageSender): boolean {
   if (sender.tab?.url) {
     try {
       const url = new URL(sender.tab.url);
-      return ALLOWED_ORIGINS.some((origin) => url.origin === origin);
+      return ALLOWED_ORIGINS.some(origin => url.origin === origin);
     } catch {
       return false;
     }
@@ -62,12 +53,7 @@ function validateSender(sender: chrome.runtime.MessageSender): boolean {
  */
 function validateMessageContent(message: ExtensionMessage): boolean {
   // Validate action against whitelist
-  const validActions = [
-    'getSettings',
-    'getExistingFile',
-    'testConnection',
-    'saveToObsidian',
-  ];
+  const validActions = ['getSettings', 'getExistingFile', 'testConnection', 'saveToObsidian'];
   if (!validActions.includes(message.action)) {
     return false;
   }
@@ -94,10 +80,7 @@ function validateMessageContent(message: ExtensionMessage): boolean {
 
     // Frontmatter validation
     if (note.frontmatter) {
-      if (
-        typeof note.frontmatter.title !== 'string' ||
-        note.frontmatter.title.length > 500
-      ) {
+      if (typeof note.frontmatter.title !== 'string' || note.frontmatter.title.length > 500) {
         return false;
       }
       if (
@@ -106,10 +89,7 @@ function validateMessageContent(message: ExtensionMessage): boolean {
       ) {
         return false;
       }
-      if (
-        !Array.isArray(note.frontmatter.tags) ||
-        note.frontmatter.tags.length > 50
-      ) {
+      if (!Array.isArray(note.frontmatter.tags) || note.frontmatter.tags.length > 50) {
         return false;
       }
     }
@@ -129,9 +109,7 @@ chrome.runtime.onMessage.addListener(
   ) => {
     // Sender validation (M-02)
     if (!validateSender(sender)) {
-      console.warn(
-        '[G2O Background] Rejected message from unauthorized sender'
-      );
+      console.warn('[G2O Background] Rejected message from unauthorized sender');
       sendResponse({ success: false, error: 'Unauthorized' });
       return false;
     }
@@ -145,7 +123,7 @@ chrome.runtime.onMessage.addListener(
 
     handleMessage(message)
       .then(sendResponse)
-      .catch((error) => {
+      .catch(error => {
         console.error('[G2O Background] Error handling message:', error);
         sendResponse({ success: false, error: getErrorMessage(error) });
       });
@@ -180,10 +158,7 @@ async function handleMessage(message: ExtensionMessage): Promise<unknown> {
 /**
  * Save note to Obsidian vault
  */
-async function handleSave(
-  settings: ExtensionSettings,
-  note: ObsidianNote
-): Promise<SaveResponse> {
+async function handleSave(settings: ExtensionSettings, note: ObsidianNote): Promise<SaveResponse> {
   if (!settings.obsidianApiKey) {
     return { success: false, error: 'API key not configured. Please check settings.' };
   }
@@ -192,9 +167,7 @@ async function handleSave(
 
   try {
     // Construct full path
-    const fullPath = settings.vaultPath
-      ? `${settings.vaultPath}/${note.fileName}`
-      : note.fileName;
+    const fullPath = settings.vaultPath ? `${settings.vaultPath}/${note.fileName}` : note.fileName;
 
     // Check if file exists for append mode detection
     const existingContent = await client.getFile(fullPath);
@@ -277,10 +250,7 @@ async function handleTestConnection(
  * Generate full note content with frontmatter and body
  * Uses YAML escaping to prevent injection attacks (NEW-04)
  */
-function generateNoteContent(
-  note: ObsidianNote,
-  settings: ExtensionSettings
-): string {
+function generateNoteContent(note: ObsidianNote, settings: ExtensionSettings): string {
   const { templateOptions } = settings;
   const lines: string[] = [];
 

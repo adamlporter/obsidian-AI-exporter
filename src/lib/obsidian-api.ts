@@ -106,19 +106,13 @@ export class ObsidianApiClient {
       }
 
       if (!response.ok) {
-        throw this.createError(
-          response.status,
-          `Failed to get file: ${response.statusText}`
-        );
+        throw this.createError(response.status, `Failed to get file: ${response.statusText}`);
       }
 
       return await response.text();
     } catch (error) {
       if (isNetworkError(error)) {
-        throw this.createError(
-          0,
-          'Request timed out. Please check your connection.'
-        );
+        throw this.createError(0, 'Request timed out. Please check your connection.');
       }
       throw error;
     }
@@ -143,17 +137,11 @@ export class ObsidianApiClient {
       });
 
       if (!response.ok) {
-        throw this.createError(
-          response.status,
-          `Failed to save file: ${response.statusText}`
-        );
+        throw this.createError(response.status, `Failed to save file: ${response.statusText}`);
       }
     } catch (error) {
       if (isNetworkError(error)) {
-        throw this.createError(
-          0,
-          'Request timed out. Please check your connection.'
-        );
+        throw this.createError(0, 'Request timed out. Please check your connection.');
       }
       throw error;
     }
@@ -184,12 +172,7 @@ export class ObsidianApiClient {
  * Type guard for ObsidianApiError
  */
 export function isObsidianApiError(error: unknown): error is ObsidianApiError {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'status' in error &&
-    'message' in error
-  );
+  return typeof error === 'object' && error !== null && 'status' in error && 'message' in error;
 }
 
 /**

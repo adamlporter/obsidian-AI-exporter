@@ -13,28 +13,16 @@ import type { ExtractionResult, ConversationMessage } from '../../lib/types';
  */
 const SELECTORS = {
   // Conversation turn container (each Q&A pair)
-  conversationTurn: [
-    '.conversation-container',
-    '[class*="conversation-container"]',
-  ],
+  conversationTurn: ['.conversation-container', '[class*="conversation-container"]'],
 
   // User query element (Angular component)
-  userQuery: [
-    'user-query',
-    '[class*="user-query"]',
-  ],
+  userQuery: ['user-query', '[class*="user-query"]'],
 
   // Query text lines (multiple lines per query)
-  queryTextLine: [
-    '.query-text-line',
-    'p[class*="query-text-line"]',
-  ],
+  queryTextLine: ['.query-text-line', 'p[class*="query-text-line"]'],
 
   // Model response element (Angular component)
-  modelResponse: [
-    'model-response',
-    '[class*="model-response"]',
-  ],
+  modelResponse: ['model-response', '[class*="model-response"]'],
 
   // Model response markdown content
   modelResponseContent: [
@@ -151,7 +139,9 @@ export class GeminiExtractor extends BaseExtractor {
     const userQueries = this.queryAllWithFallback<HTMLElement>(SELECTORS.userQuery);
     const modelResponses = this.queryAllWithFallback<HTMLElement>(SELECTORS.modelResponse);
 
-    console.info(`[G2O] Fallback: Found ${userQueries.length} user queries, ${modelResponses.length} model responses`);
+    console.info(
+      `[G2O] Fallback: Found ${userQueries.length} user queries, ${modelResponses.length} model responses`
+    );
 
     // Interleave based on DOM order
     const allElements: Array<{ element: Element; type: 'user' | 'assistant' }> = [];
@@ -168,9 +158,10 @@ export class GeminiExtractor extends BaseExtractor {
 
     // Extract content
     allElements.forEach((item, index) => {
-      const content = item.type === 'user'
-        ? this.extractUserQueryContent(item.element)
-        : this.extractModelResponseContent(item.element);
+      const content =
+        item.type === 'user'
+          ? this.extractUserQueryContent(item.element)
+          : this.extractModelResponseContent(item.element);
 
       if (content) {
         messages.push({
@@ -300,8 +291,8 @@ export class GeminiExtractor extends BaseExtractor {
             messageCount: messages.length,
             userMessageCount: userCount,
             assistantMessageCount: assistantCount,
-            hasCodeBlocks: messages.some(m =>
-              m.content.includes('<code') || m.content.includes('```')
+            hasCodeBlocks: messages.some(
+              m => m.content.includes('<code') || m.content.includes('```')
             ),
           },
         },
