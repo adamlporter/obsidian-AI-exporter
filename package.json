@@ -1,11 +1,12 @@
 {
   "name": "obsidian-ai-exporter",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Chrome Extension to export AI conversations from Gemini to Obsidian",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
+    "build:zip": "npm run build && cd dist && zip -r ../gemini2obsidian-$(node -p \"require('../package.json').version\").zip . -x '*.DS_Store' -x '.vite/*' && cd ..",
     "lint": "eslint src/",
     "format": "prettier --write \"src/**/*.{ts,tsx,css,html}\"",
     "preview": "vite preview",

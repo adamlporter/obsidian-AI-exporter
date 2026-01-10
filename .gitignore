@@ -1,12 +1,14 @@
 # MCP config with secrets
 .mcp.json
 data/
+.serena/
 
 # Dependencies
 node_modules/
 
 # Build output
 dist/
+gemini2obsidian-*.zip
 
 # IDE
 .vscode/
@@ -24,6 +26,7 @@ npm-debug.log*
 
 # Test files
 elements-sample.html
+coverage/
 
 # Environment
 .env
