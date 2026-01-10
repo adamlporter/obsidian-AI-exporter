@@ -13,14 +13,15 @@ export default defineConfig({
       exclude: [
         'src/**/*.d.ts',
         'src/lib/types.ts',    // Type definitions only
-        'src/popup/index.ts',  // P5 - exclude until Phase 5
+        'src/popup/index.ts',  // Has side effects on import, tested via patterns
+        'src/content/index.ts', // Has side effects on import, tested via patterns
       ],
-      // Phase 4 thresholds (75%) - update as coverage improves
+      // Final thresholds - achieved 88.5% statements
       thresholds: {
-        statements: 75,
-        branches: 68,
-        functions: 75,
-        lines: 75,
+        statements: 85,
+        branches: 75,
+        functions: 85,
+        lines: 85,
       },
     },
   },
