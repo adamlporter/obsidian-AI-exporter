@@ -2,12 +2,15 @@
 
 Chrome Extension that exports AI conversations from Google Gemini to Obsidian via the Local REST API.
 
+[日本語版はこちら](README.ja.md)
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Chrome Web Store](https://img.shields.io/badge/Chrome-Extension-blue)](https://chrome.google.com/webstore)
+[![Chrome Web Store](https://img.shields.io/badge/Chrome-Extension-blue)](https://chromewebstore.google.com/detail/obsidian-ai-exporter/edemgeigfbodiehkjhjflleipabgbdeh)
 
 ## Features
 
 - **One-click export**: Floating "Sync" button on Gemini pages
+- **Deep Research support**: Export Gemini Deep Research reports with full structure
 - **Append mode**: Only new messages are added to existing notes
 - **Obsidian callouts**: Formatted output with `[!QUESTION]` and `[!NOTE]` callouts
 - **YAML frontmatter**: Metadata including title, source, URL, dates, and tags
@@ -22,12 +25,18 @@ Chrome Extension that exports AI conversations from Google Gemini to Obsidian vi
 
 ## Installation
 
+### From Chrome Web Store
+
+> **Note**: Currently under review. The link will be active once approved.
+
+[Install from Chrome Web Store](https://chromewebstore.google.com/detail/obsidian-ai-exporter/edemgeigfbodiehkjhjflleipabgbdeh)
+
 ### From Source
 
 1. Clone this repository:
    ```bash
-   git clone https://github.com/yourusername/gemini2obsidian.git
-   cd gemini2obsidian
+   git clone https://github.com/sho7650/obsidian-AI-exporter.git
+   cd obsidian-AI-exporter
    ```
 
 2. Install dependencies:
@@ -61,7 +70,16 @@ Chrome Extension that exports AI conversations from Google Gemini to Obsidian vi
 2. Click the purple "Sync" button in the bottom-right corner
 3. The conversation will be saved to your Obsidian vault
 
+### Deep Research Export
+
+When viewing a Deep Research report in Gemini:
+1. Open the Deep Research panel (expanded view)
+2. Click the "Sync" button
+3. The full report will be saved with its original heading structure
+
 ## Output Format
+
+### Conversation Format
 
 Conversations are saved as Markdown files with YAML frontmatter:
 
@@ -84,6 +102,37 @@ message_count: 4
 
 > [!NOTE] Gemini
 > To implement JWT authentication, you'll need to...
+```
+
+### Deep Research Format
+
+Deep Research reports include a `type` field and preserve the original structure:
+
+```markdown
+---
+id: gemini_deep-research-a1b2c3d4
+title: "Comprehensive Analysis of..."
+source: gemini
+type: deep-research
+url: https://gemini.google.com/app/xxx
+created: 2025-01-11T10:00:00Z
+modified: 2025-01-11T10:00:00Z
+tags:
+  - ai-research
+  - deep-research
+  - gemini
+message_count: 1
+---
+
+# Report Title
+
+## 1. Introduction
+
+The report content with original headings...
+
+## 2. Analysis
+
+Detailed analysis sections...
 ```
 
 ## Development
@@ -112,7 +161,7 @@ npm run test:coverage
 
 ```
 Content Script (gemini.google.com)
-    ↓ extracts conversation
+    ↓ extracts conversation / Deep Research
 Background Service Worker
     ↓ sends to Obsidian
 Obsidian Local REST API (127.0.0.1:27123)
@@ -123,6 +172,7 @@ Obsidian Local REST API (127.0.0.1:27123)
 | Component | Description |
 |-----------|-------------|
 | `src/content/` | Content script for DOM extraction and UI |
+| `src/content/extractors/gemini.ts` | Gemini conversation & Deep Research extractor |
 | `src/background/` | Service worker for API communication |
 | `src/popup/` | Settings UI |
 | `src/lib/` | Shared utilities and types |
@@ -143,7 +193,7 @@ This extension:
 - Only communicates with your local Obsidian instance (127.0.0.1)
 - Stores API key locally in your browser (not synced to cloud)
 
-See our [Privacy Policy](https://yourusername.github.io/gemini2obsidian/privacy.html) for details.
+See our [Privacy Policy](https://sho7650.github.io/obsidian-AI-exporter/privacy.html) for details.
 
 ## License
 
