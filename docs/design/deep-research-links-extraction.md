@@ -274,7 +274,17 @@ extractDeepResearchLinks(): DeepResearchLinks {
 
 **注記**: `extractInlineCitations()` は不要。インライン引用の処理は Markdown 変換時に行う。
 
-### 3.4 Markdown 変換（インラインリンク方式）
+### 3.4 Markdown 変換（`<a>` タグ経由方式）
+
+**重要な設計決定**: Markdown を直接生成せず、`<a>` タグを生成して Turndown に変換を委ねる。
+
+**理由**: Turndown は HTML を Markdown に変換するライブラリであり、入力に Markdown 構文が含まれていると二重エスケープが発生する。詳細は [二重エスケープ問題 調査レポート](../investigation/double-escape-issue.md) を参照。
+
+### 3.4.1 旧仕様（インラインリンク方式）【廃止】
+
+以下の実装は二重エスケープ問題を引き起こすため廃止。現在は 3.4.2 の `<a>` タグ方式を採用。
+
+#### 廃止された仕様（参考）
 
 ```typescript
 // src/content/markdown.ts に追加
@@ -411,10 +421,152 @@ function convertDeepResearchContent(
 }
 ```
 
+**旧仕様の問題点**:
+- Markdown を直接生成すると、Turndown が `[` `]` を再エスケープする
+- 結果: `\[Title\](URL)` という不正な出力
+
+### 3.4.2 現行仕様（`<a>` タグ経由方式）【採用】
+
+```typescript
+// src/content/markdown.ts
+
+/**
+ * URLをサニタイズ（危険なスキームを除去）
+ */
+export function sanitizeUrl(url: string): string {
+  const dangerousSchemes = ['javascript:', 'data:', 'vbscript:'];
+  const lowerUrl = url.toLowerCase().trim();
+  
+  for (const scheme of dangerousSchemes) {
+    if (lowerUrl.startsWith(scheme)) {
+      return ''; // 危険なURLは空文字を返す
+    }
+  }
+  
+  return url;
+}
+
+/**
+ * HTML特殊文字をエスケープ
+ * 
+ * <a> タグ内に挿入する前に呼び出す
+ */
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+/**
+ * インライン引用を <a> タグに変換（Turndown 処理用）
+ * 
+ * 変換前: <source-footnote><sup data-turn-source-index="N">...</sup></source-footnote>
+ * 変換後: <a href="URL">Title</a>
+ * 
+ * 設計: Markdown を直接生成せず、<a> タグを生成して
+ *       Turndown に [Title](URL) への変換を委ねる。
+ *       これにより二重エスケープ問題を回避。
+ * 
+ * 重要: data-turn-source-index は 1ベース
+ */
+export function convertInlineCitationsToLinks(
+  html: string,
+  sourceMap: Map<number, DeepResearchSource>
+): string {
+  // パターン1: source-footnote でラップされている場合
+  let result = html.replace(
+    /<source-footnote[^>]*>[\s\S]*?<sup[^>]*?data-turn-source-index="(\d+)"[^>]*?>[\s\S]*?<\/sup>[\s\S]*?<\/source-footnote>/gi,
+    (match, indexStr) => {
+      const index = parseInt(indexStr, 10);
+      const source = sourceMap.get(index);
+      if (source) {
+        const safeUrl = sanitizeUrl(source.url);
+        if (safeUrl) {
+          // ✅ <a> タグを生成 → Turndown が [Title](URL) に変換
+          return `<a href="${escapeHtml(safeUrl)}">${escapeHtml(source.title)}</a>`;
+        }
+        return escapeHtml(source.title); // URLが無効な場合はタイトルのみ
+      }
+      return ''; // ソースが見つからない場合は削除
+    }
+  );
+  
+  // パターン2: sup要素が直接存在する場合（フォールバック）
+  result = result.replace(
+    /<sup[^>]*?data-turn-source-index="(\d+)"[^>]*?>[\s\S]*?<\/sup>/gi,
+    (match, indexStr) => {
+      const index = parseInt(indexStr, 10);
+      const source = sourceMap.get(index);
+      if (source) {
+        const safeUrl = sanitizeUrl(source.url);
+        if (safeUrl) {
+          return `<a href="${escapeHtml(safeUrl)}">${escapeHtml(source.title)}</a>`;
+        }
+        return escapeHtml(source.title);
+      }
+      return '';
+    }
+  );
+  
+  return result;
+}
+
+/**
+ * sources-carousel-inline 要素を除去
+ */
+export function removeSourcesCarousel(html: string): string {
+  return html.replace(
+    /<sources-carousel-inline[\s\S]*?<\/sources-carousel-inline>/gi,
+    ''
+  );
+}
+
+/**
+ * Deep Research コンテンツを変換
+ */
+export function convertDeepResearchContent(
+  html: string,
+  links?: DeepResearchLinks
+): string {
+  let processed = html;
+  
+  // 1. ソースマップを構築（1ベースインデックス）
+  let sourceMap = new Map<number, DeepResearchSource>();
+  if (links && links.sources.length > 0) {
+    links.sources.forEach((source, arrayIndex) => {
+      // data-turn-source-index は 1ベース
+      const turnSourceIndex = arrayIndex + 1;
+      sourceMap.set(turnSourceIndex, source);
+    });
+  }
+  
+  // 2. インライン引用を <a> タグに変換
+  processed = convertInlineCitationsToLinks(processed, sourceMap);
+  
+  // 3. sources-carousel を除去
+  processed = removeSourcesCarousel(processed);
+  
+  // 4. HTML → Markdown 変換（Turndown が <a> → [Title](URL) に変換）
+  const markdown = htmlToMarkdown(processed);
+  
+  return markdown;
+}
+```
+
 **設計ポイント**:
-- 脚注形式（`[^N]`）は不採用 → インラインリンク（`[タイトル](URL)`）を直接挿入
-- `generateFootnoteDefinitions()` と `generateReferencesSection()` は**不要**
-- ソースが見つからない場合は空文字（引用マーカーを削除）
+- Markdown を直接生成せず、`<a>` タグを生成
+- Turndown が `<a href="URL">Title</a>` → `[Title](URL)` に変換
+- エスケープ処理は Turndown に委譲（二重エスケープ問題を回避）
+- 削除した関数: `escapeMarkdownLinkText()`, `escapeMarkdownLinkUrl()`
+
+### 3.4.3 処理フロー比較
+
+| 方式 | 処理フロー | 結果 |
+|------|-----------|------|
+| 旧（Markdown直接） | `<sup>` → `[Title](URL)` → Turndown | `\[Title\](URL)` ❌ |
+| 新（`<a>`タグ経由） | `<sup>` → `<a href="URL">Title</a>` → Turndown | `[Title](URL)` ✅ |
 
 ---
 
@@ -458,7 +610,8 @@ message_count: 1
 | インライン引用 | `[タイトル](URL)` 形式のインラインリンク |
 | 脚注定義 | **なし**（インラインリンクで完結） |
 | References セクション | **なし**（インラインリンクで完結） |
-| セキュリティ | URL/タイトルは `sanitizeUrl()` と `escapeMarkdownLinkText()` で処理 |
+| セキュリティ | DOMPurify でサニタイズ、`sanitizeUrl()` と `escapeHtml()` で処理 |
+| エスケープ方式 | `<a>` タグ経由で Turndown に委譲（二重エスケープ回避） |
 
 ### 4.3 変換前後の比較
 
@@ -486,12 +639,16 @@ message_count: 1
 
 ### 5.3 Phase 3: Markdown 変換
 
-1. `sanitizeUrl()` を実装
-2. `escapeMarkdownLinkText()` / `escapeMarkdownLinkUrl()` を実装
-3. `convertInlineCitationsToLinks()` を実装
-4. `removeSourcesCarousel()` を実装
-5. `convertDeepResearchContent()` を実装
-6. `conversationToNote()` を更新
+1. `sanitizeUrl()` を実装 ✅
+2. `escapeHtml()` を実装（`<a>` タグ方式用） ✅
+3. `convertInlineCitationsToLinks()` を実装（`<a>` タグ生成） ✅
+4. `removeSourcesCarousel()` を実装 ✅
+5. `convertDeepResearchContent()` を実装 ✅
+6. `conversationToNote()` を更新 ✅
+
+**廃止した関数**:
+- `escapeMarkdownLinkText()` - 不要（Turndown に委譲）
+- `escapeMarkdownLinkUrl()` - 不要（Turndown に委譲）
 
 ### 5.4 Phase 4: テスト
 
@@ -537,21 +694,72 @@ message_count: 1
 
 ### 6.5 セキュリティ考慮事項
 
-#### URLサニタイズ
+#### URLサニタイズ（`sanitizeUrl()`）
 - `javascript:`, `data:`, `vbscript:` スキームは除去
 - 無効なURLは空文字を返す
-- `sanitizeUrl()` で検証してからMarkdownに出力
+- `sanitizeUrl()` で検証してから `<a>` タグに出力
 
-#### Markdownエスケープ
-- タイトル内の `[` `]` → `\[` `\]` にエスケープ
-- URL内の `(` `)` → `%28` `%29` にエスケープ
-- XSS防止のため、外部データは必ずエスケープ
+#### HTMLエスケープ（`escapeHtml()`）【現行方式】
+`<a>` タグ方式では HTML エスケープを使用:
+- `&` → `&amp;`
+- `<` → `&lt;`
+- `>` → `&gt;`
+- `"` → `&quot;`
 
-#### 検証順序
+**廃止**: `escapeMarkdownLinkText()` / `escapeMarkdownLinkUrl()` は不要（Turndown が処理）
+
+#### 検証順序【現行方式】
 ```
-URL取得 → sanitizeUrl() → escapeMarkdownLinkUrl() → Markdown出力
-タイトル取得 → escapeMarkdownLinkText() → Markdown出力
+URL取得 → sanitizeUrl() → escapeHtml() → <a href="..."> に挿入
+タイトル取得 → escapeHtml() → <a>...</a> に挿入
+<a> タグ → Turndown → [Title](URL) 変換
 ```
+
+#### HTMLサニタイズ（DOMPurify）
+
+抽出した HTML は `sanitizeHtml()` でサニタイズしてから処理する。
+
+```typescript
+// src/lib/sanitize.ts
+
+/**
+ * DOMPurify 設定:
+ * - USE_PROFILES: { html: true } でデフォルトの安全なHTML許可リスト
+ * - data-turn-source-index を明示的に許可（hook 使用）
+ * - 他の data-* 属性はブロック
+ */
+export function sanitizeHtml(html: string): string {
+  DOMPurify.addHook('uponSanitizeAttribute', (node, data) => {
+    // data-turn-source-index のみ許可
+    if (data.attrName === 'data-turn-source-index') {
+      data.forceKeepAttr = true;
+    }
+    // 他の data-* 属性はブロック
+    else if (data.attrName.startsWith('data-')) {
+      data.keepAttr = false;
+    }
+  });
+
+  const result = DOMPurify.sanitize(html, {
+    USE_PROFILES: { html: true },
+    FORBID_TAGS: ['style'],
+  });
+
+  DOMPurify.removeHook('uponSanitizeAttribute');
+  return result;
+}
+```
+
+**重要**: `data-turn-source-index` 属性は `convertInlineCitationsToLinks()` で使用するため、サニタイズ時に保持する必要がある。
+
+#### セキュリティ対策の層
+
+| 層 | 対策 | 目的 |
+|----|------|------|
+| 1 | DOMPurify サニタイズ | XSS 攻撃防止、`data-turn-source-index` 保持 |
+| 2 | `sanitizeUrl()` | 危険な URL スキーム除去 |
+| 3 | `escapeHtml()` | HTML インジェクション防止 |
+| 4 | Turndown 変換 | Markdown への安全な変換 |
 
 ### 6.6 インラインリンク方式の利点
 
@@ -569,29 +777,34 @@ URL取得 → sanitizeUrl() → escapeMarkdownLinkUrl() → Markdown出力
 
 ### 7.1 ユニットテスト
 
-| テスト項目 | 説明 |
-|-----------|------|
-| `extractSourceList()` | URL、タイトル、ドメインの抽出 |
-| `buildSourceMap()` | 1ベースインデックスへのマッピング |
-| `convertInlineCitationsToLinks()` | HTML → `[タイトル](URL)` 変換 |
-| `sanitizeUrl()` | 危険スキームの除去 |
-| `escapeMarkdownLinkText()` | `[]` のエスケープ |
-| `escapeMarkdownLinkUrl()` | `()` のエンコード |
+| テスト項目 | 説明 | 実装状態 |
+|-----------|------|---------|
+| `extractSourceList()` | URL、タイトル、ドメインの抽出 | ✅ 実装済み |
+| `buildSourceMap()` | 1ベースインデックスへのマッピング | ✅ 実装済み |
+| `convertInlineCitationsToLinks()` | `<sup>` → `<a>` タグ変換 | ✅ 実装済み |
+| `sanitizeUrl()` | 危険スキームの除去 | ✅ 実装済み |
+| `escapeHtml()` | HTML特殊文字のエスケープ | ✅ 実装済み |
+| `sanitizeHtml()` | DOMPurify による XSS 防止 | ✅ 実装済み |
+
+**廃止されたテスト項目**:
+- `escapeMarkdownLinkText()` - Turndown に委譲
+- `escapeMarkdownLinkUrl()` - Turndown に委譲
 
 ### 7.2 エッジケース
 
-| シナリオ | 期待結果 |
-|---------|---------|
-| 引用なし | 本文のみ（インラインリンクなし） |
-| ソースリストなし | 本文のみ、警告ログ |
-| ソースリストに存在しない `data-turn-source-index` | 引用マーカー削除（空文字） |
-| 重複引用（同じインデックス複数回） | 各位置に同じリンクを挿入 |
-| 無効なURL（`javascript:`） | タイトルのみテキスト出力 |
-| 日本語タイトル | 正しくエスケープ |
-| タイトルに `[]` 含む | `\[\]` にエスケープ |
-| URLに `()` 含む | `%28%29` にエンコード |
-| URL解析失敗 | domain を 'unknown' にフォールバック |
-| `data-turn-source-index="1"` | `sources[0]` に対応（1ベース確認） |
+| シナリオ | 期待結果 | 実装状態 |
+|---------|---------|---------|
+| 引用なし | 本文のみ（インラインリンクなし） | ✅ |
+| ソースリストなし | 本文のみ | ✅ |
+| ソースリストに存在しない `data-turn-source-index` | 引用マーカー削除（空文字） | ✅ |
+| 重複引用（同じインデックス複数回） | 各位置に同じリンクを挿入 | ✅ |
+| 無効なURL（`javascript:`） | タイトルのみテキスト出力 | ✅ |
+| 日本語タイトル | 正しく HTML エスケープ | ✅ |
+| タイトルに `<script>` 含む | `&lt;script&gt;` にエスケープ | ✅ |
+| URLに `()` 含む | Turndown が適切にエンコード | ✅ |
+| URL解析失敗 | domain を 'unknown' にフォールバック | ✅ |
+| `data-turn-source-index="1"` | `sources[0]` に対応（1ベース確認） | ✅ |
+| `data-turn-source-index` 属性保持 | DOMPurify サニタイズ後も属性残存 | ✅ |
 
 ---
 
@@ -602,10 +815,11 @@ URL取得 → sanitizeUrl() → escapeMarkdownLinkUrl() → Markdown出力
 | ファイル | 変更内容 |
 |---------|---------|
 | `src/lib/types.ts` | `DeepResearchSource`, `DeepResearchLinks` 追加 |
-| `src/content/extractors/gemini.ts` | `extractSourceList()`, `buildSourceMap()`, `extractDeepResearchLinks()` 追加 |
-| `src/content/markdown.ts` | `convertInlineCitationsToLinks()`, `convertDeepResearchContent()` 追加 |
-| `test/extractors/gemini.test.ts` | リンク抽出テスト追加 |
-| `test/markdown.test.ts` | インラインリンク変換テスト追加 |
+| `src/lib/sanitize.ts` | `sanitizeHtml()` に DOMPurify hook 追加（`data-turn-source-index` 保持） |
+| `src/content/extractors/gemini.ts` | `extractSourceList()`, `extractDeepResearchLinks()` 追加 |
+| `src/content/markdown.ts` | `convertInlineCitationsToLinks()`（`<a>` タグ生成）、`escapeHtml()`、`convertDeepResearchContent()` 追加 |
+| `test/lib/sanitize.test.ts` | `data-turn-source-index` 保持テスト追加 |
+| `test/content/markdown.test.ts` | インラインリンク変換テスト追加 |
 
 ### 8.2 後方互換性
 
@@ -631,10 +845,21 @@ URL取得 → sanitizeUrl() → escapeMarkdownLinkUrl() → Markdown出力
 | 1.0 | 2025-01-11 | 初版作成 |
 | 1.1 | 2025-01-11 | レビュー指摘対応: Set→配列、URLバリデーション、セキュリティ対応 |
 | 2.0 | 2025-01-12 | 大幅改訂: 脚注形式からインラインリンク形式に変更、`data-turn-source-index` を1ベースに修正（検証済み）、`InlineCitation`型削除、Referencesセクション削除 |
+| 2.1 | 2025-01-12 | `<a>` タグ経由方式に変更（二重エスケープ問題解決）、DOMPurify hook による `data-turn-source-index` 保持仕様追加、`escapeMarkdownLink*()` 廃止、`escapeHtml()` 追加 |
+
+---
+
+## 関連ドキュメント
+
+| ドキュメント | 内容 |
+|-------------|------|
+| [Deep Research 抽出機能 設計書](./deep-research-extraction.md) | Deep Research コンテンツの基本抽出仕様 |
+| [インライン引用の折りたたみ状態に関する調査レポート](../investigation/inline-citation-collapsed-state.md) | `data-turn-source-index` 属性の机上検証結果 |
+| [Markdown 二重エスケープ問題 調査レポート](../investigation/double-escape-issue.md) | `<a>` タグ方式採用の経緯と技術的詳細 |
 
 ---
 
 *作成日: 2025-01-11*
 *更新日: 2025-01-12*
-*バージョン: 2.0*
+*バージョン: 2.1*
 *前提: deep-research-extraction.md v1.1*
