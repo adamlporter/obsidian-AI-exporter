@@ -8,8 +8,157 @@ import type {
   ObsidianNote,
   NoteFrontmatter,
   TemplateOptions,
+  DeepResearchLinks,
+  DeepResearchSource,
 } from '../lib/types';
 import { generateHash } from '../lib/hash';
+
+// ============================================================
+// Deep Research Link Processing Functions (Inline Link Mode)
+// ============================================================
+
+/**
+ * Sanitize URL to remove dangerous schemes
+ */
+export function sanitizeUrl(url: string): string {
+  const dangerousSchemes = ['javascript:', 'data:', 'vbscript:'];
+  const lowerUrl = url.toLowerCase().trim();
+
+  for (const scheme of dangerousSchemes) {
+    if (lowerUrl.startsWith(scheme)) {
+      return ''; // Return empty for dangerous URLs
+    }
+  }
+
+  return url;
+}
+
+/**
+ * Build a Map for accessing sources by data-turn-source-index (1-based)
+ *
+ * @param sources Array of DeepResearchSource (0-based index)
+ * @returns Map<data-turn-source-index, DeepResearchSource>
+ */
+function buildSourceMap(sources: DeepResearchSource[]): Map<number, DeepResearchSource> {
+  const map = new Map<number, DeepResearchSource>();
+
+  sources.forEach((source, arrayIndex) => {
+    // data-turn-source-index is 1-based
+    // arrayIndex=0 → data-turn-source-index=1
+    const turnSourceIndex = arrayIndex + 1;
+    map.set(turnSourceIndex, source);
+  });
+
+  return map;
+}
+
+/**
+ * Escape HTML special characters for safe insertion into HTML
+ */
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+/**
+ * Convert inline citations to anchor tags for Turndown processing
+ *
+ * Before: <source-footnote><sup data-turn-source-index="N">...</sup></source-footnote>
+ * After: <a href="URL">Title</a>
+ *
+ * Design: Instead of generating Markdown directly, we convert to <a> tags
+ * and let Turndown handle the Markdown conversion. This avoids double-escaping
+ * issues where our Markdown escapes get re-escaped by Turndown.
+ *
+ * Important: data-turn-source-index is 1-based
+ *
+ * @param html HTML content to convert
+ * @param sourceMap Map built from buildSourceMap()
+ */
+export function convertInlineCitationsToLinks(
+  html: string,
+  sourceMap: Map<number, DeepResearchSource>
+): string {
+  // Pattern 1: source-footnote wrapped
+  let result = html.replace(
+    /<source-footnote[^>]*>[\s\S]*?<sup[^>]*?data-turn-source-index="(\d+)"[^>]*?>[\s\S]*?<\/sup>[\s\S]*?<\/source-footnote>/gi,
+    (match, indexStr) => {
+      const index = parseInt(indexStr, 10);
+      const source = sourceMap.get(index);
+      if (source) {
+        const safeUrl = sanitizeUrl(source.url);
+        if (safeUrl) {
+          // Return <a> tag for Turndown to process
+          return `<a href="${escapeHtml(safeUrl)}">${escapeHtml(source.title)}</a>`;
+        }
+        return escapeHtml(source.title); // URL invalid: title only
+      }
+      return ''; // Source not found: remove marker
+    }
+  );
+
+  // Pattern 2: standalone sup element (fallback)
+  result = result.replace(
+    /<sup[^>]*?data-turn-source-index="(\d+)"[^>]*?>[\s\S]*?<\/sup>/gi,
+    (match, indexStr) => {
+      const index = parseInt(indexStr, 10);
+      const source = sourceMap.get(index);
+      if (source) {
+        const safeUrl = sanitizeUrl(source.url);
+        if (safeUrl) {
+          return `<a href="${escapeHtml(safeUrl)}">${escapeHtml(source.title)}</a>`;
+        }
+        return escapeHtml(source.title);
+      }
+      return '';
+    }
+  );
+
+  return result;
+}
+
+/**
+ * Remove sources-carousel-inline elements
+ */
+export function removeSourcesCarousel(html: string): string {
+  return html.replace(/<sources-carousel-inline[\s\S]*?<\/sources-carousel-inline>/gi, '');
+}
+
+/**
+ * Convert Deep Research content with inline links
+ *
+ * Design: Converts inline citations directly to [Title](URL) format.
+ * No footnote definitions or References section needed.
+ */
+export function convertDeepResearchContent(html: string, links?: DeepResearchLinks): string {
+  let processed = html;
+
+  // 1. Build source map (1-based index)
+  let sourceMap = new Map<number, DeepResearchSource>();
+  if (links && links.sources.length > 0) {
+    sourceMap = buildSourceMap(links.sources);
+  }
+
+  // 2. Convert inline citations to inline links
+  processed = convertInlineCitationsToLinks(processed, sourceMap);
+
+  // 3. Remove sources carousel
+  processed = removeSourcesCarousel(processed);
+
+  // 4. Convert HTML to Markdown
+  const markdown = htmlToMarkdown(processed);
+
+  // No References section (inline links are self-contained)
+
+  return markdown;
+}
+
+// ============================================================
+// Turndown Configuration
+// ============================================================
 
 // Initialize Turndown with custom rules
 const turndown = new TurndownService({
@@ -190,8 +339,8 @@ export function conversationToNote(data: ConversationData, options: TemplateOpti
   let body: string;
 
   if (data.type === 'deep-research') {
-    // Deep Research の場合は本文をそのまま変換（見出し構造維持）
-    body = htmlToMarkdown(data.messages[0].content);
+    // Deep Research: convert with links support (footnotes + References)
+    body = convertDeepResearchContent(data.messages[0].content, data.links);
   } else {
     // 通常会話のフォーマット（Callout 形式）
     const bodyParts: string[] = [];

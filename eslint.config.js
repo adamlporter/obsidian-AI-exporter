@@ -20,6 +20,7 @@ export default [
         setTimeout: 'readonly',
         fetch: 'readonly',
         HTMLElement: 'readonly',
+        HTMLAnchorElement: 'readonly',
         HTMLButtonElement: 'readonly',
         HTMLInputElement: 'readonly',
         HTMLSelectElement: 'readonly',

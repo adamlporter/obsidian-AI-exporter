@@ -280,6 +280,79 @@ export function createDeepResearchDOM(title: string, content: string): string {
   `;
 }
 
+
+/**
+ * Creates Deep Research DOM with inline citations and source list
+ */
+export function createDeepResearchDOMWithLinks(
+  title: string,
+  contentWithCitations: string,
+  sources: Array<{ url: string; title: string; domain: string }>
+): string {
+  // Generate source list HTML
+  const sourceListHtml = sources
+    .map(
+      (source, i) => `
+      <a data-test-id="browse-web-item-link"
+         href="${source.url}"
+         target="_blank" rel="noopener">
+        <span data-test-id="title" class="sub-title">${source.title}</span>
+        <span data-test-id="domain-name" class="display-name">${source.domain}</span>
+      </a>
+    `
+    )
+    .join('\n');
+
+  return `
+    <deep-research-immersive-panel class="ng-star-inserted">
+      <toolbar>
+        <div class="toolbar has-title">
+          <div class="left-panel">
+            <h2 class="title-text gds-title-s">${title}</h2>
+          </div>
+        </div>
+      </toolbar>
+      <div class="container">
+        <response-container>
+          <structured-content-container data-test-id="message-content">
+            <message-content id="extended-response-message-content">
+              <div id="extended-response-markdown-content"
+                   class="markdown markdown-main-panel">
+                ${contentWithCitations}
+              </div>
+            </message-content>
+          </structured-content-container>
+        </response-container>
+      </div>
+    </deep-research-immersive-panel>
+    <deep-research-source-lists>
+      <collapsible-button data-test-id="used-sources-button">
+        <span class="gds-title-m">レポートに使用されているソース</span>
+      </collapsible-button>
+      <div id="used-sources-list">
+        ${sourceListHtml}
+      </div>
+    </deep-research-source-lists>
+  `;
+}
+
+/**
+ * Create inline citation HTML element
+ */
+/**
+ * Create inline citation element
+ * 
+ * Note: data-turn-source-index is 1-based (verified 2025-01-12)
+ * Mapping: sources[N] -> data-turn-source-index = N + 1
+ * 
+ * @param arrayIndex 0-based index in sources array
+ * @returns HTML string with 1-based data-turn-source-index
+ */
+export function createInlineCitation(arrayIndex: number): string {
+  const turnSourceIndex = arrayIndex + 1; // Convert to 1-based
+  return `<source-footnote class="ng-star-inserted"><sup class="superscript" data-turn-source-index="${turnSourceIndex}"></sup></source-footnote>`;
+}
+
 /**
  * Create パネルのみ（コンテンツなし）の DOM
  */
