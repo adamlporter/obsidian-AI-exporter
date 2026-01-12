@@ -3,21 +3,31 @@
 ## 1. 概要
 
 ### 1.1 目的
-Deep Research レポートに含まれるインライン引用を**インラインリンク形式**（`[タイトル](URL)`）に変換し、Obsidian に保存する。
+Deep Research レポートに含まれるインライン引用を **Obsidian ネイティブ脚注形式**（`[^N]`）に変換し、References セクションと共に Obsidian に保存する。
 
 ### 1.2 スコープ
 - インライン引用（`<sup data-turn-source-index>`）の検出
 - ドキュメント末尾のソースリスト抽出（URL・タイトル）
-- 引用のインラインリンク変換（`<sup>` → `[タイトル](URL)`）
+- 引用の脚注形式変換（`<sup>` → `[^N]`）
+- References セクションの生成（全ソース、脚注定義形式）
 - URL・タイトルのセキュリティサニタイズ
 
 ### 1.3 スコープ外
-- 脚注形式（`[^N]`）での出力（**不採用**：インラインリンク形式を採用）
-- References セクションの出力（**不要**：インラインリンクで完結）
+- ~~インラインリンク形式（`[タイトル](URL)`）での出力~~（**v2.1 で廃止**）
 - サムネイル画像の取得・保存
 - ソースの信頼性評価
 - リンク先コンテンツのプリフェッチ
-- 元レポートとの番号一致（**不要**：ユーザー要件）
+
+### 1.4 要件（ブレインストーミング結果）
+
+| 項目 | 決定内容 |
+|------|---------|
+| 文中引用形式 | `[^N]`（Obsidian ネイティブ脚注） |
+| 脚注番号 | `data-turn-source-index` の値をそのまま使用（非連続可） |
+| 重複引用 | 同一番号を再利用（References に1回のみ記載） |
+| References 見出し | `# References` |
+| References 配置 | ドキュメント最後尾 |
+| 未参照ソース | References に含める（全ソース記載） |
 
 ---
 
@@ -28,8 +38,8 @@ Deep Research レポートに含まれるインライン引用を**インライ�
 ```html
 <!-- 文中の引用マーカー -->
 <source-footnote _nghost-ng-c55987025="" class="ng-star-inserted">
-  <sup _ngcontent-ng-c55987025="" 
-       class="superscript" 
+  <sup _ngcontent-ng-c55987025=""
+       class="superscript"
        data-turn-source-index="1">
     <!-- 実際の番号は CSS で表示 -->
   </sup>
@@ -47,6 +57,7 @@ Deep Research レポートに含まれるインライン引用を**インライ�
   - 検証結果: `data-turn-source-index="1"` → ソースリスト[0]のURLと一致
   - 変換式: `sourceListIndex = data-turn-source-index - 1`
   - 注意: 0は存在しない（1から開始）
+  - 注意: 非連続の可能性あり（1, 2, 3, 5, 10, 11...）
 
 ### 2.2 ソースカルーセル構造（インライン展開）
 
@@ -71,11 +82,11 @@ Deep Research レポートに含まれるインライン引用を**インライ�
   <collapsible-button data-test-id="used-sources-button">
     <span class="gds-title-m">レポートに使用されているソース</span>
   </collapsible-button>
-  
+
   <!-- ソースリスト本体 -->
   <div id="used-sources-list">
     <!-- 各ソースアイテム -->
-    <a data-test-id="browse-web-item-link" 
+    <a data-test-id="browse-web-item-link"
        href="https://example.com/article"
        target="_blank" rel="noopener">
       <span data-test-id="title" class="sub-title">Article Title</span>
@@ -88,8 +99,8 @@ Deep Research レポートに含まれるインライン引用を**インライ�
 ### 2.4 Browse チップ構造（代替ソース）
 
 ```html
-<a data-test-id="browse-chip-link" 
-   class="browse-chip" 
+<a data-test-id="browse-chip-link"
+   class="browse-chip"
    href="https://www.help.cbp.gov/s/article/Article-1282"
    target="_blank" rel="noopener noreferrer">
   <span data-test-id="title" class="sub-title">ESTA - How do I pay...</span>
@@ -112,25 +123,25 @@ const DEEP_RESEARCH_LINK_SELECTORS = {
     'source-footnote sup.superscript[data-turn-source-index]',
     'sup.superscript[data-turn-source-index]',
   ],
-  
+
   // ソースリストコンテナ
   sourceListContainer: [
     'deep-research-source-lists',
     '#used-sources-list',
   ],
-  
+
   // ソースリスト内のリンク
   sourceListItem: [
     'a[data-test-id="browse-web-item-link"]',
     'a[data-test-id="browse-chip-link"]',
   ],
-  
+
   // ソースタイトル
   sourceTitle: [
     '[data-test-id="title"]',
     '.sub-title',
   ],
-  
+
   // ソースドメイン
   sourceDomain: [
     '[data-test-id="domain-name"]',
@@ -160,7 +171,7 @@ export interface DeepResearchSource {
 
 /**
  * Deep Research リンク抽出結果
- * 
+ *
  * 設計方針: ソースリストのみを保持し、インライン引用は
  * HTML→Markdown変換時に data-turn-source-index から直接処理する
  */
@@ -190,29 +201,29 @@ export interface ConversationData {
 
 /**
  * ソースリストを抽出し、data-turn-source-index でアクセス可能な Map を構築
- * 
+ *
  * 重要: data-turn-source-index は 1ベース
  * ソースリストの DOM 順（0ベース）との対応:
  *   data-turn-source-index="N" → sourceList[N-1]
  */
 extractSourceList(): DeepResearchSource[] {
   const sources: DeepResearchSource[] = [];
-  
+
   // ソースリスト内のリンクを取得
   const sourceLinks = document.querySelectorAll(
     DEEP_RESEARCH_LINK_SELECTORS.sourceListItem.join(',')
   );
-  
+
   sourceLinks.forEach((link, index) => {
     const anchor = link as HTMLAnchorElement;
     const url = anchor.href;
-    
+
     // タイトルを取得
     const titleEl = anchor.querySelector(
       DEEP_RESEARCH_LINK_SELECTORS.sourceTitle.join(',')
     );
     const title = titleEl?.textContent?.trim() || 'Unknown Title';
-    
+
     // ドメインを取得（URLパース失敗に備えてtry-catch）
     const domainEl = anchor.querySelector(
       DEEP_RESEARCH_LINK_SELECTORS.sourceDomain.join(',')
@@ -225,7 +236,7 @@ extractSourceList(): DeepResearchSource[] {
         domain = 'unknown';
       }
     }
-    
+
     sources.push({
       index,  // 0ベースの配列インデックス
       url,
@@ -233,30 +244,30 @@ extractSourceList(): DeepResearchSource[] {
       domain,
     });
   });
-  
+
   return sources;
 }
 
 /**
  * ソースリストから data-turn-source-index でアクセス可能な Map を構築
- * 
+ *
  * @param sources extractSourceList() の結果
  * @returns Map<data-turn-source-index, DeepResearchSource>
- * 
+ *
  * 使用例:
  *   const map = buildSourceMap(sources);
  *   const source = map.get(5); // data-turn-source-index="5" に対応するソース
  */
 buildSourceMap(sources: DeepResearchSource[]): Map<number, DeepResearchSource> {
   const map = new Map<number, DeepResearchSource>();
-  
+
   sources.forEach((source, arrayIndex) => {
     // data-turn-source-index は 1ベース
     // arrayIndex=0 → data-turn-source-index=1
     const turnSourceIndex = arrayIndex + 1;
     map.set(turnSourceIndex, source);
   });
-  
+
   return map;
 }
 
@@ -265,7 +276,7 @@ buildSourceMap(sources: DeepResearchSource[]): Map<number, DeepResearchSource> {
  */
 extractDeepResearchLinks(): DeepResearchLinks {
   const sources = this.extractSourceList();
-  
+
   return {
     sources,
   };
@@ -274,158 +285,31 @@ extractDeepResearchLinks(): DeepResearchLinks {
 
 **注記**: `extractInlineCitations()` は不要。インライン引用の処理は Markdown 変換時に行う。
 
-### 3.4 Markdown 変換（`<a>` タグ経由方式）
+### 3.4 Markdown 変換（Obsidian ネイティブ脚注形式）
 
-**重要な設計決定**: Markdown を直接生成せず、`<a>` タグを生成して Turndown に変換を委ねる。
+**重要な設計決定**:
+- v2.1 までの `<a>` タグ方式から **Obsidian ネイティブ脚注形式** に変更
+- 文中: `[^N]` → Obsidian が自動的に脚注定義にジャンプ
+- 文末: `[^N]: [タイトル](URL)` → 脚注定義（リンク付き）
 
-**理由**: Turndown は HTML を Markdown に変換するライブラリであり、入力に Markdown 構文が含まれていると二重エスケープが発生する。詳細は [二重エスケープ問題 調査レポート](../investigation/double-escape-issue.md) を参照。
+**Obsidian 脚注構文（公式ドキュメントより）**:
+- 参照: [Obsidian Help - Basic formatting syntax](https://help.obsidian.md/syntax)
+- 参照: [GitHub - obsidian-help/Footnote.md](https://github.com/obsidianmd/obsidian-help/blob/master/Sandbox/Formatting/Footnote.md)
 
-### 3.4.1 旧仕様（インラインリンク方式）【廃止】
+```markdown
+文中の脚注参照[^1]と別の参照[^bignote]
 
-以下の実装は二重エスケープ問題を引き起こすため廃止。現在は 3.4.2 の `<a>` タグ方式を採用。
+[^1]: 脚注の内容
 
-#### 廃止された仕様（参考）
-
-```typescript
-// src/content/markdown.ts に追加
-
-/**
- * URLをサニタイズ（危険なスキームを除去）
- */
-function sanitizeUrl(url: string): string {
-  const dangerousSchemes = ['javascript:', 'data:', 'vbscript:'];
-  const lowerUrl = url.toLowerCase().trim();
-  
-  for (const scheme of dangerousSchemes) {
-    if (lowerUrl.startsWith(scheme)) {
-      return ''; // 危険なURLは空文字を返す
-    }
-  }
-  
-  return url;
-}
-
-/**
- * Markdownリンクテキスト用のエスケープ
- */
-function escapeMarkdownLinkText(text: string): string {
-  return text.replace(/\[/g, '\\[').replace(/\]/g, '\\]');
-}
-
-/**
- * Markdownリンク用のURLエスケープ
- */
-function escapeMarkdownLinkUrl(url: string): string {
-  return url.replace(/\(/g, '%28').replace(/\)/g, '%29');
-}
-
-/**
- * インライン引用をインラインリンク形式に変換
- * 
- * 変換前: <source-footnote><sup data-turn-source-index="N">...</sup></source-footnote>
- * 変換後: [タイトル](URL)
- * 
- * 重要: data-turn-source-index は 1ベース
- *       sourceMap.get(N) で対応するソースを取得
- * 
- * @param html 変換対象のHTML
- * @param sourceMap buildSourceMap() で構築した Map
- */
-function convertInlineCitationsToLinks(
-  html: string,
-  sourceMap: Map<number, DeepResearchSource>
-): string {
-  // パターン1: source-footnote でラップされている場合
-  let result = html.replace(
-    /<source-footnote[^>]*>[\s\S]*?<sup[^>]*?data-turn-source-index="(\d+)"[^>]*?>[\s\S]*?<\/sup>[\s\S]*?<\/source-footnote>/gi,
-    (match, indexStr) => {
-      const index = parseInt(indexStr, 10);
-      const source = sourceMap.get(index);
-      if (source) {
-        const safeTitle = escapeMarkdownLinkText(source.title);
-        const safeUrl = escapeMarkdownLinkUrl(sanitizeUrl(source.url));
-        if (safeUrl) {
-          return `[${safeTitle}](${safeUrl})`;
-        }
-        return safeTitle; // URLが無効な場合はタイトルのみ
-      }
-      return ''; // ソースが見つからない場合は削除
-    }
-  );
-  
-  // パターン2: sup要素が直接存在する場合（フォールバック）
-  result = result.replace(
-    /<sup[^>]*?data-turn-source-index="(\d+)"[^>]*?>[\s\S]*?<\/sup>/gi,
-    (match, indexStr) => {
-      const index = parseInt(indexStr, 10);
-      const source = sourceMap.get(index);
-      if (source) {
-        const safeTitle = escapeMarkdownLinkText(source.title);
-        const safeUrl = escapeMarkdownLinkUrl(sanitizeUrl(source.url));
-        if (safeUrl) {
-          return `[${safeTitle}](${safeUrl})`;
-        }
-        return safeTitle;
-      }
-      return '';
-    }
-  );
-  
-  return result;
-}
-
-/**
- * sources-carousel-inline 要素を除去
- */
-function removeSourcesCarousel(html: string): string {
-  return html.replace(
-    /<sources-carousel-inline[\s\S]*?<\/sources-carousel-inline>/gi,
-    ''
-  );
-}
-
-/**
- * Deep Research コンテンツを変換（インラインリンク方式）
- * 
- * @param html 変換対象のHTML
- * @param links extractDeepResearchLinks() の結果
- */
-function convertDeepResearchContent(
-  html: string,
-  links?: DeepResearchLinks
-): string {
-  let processed = html;
-  
-  // 1. ソースマップを構築
-  let sourceMap = new Map<number, DeepResearchSource>();
-  if (links && links.sources.length > 0) {
-    links.sources.forEach((source, arrayIndex) => {
-      // data-turn-source-index は 1ベース
-      const turnSourceIndex = arrayIndex + 1;
-      sourceMap.set(turnSourceIndex, source);
-    });
-  }
-  
-  // 2. インライン引用をインラインリンクに変換
-  processed = convertInlineCitationsToLinks(processed, sourceMap);
-  
-  // 3. sources-carousel を除去
-  processed = removeSourcesCarousel(processed);
-  
-  // 4. HTML → Markdown 変換
-  const markdown = htmlToMarkdown(processed);
-  
-  // References セクションは生成しない（インラインリンクで完結）
-  
-  return markdown;
-}
+[^bignote]: 複数段落の脚注
+    インデントで継続
 ```
 
-**旧仕様の問題点**:
-- Markdown を直接生成すると、Turndown が `[` `]` を再エスケープする
-- 結果: `\[Title\](URL)` という不正な出力
+### 3.4.1 旧仕様（インラインリンク方式）【v2.1 で廃止】
 
-### 3.4.2 現行仕様（`<a>` タグ経由方式）【採用】
+v2.1 までの `<a>` タグ経由方式は廃止。詳細は変更履歴を参照。
+
+### 3.4.2 現行仕様（Obsidian ネイティブ脚注形式）【v3.0 採用】
 
 ```typescript
 // src/content/markdown.ts
@@ -436,82 +320,72 @@ function convertDeepResearchContent(
 export function sanitizeUrl(url: string): string {
   const dangerousSchemes = ['javascript:', 'data:', 'vbscript:'];
   const lowerUrl = url.toLowerCase().trim();
-  
+
   for (const scheme of dangerousSchemes) {
     if (lowerUrl.startsWith(scheme)) {
       return ''; // 危険なURLは空文字を返す
     }
   }
-  
+
   return url;
 }
 
 /**
- * HTML特殊文字をエスケープ
- * 
- * <a> タグ内に挿入する前に呼び出す
- */
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
-/**
- * インライン引用を <a> タグに変換（Turndown 処理用）
- * 
+ * インライン引用をプレースホルダー span に変換
+ *
  * 変換前: <source-footnote><sup data-turn-source-index="N">...</sup></source-footnote>
- * 変換後: <a href="URL">Title</a>
- * 
- * 設計: Markdown を直接生成せず、<a> タグを生成して
- *       Turndown に [Title](URL) への変換を委ねる。
- *       これにより二重エスケープ問題を回避。
- * 
- * 重要: data-turn-source-index は 1ベース
+ * 変換後: <span data-footnote-ref="N">REF</span>
+ *
+ * 注: 最終的な [^N] への変換は Turndown カスタムルールで行う
+ *     span 内に "REF" を含めるのは Turndown が空要素をフィルタするため
+ *
+ * 重要: data-turn-source-index は 1ベース、非連続の可能性あり
  */
-export function convertInlineCitationsToLinks(
+export function convertInlineCitationsToFootnoteRefs(
   html: string,
   sourceMap: Map<number, DeepResearchSource>
 ): string {
   // パターン1: source-footnote でラップされている場合
   let result = html.replace(
     /<source-footnote[^>]*>[\s\S]*?<sup[^>]*?data-turn-source-index="(\d+)"[^>]*?>[\s\S]*?<\/sup>[\s\S]*?<\/source-footnote>/gi,
-    (match, indexStr) => {
+    (_match, indexStr) => {
       const index = parseInt(indexStr, 10);
       const source = sourceMap.get(index);
       if (source) {
-        const safeUrl = sanitizeUrl(source.url);
-        if (safeUrl) {
-          // ✅ <a> タグを生成 → Turndown が [Title](URL) に変換
-          return `<a href="${escapeHtml(safeUrl)}">${escapeHtml(source.title)}</a>`;
-        }
-        return escapeHtml(source.title); // URLが無効な場合はタイトルのみ
+        // プレースホルダーを挿入（Turndown カスタムルールで変換）
+        return `<span data-footnote-ref="${index}">REF</span>`;
       }
       return ''; // ソースが見つからない場合は削除
     }
   );
-  
+
   // パターン2: sup要素が直接存在する場合（フォールバック）
   result = result.replace(
     /<sup[^>]*?data-turn-source-index="(\d+)"[^>]*?>[\s\S]*?<\/sup>/gi,
-    (match, indexStr) => {
+    (_match, indexStr) => {
       const index = parseInt(indexStr, 10);
       const source = sourceMap.get(index);
       if (source) {
-        const safeUrl = sanitizeUrl(source.url);
-        if (safeUrl) {
-          return `<a href="${escapeHtml(safeUrl)}">${escapeHtml(source.title)}</a>`;
-        }
-        return escapeHtml(source.title);
+        return `<span data-footnote-ref="${index}">REF</span>`;
       }
       return '';
     }
   );
-  
+
   return result;
 }
+
+// Turndown カスタムルール: プレースホルダー span を [^N] に変換
+// (turndown.addRule で登録)
+turndown.addRule('footnoteRef', {
+  filter: node => {
+    return node.nodeName === 'SPAN' && node.hasAttribute('data-footnote-ref');
+  },
+  replacement: (_content, node) => {
+    const index = node.getAttribute('data-footnote-ref');
+    return `[^${index}]`;
+  },
+});
 
 /**
  * sources-carousel-inline 要素を除去
@@ -524,55 +398,112 @@ export function removeSourcesCarousel(html: string): string {
 }
 
 /**
- * Deep Research コンテンツを変換
+ * References セクションを生成（Obsidian 脚注定義形式）
+ *
+ * 出力形式:
+ * # References
+ *
+ * [^1]: [タイトル1](URL1)
+ * [^2]: [タイトル2](URL2)
+ * ...
+ *
+ * @param sources 全ソースリスト
+ * @returns References セクションの Markdown 文字列
+ */
+export function generateReferencesSection(
+  sources: DeepResearchSource[]
+): string {
+  if (sources.length === 0) {
+    return '';
+  }
+
+  const lines: string[] = ['', '# References', ''];
+
+  sources.forEach((source, arrayIndex) => {
+    // data-turn-source-index は 1ベース
+    const footnoteIndex = arrayIndex + 1;
+    const safeUrl = sanitizeUrl(source.url);
+
+    if (safeUrl) {
+      // [^N]: [タイトル](URL)
+      lines.push(`[^${footnoteIndex}]: [${source.title}](${safeUrl})`);
+    } else {
+      // URLが無効な場合はタイトルのみ
+      lines.push(`[^${footnoteIndex}]: ${source.title}`);
+    }
+  });
+
+  return lines.join('\n');
+}
+
+/**
+ * Deep Research コンテンツを変換（Obsidian ネイティブ脚注形式）
+ *
+ * @param html 変換対象のHTML
+ * @param links extractDeepResearchLinks() の結果
  */
 export function convertDeepResearchContent(
   html: string,
   links?: DeepResearchLinks
 ): string {
   let processed = html;
-  
+
   // 1. ソースマップを構築（1ベースインデックス）
   let sourceMap = new Map<number, DeepResearchSource>();
   if (links && links.sources.length > 0) {
-    links.sources.forEach((source, arrayIndex) => {
-      // data-turn-source-index は 1ベース
-      const turnSourceIndex = arrayIndex + 1;
-      sourceMap.set(turnSourceIndex, source);
-    });
+    sourceMap = buildSourceMap(links.sources);
   }
-  
-  // 2. インライン引用を <a> タグに変換
-  processed = convertInlineCitationsToLinks(processed, sourceMap);
-  
+
+  // 2. インライン引用をプレースホルダーに変換
+  processed = convertInlineCitationsToFootnoteRefs(processed, sourceMap);
+
   // 3. sources-carousel を除去
   processed = removeSourcesCarousel(processed);
-  
-  // 4. HTML → Markdown 変換（Turndown が <a> → [Title](URL) に変換）
+
+  // 4. HTML → Markdown 変換（Turndown カスタムルールで span → [^N]）
   const markdown = htmlToMarkdown(processed);
-  
+
+  // 5. References セクションを追加
+  if (links && links.sources.length > 0) {
+    return markdown + generateReferencesSection(links.sources);
+  }
+
   return markdown;
 }
 ```
 
-**設計ポイント**:
-- Markdown を直接生成せず、`<a>` タグを生成
-- Turndown が `<a href="URL">Title</a>` → `[Title](URL)` に変換
-- エスケープ処理は Turndown に委譲（二重エスケープ問題を回避）
-- 削除した関数: `escapeMarkdownLinkText()`, `escapeMarkdownLinkUrl()`
+### 3.4.3 処理フロー
 
-### 3.4.3 処理フロー比較
+```
+HTML 入力
+    ↓
+1. ソースマップ構築（data-turn-source-index → ソース情報）
+    ↓
+2. <sup data-turn-source-index="N"> → <span data-footnote-ref="N">REF</span>
+   （Turndown が空要素をフィルタするため、ダミーコンテンツ "REF" を挿入）
+    ↓
+3. sources-carousel 除去
+    ↓
+4. Turndown（HTML → Markdown）
+   + カスタムルール: <span data-footnote-ref="N">REF</span> → [^N]
+    ↓
+5. References セクション追加
+    ↓
+Markdown 出力
+```
 
-| 方式 | 処理フロー | 結果 |
-|------|-----------|------|
-| 旧（Markdown直接） | `<sup>` → `[Title](URL)` → Turndown | `\[Title\](URL)` ❌ |
-| 新（`<a>`タグ経由） | `<sup>` → `<a href="URL">Title</a>` → Turndown | `[Title](URL)` ✅ |
+### 3.4.4 処理フロー比較（バージョン間）
+
+| バージョン | 文中形式 | 文末形式 | Obsidian 動作 |
+|-----------|---------|---------|--------------|
+| v2.1（廃止） | `[タイトル](URL)` | なし | クリックで外部URLへ遷移 |
+| v3.0（現行） | `[^N]` | `[^N]: [タイトル](URL)` | クリックで脚注定義へジャンプ → そこからURLへ遷移可能 |
 
 ---
 
 ## 4. 出力フォーマット
 
-### 4.1 期待される出力例（インラインリンク方式）
+### 4.1 期待される出力例（Obsidian ネイティブ脚注形式）
 
 ```markdown
 ---
@@ -596,40 +527,51 @@ message_count: 1
 
 ### 1.1 ESTA申請
 
-2026年現在、ESTA費用は**$40**に改定されている[ESTA - How do I pay for my application?](https://www.help.cbp.gov/s/article/Article-1282)。申請は出発の72時間前までに完了することが推奨される[CBP's Electronic System for Travel Authorization](https://uk.usembassy.gov/cbps-electronic-system-for-travel-authorization-esta/)。
+2026年現在、ESTA費用は**$40**に改定されている[^1]。申請は出発の72時間前までに完了することが推奨される[^2]。
 
 ## 2. 交通
 
-スカイライン運賃は**$3.00**である[Honolulu Skyline Rail 2025](https://livinginhawaii.com/honolulu-skyline-rail/)。大型スーツケースは持ち込み不可[Rail Operations](https://www.honolulu.gov/dts/rail-operations)。
+スカイライン運賃は**$3.00**である[^3]。大型スーツケースは持ち込み不可[^4]。
+
+# References
+
+[^1]: [ESTA - How do I pay for my application?](https://www.help.cbp.gov/s/article/Article-1282)
+[^2]: [CBP's Electronic System for Travel Authorization](https://uk.usembassy.gov/cbps-electronic-system-for-travel-authorization-esta/)
+[^3]: [Honolulu Skyline Rail 2025](https://livinginhawaii.com/honolulu-skyline-rail/)
+[^4]: [Rail Operations](https://www.honolulu.gov/dts/rail-operations)
 ```
 
 ### 4.2 フォーマット特徴
 
 | 項目 | 説明 |
 |------|------|
-| インライン引用 | `[タイトル](URL)` 形式のインラインリンク |
-| 脚注定義 | **なし**（インラインリンクで完結） |
-| References セクション | **なし**（インラインリンクで完結） |
-| セキュリティ | DOMPurify でサニタイズ、`sanitizeUrl()` と `escapeHtml()` で処理 |
-| エスケープ方式 | `<a>` タグ経由で Turndown に委譲（二重エスケープ回避） |
+| 文中引用 | `[^N]` 形式（Obsidian ネイティブ脚注） |
+| 脚注番号 | `data-turn-source-index` の値をそのまま使用（非連続可） |
+| References セクション | `# References` 見出し + 脚注定義リスト |
+| 脚注定義 | `[^N]: [タイトル](URL)` 形式 |
+| セキュリティ | DOMPurify でサニタイズ、`sanitizeUrl()` で処理 |
+| Obsidian 動作 | `[^N]` クリックで脚注定義へジャンプ |
 
 ### 4.3 変換前後の比較
 
 | 変換前（HTML） | 変換後（Markdown） |
 |---------------|-------------------|
-| `テキスト<source-footnote><sup data-turn-source-index="1">...</sup></source-footnote>` | `テキスト[タイトル](URL)` |
+| `テキスト<source-footnote><sup data-turn-source-index="1">...</sup></source-footnote>` | `テキスト[^1]` |
 | `<sources-carousel-inline>...</sources-carousel-inline>` | （削除） |
+| （なし） | `# References` + 脚注定義リスト |
 
 ---
 
 ## 5. 実装計画
 
 ### 5.1 Phase 1: 型定義と基本構造
+**状態**: ✅ 完了（v2.1）
 
-1. `src/lib/types.ts` に `DeepResearchSource`, `InlineCitation`, `DeepResearchLinks` を追加
+1. `src/lib/types.ts` に `DeepResearchSource`, `DeepResearchLinks` を追加
 2. `ConversationData` に `links` フィールドを追加
 
 ### 5.2 Phase 2: 抽出ロジック
+**状態**: ✅ 完了（v2.1）
 
 1. `DEEP_RESEARCH_LINK_SELECTORS` を追加
 2. `extractSourceList()` を実装
@@ -637,25 +579,27 @@ message_count: 1
 4. `extractDeepResearchLinks()` を実装
 5. `extractDeepResearch()` を更新してリンク情報を含める
 
-### 5.3 Phase 3: Markdown 変換
+### 5.3 Phase 3: Markdown 変換（v3.0 変更）
+**状態**: 🔄 要更新
 
-1. `sanitizeUrl()` を実装 ✅
-2. `escapeHtml()` を実装（`<a>` タグ方式用） ✅
-3. `convertInlineCitationsToLinks()` を実装（`<a>` タグ生成） ✅
-4. `removeSourcesCarousel()` を実装 ✅
-5. `convertDeepResearchContent()` を実装 ✅
-6. `conversationToNote()` を更新 ✅
+| 関数 | v2.1 状態 | v3.0 変更 |
+|------|----------|----------|
+| `sanitizeUrl()` | ✅ 実装済み | 変更なし |
+| `escapeHtml()` | ✅ 実装済み | 変更なし |
+| `convertInlineCitationsToLinks()` | ✅ 実装済み | → `convertInlineCitationsToFootnoteRefs()` に名称・実装変更 |
+| `removeSourcesCarousel()` | ✅ 実装済み | 変更なし |
+| `convertDeepResearchContent()` | ✅ 実装済み | 脚注形式対応に更新 |
+| `replacePlaceholdersWithFootnoteRefs()` | - | 🆕 新規追加 |
+| `generateReferencesSection()` | - | 🆕 新規追加 |
 
-**廃止した関数**:
-- `escapeMarkdownLinkText()` - 不要（Turndown に委譲）
-- `escapeMarkdownLinkUrl()` - 不要（Turndown に委譲）
+### 5.4 Phase 4: テスト（v3.0 変更）
+**状態**: 🔄 要更新
 
-### 5.4 Phase 4: テスト
-
-1. 引用抽出のユニットテスト
-2. ソースリスト抽出のユニットテスト
-3. Markdown 変換のユニットテスト
-4. 統合テスト（サンプル HTML 使用）
+1. 脚注参照変換のユニットテスト（新規）
+2. References セクション生成のユニットテスト（新規）
+3. 重複引用のテスト（同一番号再利用）
+4. 非連続番号のテスト
+5. 統合テスト（サンプル HTML 使用）
 
 ---
 
@@ -676,19 +620,20 @@ message_count: 1
 - ソースリストの配列は **0ベース**
 - **変換式**: `sourceListIndex = data-turn-source-index - 1`
 - 例: `data-turn-source-index="1"` → `sources[0]`
+- **非連続の可能性**: 番号が飛ぶ場合あり（1, 2, 3, 5, 10, 11...）
 
-### 6.3 重複ソースの扱い
+### 6.3 重複ソースの扱い（v3.0 変更）
 
 - 同一ソースが複数の文で引用される場合がある
-- 各引用位置に同じインラインリンクを挿入（重複OK）
-- 脚注方式と異なり、重複管理は不要
+- **v3.0**: 同一の `[^N]` を使用（References に1回のみ記載）
+- 重複管理は Obsidian の脚注機能が自動処理
 
 ### 6.4 欠損データの処理
 
 | 状況 | 処理 |
 |------|------|
 | ソースリストに存在しない `data-turn-source-index` | 引用マーカーを削除（空文字） |
-| URL が無効（危険スキーム） | タイトルのみテキスト出力 |
+| URL が無効（危険スキーム） | 脚注定義でタイトルのみ出力 |
 | タイトルが空 | "Unknown Title" を使用 |
 | ドメイン取得失敗 | "unknown" を使用 |
 
@@ -697,23 +642,14 @@ message_count: 1
 #### URLサニタイズ（`sanitizeUrl()`）
 - `javascript:`, `data:`, `vbscript:` スキームは除去
 - 無効なURLは空文字を返す
-- `sanitizeUrl()` で検証してから `<a>` タグに出力
+- `sanitizeUrl()` で検証してから脚注定義に出力
 
-#### HTMLエスケープ（`escapeHtml()`）【現行方式】
-`<a>` タグ方式では HTML エスケープを使用:
+#### HTMLエスケープ（`escapeHtml()`）
+`<span>` タグ生成時に使用:
 - `&` → `&amp;`
 - `<` → `&lt;`
 - `>` → `&gt;`
 - `"` → `&quot;`
-
-**廃止**: `escapeMarkdownLinkText()` / `escapeMarkdownLinkUrl()` は不要（Turndown が処理）
-
-#### 検証順序【現行方式】
-```
-URL取得 → sanitizeUrl() → escapeHtml() → <a href="..."> に挿入
-タイトル取得 → escapeHtml() → <a>...</a> に挿入
-<a> タグ → Turndown → [Title](URL) 変換
-```
 
 #### HTMLサニタイズ（DOMPurify）
 
@@ -750,7 +686,7 @@ export function sanitizeHtml(html: string): string {
 }
 ```
 
-**重要**: `data-turn-source-index` 属性は `convertInlineCitationsToLinks()` で使用するため、サニタイズ時に保持する必要がある。
+**重要**: `data-turn-source-index` 属性は `convertInlineCitationsToFootnoteRefs()` で使用するため、サニタイズ時に保持する必要がある。
 
 #### セキュリティ対策の層
 
@@ -758,18 +694,18 @@ export function sanitizeHtml(html: string): string {
 |----|------|------|
 | 1 | DOMPurify サニタイズ | XSS 攻撃防止、`data-turn-source-index` 保持 |
 | 2 | `sanitizeUrl()` | 危険な URL スキーム除去 |
-| 3 | `escapeHtml()` | HTML インジェクション防止 |
-| 4 | Turndown 変換 | Markdown への安全な変換 |
+| 3 | Turndown 変換 | Markdown への安全な変換 |
 
-### 6.6 インラインリンク方式の利点
+### 6.6 脚注形式の利点（v3.0）
 
-| 観点 | 脚注方式 | インラインリンク方式 |
-|------|---------|-------------------|
-| 実装複雑度 | 高（脚注定義管理必要） | 低（直接置換） |
-| 出力の可読性 | 本文がシンプル | リンク情報が即座に分かる |
-| Obsidian互換性 | 脚注プラグイン依存 | 標準Markdown |
-| 重複管理 | 必要 | 不要 |
-| ユーザー要件 | ❌ | ✅（採用） |
+| 観点 | インラインリンク方式（v2.1） | 脚注形式（v3.0） |
+|------|---------------------------|-----------------|
+| 本文の可読性 | 低（URLが長い場合） | 高（`[^N]` のみ） |
+| References セクション | なし | あり（全ソース一覧） |
+| Obsidian 互換性 | 標準 Markdown | Obsidian ネイティブ脚注 |
+| クリック動作 | 外部URLへ直接遷移 | 脚注定義へジャンプ → URLへ遷移 |
+| 重複管理 | 不要 | Obsidian が自動処理 |
+| ユーザー要件 | ❌（v2.1 で採用） | ✅（v3.0 で採用） |
 
 ---
 
@@ -781,29 +717,25 @@ export function sanitizeHtml(html: string): string {
 |-----------|------|---------|
 | `extractSourceList()` | URL、タイトル、ドメインの抽出 | ✅ 実装済み |
 | `buildSourceMap()` | 1ベースインデックスへのマッピング | ✅ 実装済み |
-| `convertInlineCitationsToLinks()` | `<sup>` → `<a>` タグ変換 | ✅ 実装済み |
+| `convertInlineCitationsToFootnoteRefs()` | `<sup>` → `<span data-footnote-ref>` 変換 | 🔄 要更新 |
+| `replacePlaceholdersWithFootnoteRefs()` | プレースホルダー → `[^N]` 変換 | 🆕 新規 |
+| `generateReferencesSection()` | References セクション生成 | 🆕 新規 |
 | `sanitizeUrl()` | 危険スキームの除去 | ✅ 実装済み |
-| `escapeHtml()` | HTML特殊文字のエスケープ | ✅ 実装済み |
 | `sanitizeHtml()` | DOMPurify による XSS 防止 | ✅ 実装済み |
-
-**廃止されたテスト項目**:
-- `escapeMarkdownLinkText()` - Turndown に委譲
-- `escapeMarkdownLinkUrl()` - Turndown に委譲
 
 ### 7.2 エッジケース
 
 | シナリオ | 期待結果 | 実装状態 |
 |---------|---------|---------|
-| 引用なし | 本文のみ（インラインリンクなし） | ✅ |
-| ソースリストなし | 本文のみ | ✅ |
+| 引用なし | 本文のみ（脚注なし、References なし） | 🔄 要更新 |
+| ソースリストなし | 本文のみ | 🔄 要更新 |
 | ソースリストに存在しない `data-turn-source-index` | 引用マーカー削除（空文字） | ✅ |
-| 重複引用（同じインデックス複数回） | 各位置に同じリンクを挿入 | ✅ |
-| 無効なURL（`javascript:`） | タイトルのみテキスト出力 | ✅ |
-| 日本語タイトル | 正しく HTML エスケープ | ✅ |
-| タイトルに `<script>` 含む | `&lt;script&gt;` にエスケープ | ✅ |
-| URLに `()` 含む | Turndown が適切にエンコード | ✅ |
-| URL解析失敗 | domain を 'unknown' にフォールバック | ✅ |
-| `data-turn-source-index="1"` | `sources[0]` に対応（1ベース確認） | ✅ |
+| 重複引用（同じインデックス複数回） | 同一 `[^N]` を使用、References に1回のみ | 🆕 新規 |
+| 非連続番号（1, 2, 5, 10...） | 番号をそのまま使用 | 🆕 新規 |
+| 無効なURL（`javascript:`） | 脚注定義でタイトルのみ出力 | 🔄 要更新 |
+| 日本語タイトル | 正しく出力 | ✅ |
+| タイトルに `<script>` 含む | エスケープして出力 | ✅ |
+| URLに `()` 含む | Markdown リンク内で正しくエスケープ | 🔄 要確認 |
 | `data-turn-source-index` 属性保持 | DOMPurify サニタイズ後も属性残存 | ✅ |
 
 ---
@@ -814,18 +746,17 @@ export function sanitizeHtml(html: string): string {
 
 | ファイル | 変更内容 |
 |---------|---------|
-| `src/lib/types.ts` | `DeepResearchSource`, `DeepResearchLinks` 追加 |
-| `src/lib/sanitize.ts` | `sanitizeHtml()` に DOMPurify hook 追加（`data-turn-source-index` 保持） |
-| `src/content/extractors/gemini.ts` | `extractSourceList()`, `extractDeepResearchLinks()` 追加 |
-| `src/content/markdown.ts` | `convertInlineCitationsToLinks()`（`<a>` タグ生成）、`escapeHtml()`、`convertDeepResearchContent()` 追加 |
-| `test/lib/sanitize.test.ts` | `data-turn-source-index` 保持テスト追加 |
-| `test/content/markdown.test.ts` | インラインリンク変換テスト追加 |
+| `src/lib/types.ts` | `DeepResearchSource`, `DeepResearchLinks`（変更なし） |
+| `src/lib/sanitize.ts` | `sanitizeHtml()`（変更なし） |
+| `src/content/extractors/gemini.ts` | `extractSourceList()`, `extractDeepResearchLinks()`（変更なし） |
+| `src/content/markdown.ts` | `convertInlineCitationsToFootnoteRefs()`, `replacePlaceholdersWithFootnoteRefs()`, `generateReferencesSection()`, `convertDeepResearchContent()` 更新 |
+| `test/content/markdown.test.ts` | 脚注形式変換テスト追加・更新 |
 
 ### 8.2 後方互換性
 
-- `ConversationData.links` は optional
+- `ConversationData.links` は optional（変更なし）
 - 既存のレポート抽出機能に影響なし
-- リンク情報がない場合は従来通りの出力
+- **破壊的変更**: 出力形式がインラインリンク → 脚注形式に変更
 
 ---
 
@@ -846,6 +777,7 @@ export function sanitizeHtml(html: string): string {
 | 1.1 | 2025-01-11 | レビュー指摘対応: Set→配列、URLバリデーション、セキュリティ対応 |
 | 2.0 | 2025-01-12 | 大幅改訂: 脚注形式からインラインリンク形式に変更、`data-turn-source-index` を1ベースに修正（検証済み）、`InlineCitation`型削除、Referencesセクション削除 |
 | 2.1 | 2025-01-12 | `<a>` タグ経由方式に変更（二重エスケープ問題解決）、DOMPurify hook による `data-turn-source-index` 保持仕様追加、`escapeMarkdownLink*()` 廃止、`escapeHtml()` 追加 |
+| 3.0 | 2025-01-12 | **Obsidian ネイティブ脚注形式に変更**: `[^N]` 参照 + `# References` セクション追加、`data-turn-source-index` の非連続番号をそのまま使用、重複引用は同一番号再利用、未参照ソースも References に含める |
 
 ---
 
@@ -856,10 +788,12 @@ export function sanitizeHtml(html: string): string {
 | [Deep Research 抽出機能 設計書](./deep-research-extraction.md) | Deep Research コンテンツの基本抽出仕様 |
 | [インライン引用の折りたたみ状態に関する調査レポート](../investigation/inline-citation-collapsed-state.md) | `data-turn-source-index` 属性の机上検証結果 |
 | [Markdown 二重エスケープ問題 調査レポート](../investigation/double-escape-issue.md) | `<a>` タグ方式採用の経緯と技術的詳細 |
+| [Obsidian Help - Basic formatting syntax](https://help.obsidian.md/syntax) | Obsidian 脚注構文の公式ドキュメント |
+| [GitHub - obsidian-help/Footnote.md](https://github.com/obsidianmd/obsidian-help/blob/master/Sandbox/Formatting/Footnote.md) | Obsidian 脚注サンプル |
 
 ---
 
 *作成日: 2025-01-11*
 *更新日: 2025-01-12*
-*バージョン: 2.1*
+*バージョン: 3.0*
 *前提: deep-research-extraction.md v1.1*

@@ -5,7 +5,8 @@ import {
   generateContentHash,
   conversationToNote,
   sanitizeUrl,
-  convertInlineCitationsToLinks,
+  convertInlineCitationsToFootnoteRefs,
+  generateReferencesSection,
   removeSourcesCarousel,
   convertDeepResearchContent,
 } from '../../src/content/markdown';
@@ -309,7 +310,7 @@ describe('sanitizeUrl', () => {
   });
 });
 
-describe('convertInlineCitationsToLinks', () => {
+describe('convertInlineCitationsToFootnoteRefs', () => {
   // Helper to create source map (data-turn-source-index is 1-based)
   const createSourceMap = () => {
     const map = new Map<number, { index: number; url: string; title: string; domain: string }>();
@@ -319,67 +320,106 @@ describe('convertInlineCitationsToLinks', () => {
     return map;
   };
 
-  // Note: convertInlineCitationsToLinks now outputs <a> tags instead of Markdown links
-  // This allows Turndown to handle the Markdown conversion, avoiding double-escaping issues
+  // v3.0: Outputs placeholder spans with content that Turndown rule converts to [^N]
 
-  it('converts source-footnote wrapped citations to anchor tags', () => {
+  it('converts source-footnote wrapped citations to placeholder spans', () => {
     const html =
       'Text<source-footnote><sup class="superscript" data-turn-source-index="1"></sup></source-footnote>more';
-    const result = convertInlineCitationsToLinks(html, createSourceMap());
-    expect(result).toBe('Text<a href="https://example.com/a">Article A</a>more');
+    const result = convertInlineCitationsToFootnoteRefs(html, createSourceMap());
+    expect(result).toBe('Text<span data-footnote-ref="1">REF</span>more');
   });
 
-  it('converts standalone sup citations to anchor tags', () => {
+  it('converts standalone sup citations to placeholder spans', () => {
     const html = 'Text<sup data-turn-source-index="5"></sup>more';
-    const result = convertInlineCitationsToLinks(html, createSourceMap());
-    expect(result).toBe('Text<a href="https://test.net/c">Article C</a>more');
+    const result = convertInlineCitationsToFootnoteRefs(html, createSourceMap());
+    expect(result).toBe('Text<span data-footnote-ref="5">REF</span>more');
   });
 
   it('handles multiple citations', () => {
     const html =
       'First<sup data-turn-source-index="1"></sup> second<sup data-turn-source-index="2"></sup>';
-    const result = convertInlineCitationsToLinks(html, createSourceMap());
-    expect(result).toBe('First<a href="https://example.com/a">Article A</a> second<a href="https://example.org/b">Article B</a>');
+    const result = convertInlineCitationsToFootnoteRefs(html, createSourceMap());
+    expect(result).toBe('First<span data-footnote-ref="1">REF</span> second<span data-footnote-ref="2">REF</span>');
   });
 
   it('preserves non-citation content', () => {
     const html = '<p>No citations here</p>';
-    const result = convertInlineCitationsToLinks(html, createSourceMap());
+    const result = convertInlineCitationsToFootnoteRefs(html, createSourceMap());
     expect(result).toBe('<p>No citations here</p>');
   });
 
   it('removes citation when source not found in map', () => {
     const html = 'Text<sup data-turn-source-index="99"></sup>more';
-    const result = convertInlineCitationsToLinks(html, createSourceMap());
+    const result = convertInlineCitationsToFootnoteRefs(html, createSourceMap());
     expect(result).toBe('Textmore');
   });
 
-  it('handles dangerous URLs by showing title only', () => {
-    const map = new Map<number, { index: number; url: string; title: string; domain: string }>();
-    map.set(1, { index: 0, url: 'javascript:alert(1)', title: 'Bad Source', domain: 'bad.com' });
-    const html = 'Text<sup data-turn-source-index="1"></sup>more';
-    const result = convertInlineCitationsToLinks(html, map);
-    expect(result).toBe('TextBad Sourcemore');
+  it('handles duplicate citations with same data-turn-source-index', () => {
+    const html =
+      'First<sup data-turn-source-index="1"></sup> second<sup data-turn-source-index="1"></sup>';
+    const result = convertInlineCitationsToFootnoteRefs(html, createSourceMap());
+    // Both use the same index from data-turn-source-index
+    expect(result).toBe('First<span data-footnote-ref="1">REF</span> second<span data-footnote-ref="1">REF</span>');
+  });
+
+  it('preserves original data-turn-source-index values (non-sequential)', () => {
+    const html = 'A<sup data-turn-source-index="1"></sup>B<sup data-turn-source-index="5"></sup>';
+    const result = convertInlineCitationsToFootnoteRefs(html, createSourceMap());
+    // Index 5 is preserved as-is, not renumbered to 2
+    expect(result).toBe('A<span data-footnote-ref="1">REF</span>B<span data-footnote-ref="5">REF</span>');
+  });
+});
+
+// Note: replacePlaceholdersWithFootnoteRefs is no longer needed in v3.0
+// The Turndown custom rule now handles conversion of <span data-footnote-ref> to [^N] directly
+
+describe('generateReferencesSection', () => {
+  it('generates empty string for empty sources', () => {
+    expect(generateReferencesSection([])).toBe('');
+  });
+
+  it('generates References section with footnote definitions', () => {
+    const sources = [
+      { index: 0, url: 'https://a.com', title: 'Article A', domain: 'a.com' },
+      { index: 1, url: 'https://b.com', title: 'Article B', domain: 'b.com' },
+    ];
+    const result = generateReferencesSection(sources);
+
+    expect(result).toContain('# References');
+    expect(result).toContain('[^1]: [Article A](https://a.com)');
+    expect(result).toContain('[^2]: [Article B](https://b.com)');
+  });
+
+  it('handles invalid URLs by showing title only', () => {
+    const sources = [
+      { index: 0, url: 'javascript:alert(1)', title: 'Bad', domain: 'bad.com' },
+    ];
+    const result = generateReferencesSection(sources);
+
+    expect(result).toContain('[^1]: Bad');
     expect(result).not.toContain('javascript:');
   });
 
-  it('escapes HTML special characters in title', () => {
-    const map = new Map<number, { index: number; url: string; title: string; domain: string }>();
-    map.set(1, { index: 0, url: 'https://example.com', title: 'Title <script> & "quotes"', domain: 'example.com' });
-    const html = 'Text<sup data-turn-source-index="1"></sup>';
-    const result = convertInlineCitationsToLinks(html, map);
-    expect(result).toContain('&lt;script&gt;');
-    expect(result).toContain('&amp;');
-    expect(result).toContain('&quot;');
+  it('uses 1-based index for footnote numbers', () => {
+    const sources = [
+      { index: 0, url: 'https://first.com', title: 'First', domain: 'first.com' },
+    ];
+    const result = generateReferencesSection(sources);
+
+    expect(result).toContain('[^1]:'); // Not [^0]
   });
 
-  it('preserves parentheses in URL (Turndown handles encoding)', () => {
-    const map = new Map<number, { index: number; url: string; title: string; domain: string }>();
-    map.set(1, { index: 0, url: 'https://example.com/page(1)', title: 'Page', domain: 'example.com' });
-    const html = 'Text<sup data-turn-source-index="1"></sup>';
-    const result = convertInlineCitationsToLinks(html, map);
-    // URL is preserved as-is in href, Turndown will handle Markdown encoding
-    expect(result).toContain('href="https://example.com/page(1)"');
+  it('includes all sources even if unreferenced in text', () => {
+    const sources = [
+      { index: 0, url: 'https://a.com', title: 'A', domain: 'a.com' },
+      { index: 1, url: 'https://b.com', title: 'B', domain: 'b.com' },
+      { index: 2, url: 'https://c.com', title: 'C', domain: 'c.com' },
+    ];
+    const result = generateReferencesSection(sources);
+
+    expect(result).toContain('[^1]: [A](https://a.com)');
+    expect(result).toContain('[^2]: [B](https://b.com)');
+    expect(result).toContain('[^3]: [C](https://c.com)');
   });
 });
 
@@ -400,11 +440,10 @@ describe('removeSourcesCarousel', () => {
   });
 });
 
-// generateFootnoteDefinitions and generateReferencesSection removed in v2.0
-// Inline link format is now used instead of footnotes
+// v3.0: Obsidian native footnote format with References section
 
 describe('convertDeepResearchContent', () => {
-  it('converts citations to inline links', () => {
+  it('converts citations to footnotes with References section', () => {
     // data-turn-source-index is 1-based, sources array is 0-based
     const html = '<p>Text<sup data-turn-source-index="1"></sup></p>';
     const links: DeepResearchLinks = {
@@ -413,11 +452,11 @@ describe('convertDeepResearchContent', () => {
 
     const result = convertDeepResearchContent(html, links);
 
-    // With <a> tag approach, Turndown converts to clean Markdown (no escaping)
-    expect(result).toContain('[Source](https://example.com)');
-    // No footnotes or References section in v2.0 (inline links instead)
-    expect(result).not.toContain('[^');
-    expect(result).not.toContain('References');
+    // v3.0: Footnote reference in text
+    expect(result).toContain('[^1]');
+    // v3.0: References section with footnote definitions
+    expect(result).toContain('# References');
+    expect(result).toContain('[^1]: [Source](https://example.com)');
   });
 
   it('removes sources carousel', () => {
@@ -428,12 +467,12 @@ describe('convertDeepResearchContent', () => {
     expect(result).toContain('Text');
   });
 
-  it('works without links', () => {
+  it('works without links (no References section)', () => {
     const html = '<p>Simple content</p>';
     const result = convertDeepResearchContent(html, undefined);
 
     expect(result).toContain('Simple content');
-    expect(result).not.toContain('References');
+    expect(result).not.toContain('# References');
   });
 
   it('handles multiple sources with 1-based index mapping', () => {
@@ -447,9 +486,44 @@ describe('convertDeepResearchContent', () => {
 
     const result = convertDeepResearchContent(html, links);
 
-    // With <a> tag approach, Turndown converts to clean Markdown (no escaping)
-    expect(result).toContain('[Article A](https://example.com/a)');
-    expect(result).toContain('[Article B](https://example.org/b)');
+    // v3.0: Footnote references in text
+    expect(result).toContain('[^1]');
+    expect(result).toContain('[^2]');
+    // v3.0: References section with all sources
+    expect(result).toContain('# References');
+    expect(result).toContain('[^1]: [Article A](https://example.com/a)');
+    expect(result).toContain('[^2]: [Article B](https://example.org/b)');
+  });
+
+  it('handles duplicate citations with same footnote number', () => {
+    const html = '<p>First<sup data-turn-source-index="1"></sup> second<sup data-turn-source-index="1"></sup></p>';
+    const links: DeepResearchLinks = {
+      sources: [{ index: 0, url: 'https://example.com', title: 'Source', domain: 'example.com' }],
+    };
+
+    const result = convertDeepResearchContent(html, links);
+
+    // Both citations use [^1], plus one in definition = 3 occurrences
+    expect((result.match(/\[\^1\]/g) || []).length).toBe(3);
+    expect(result).toContain('# References');
+  });
+
+  it('includes all sources in References even if unreferenced', () => {
+    // Only index 1 is referenced, but all 3 sources should appear in References
+    const html = '<p>Text<sup data-turn-source-index="1"></sup></p>';
+    const links: DeepResearchLinks = {
+      sources: [
+        { index: 0, url: 'https://a.com', title: 'A', domain: 'a.com' },
+        { index: 1, url: 'https://b.com', title: 'B', domain: 'b.com' },
+        { index: 2, url: 'https://c.com', title: 'C', domain: 'c.com' },
+      ],
+    };
+
+    const result = convertDeepResearchContent(html, links);
+
+    expect(result).toContain('[^1]: [A](https://a.com)');
+    expect(result).toContain('[^2]: [B](https://b.com)');
+    expect(result).toContain('[^3]: [C](https://c.com)');
   });
 });
 
@@ -466,7 +540,7 @@ describe('conversationToNote with Deep Research links', () => {
     assistantCalloutType: 'NOTE',
   };
 
-  it('converts Deep Research with links to note with inline links', () => {
+  it('converts Deep Research with links to note with footnotes and References', () => {
     const links: DeepResearchLinks = {
       sources: [{ index: 0, url: 'https://example.com', title: 'Source', domain: 'example.com' }],
     };
@@ -500,9 +574,9 @@ describe('conversationToNote with Deep Research links', () => {
 
     expect(note.frontmatter.type).toBe('deep-research');
     expect(note.frontmatter.tags).toContain('deep-research');
-    // v2.0: inline links via <a> tags (Turndown converts to clean Markdown)
-    expect(note.body).toContain('[Source](https://example.com)');
-    expect(note.body).not.toContain('[^');
-    expect(note.body).not.toContain('## References');
+    // v3.0: Obsidian native footnotes
+    expect(note.body).toContain('[^1]');
+    expect(note.body).toContain('# References');
+    expect(note.body).toContain('[^1]: [Source](https://example.com)');
   });
 });

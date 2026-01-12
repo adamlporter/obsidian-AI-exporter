@@ -14,7 +14,7 @@ import type {
 import { generateHash } from '../lib/hash';
 
 // ============================================================
-// Deep Research Link Processing Functions (Inline Link Mode)
+// Deep Research Link Processing Functions (Obsidian Footnote Mode)
 // ============================================================
 
 /**
@@ -52,49 +52,38 @@ function buildSourceMap(sources: DeepResearchSource[]): Map<number, DeepResearch
   return map;
 }
 
-/**
- * Escape HTML special characters for safe insertion into HTML
- */
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
+// Note: escapeHtml was removed in v3.0 - no longer needed with placeholder span approach
+// Previously used for inline link generation, now using Obsidian native footnotes
 
 /**
- * Convert inline citations to anchor tags for Turndown processing
+ * Convert inline citations to footnote reference placeholders
  *
  * Before: <source-footnote><sup data-turn-source-index="N">...</sup></source-footnote>
- * After: <a href="URL">Title</a>
+ * After: <span data-footnote-ref="N"></span>
  *
- * Design: Instead of generating Markdown directly, we convert to <a> tags
- * and let Turndown handle the Markdown conversion. This avoids double-escaping
- * issues where our Markdown escapes get re-escaped by Turndown.
+ * Design: We insert placeholder spans that survive Turndown processing,
+ * then replace them with Obsidian footnote syntax [^N] after conversion.
+ * This avoids double-escaping issues where Markdown gets re-escaped by Turndown.
  *
- * Important: data-turn-source-index is 1-based
+ * Important: data-turn-source-index is 1-based and may be non-sequential
  *
  * @param html HTML content to convert
  * @param sourceMap Map built from buildSourceMap()
  */
-export function convertInlineCitationsToLinks(
+export function convertInlineCitationsToFootnoteRefs(
   html: string,
   sourceMap: Map<number, DeepResearchSource>
 ): string {
   // Pattern 1: source-footnote wrapped
   let result = html.replace(
     /<source-footnote[^>]*>[\s\S]*?<sup[^>]*?data-turn-source-index="(\d+)"[^>]*?>[\s\S]*?<\/sup>[\s\S]*?<\/source-footnote>/gi,
-    (match, indexStr) => {
+    (_match, indexStr) => {
       const index = parseInt(indexStr, 10);
       const source = sourceMap.get(index);
       if (source) {
-        const safeUrl = sanitizeUrl(source.url);
-        if (safeUrl) {
-          // Return <a> tag for Turndown to process
-          return `<a href="${escapeHtml(safeUrl)}">${escapeHtml(source.title)}</a>`;
-        }
-        return escapeHtml(source.title); // URL invalid: title only
+        // Return placeholder span with content (Turndown filters empty elements)
+        // The custom Turndown rule will convert this to [^N]
+        return `<span data-footnote-ref="${index}">REF</span>`;
       }
       return ''; // Source not found: remove marker
     }
@@ -103,21 +92,57 @@ export function convertInlineCitationsToLinks(
   // Pattern 2: standalone sup element (fallback)
   result = result.replace(
     /<sup[^>]*?data-turn-source-index="(\d+)"[^>]*?>[\s\S]*?<\/sup>/gi,
-    (match, indexStr) => {
+    (_match, indexStr) => {
       const index = parseInt(indexStr, 10);
       const source = sourceMap.get(index);
       if (source) {
-        const safeUrl = sanitizeUrl(source.url);
-        if (safeUrl) {
-          return `<a href="${escapeHtml(safeUrl)}">${escapeHtml(source.title)}</a>`;
-        }
-        return escapeHtml(source.title);
+        return `<span data-footnote-ref="${index}">REF</span>`;
       }
       return '';
     }
   );
 
   return result;
+}
+
+// Note: replacePlaceholdersWithFootnoteRefs was removed in v3.0
+// The Turndown custom rule now handles conversion of <span data-footnote-ref> to [^N] directly
+
+/**
+ * Generate References section with Obsidian footnote definitions
+ *
+ * Output format:
+ * # References
+ *
+ * [^1]: [Title1](URL1)
+ * [^2]: [Title2](URL2)
+ * ...
+ *
+ * @param sources All sources from the source list (includes unreferenced sources)
+ * @returns Markdown string for References section
+ */
+export function generateReferencesSection(sources: DeepResearchSource[]): string {
+  if (sources.length === 0) {
+    return '';
+  }
+
+  const lines: string[] = ['', '# References', ''];
+
+  sources.forEach((source, arrayIndex) => {
+    // data-turn-source-index is 1-based
+    const footnoteIndex = arrayIndex + 1;
+    const safeUrl = sanitizeUrl(source.url);
+
+    if (safeUrl) {
+      // [^N]: [Title](URL)
+      lines.push(`[^${footnoteIndex}]: [${source.title}](${safeUrl})`);
+    } else {
+      // URL invalid: title only
+      lines.push(`[^${footnoteIndex}]: ${source.title}`);
+    }
+  });
+
+  return lines.join('\n');
 }
 
 /**
@@ -128,10 +153,18 @@ export function removeSourcesCarousel(html: string): string {
 }
 
 /**
- * Convert Deep Research content with inline links
+ * Convert Deep Research content with Obsidian footnotes
  *
- * Design: Converts inline citations directly to [Title](URL) format.
- * No footnote definitions or References section needed.
+ * Design: Converts inline citations to [^N] footnote references
+ * and generates a References section with footnote definitions.
+ *
+ * Processing flow:
+ * 1. Build source map from links
+ * 2. Convert <sup data-turn-source-index> to placeholder spans
+ * 3. Remove sources carousel
+ * 4. Convert HTML to Markdown (Turndown)
+ * 5. Replace placeholder spans with [^N] footnote refs
+ * 6. Append References section with footnote definitions
  */
 export function convertDeepResearchContent(html: string, links?: DeepResearchLinks): string {
   let processed = html;
@@ -142,16 +175,19 @@ export function convertDeepResearchContent(html: string, links?: DeepResearchLin
     sourceMap = buildSourceMap(links.sources);
   }
 
-  // 2. Convert inline citations to inline links
-  processed = convertInlineCitationsToLinks(processed, sourceMap);
+  // 2. Convert inline citations to placeholder spans
+  processed = convertInlineCitationsToFootnoteRefs(processed, sourceMap);
 
   // 3. Remove sources carousel
   processed = removeSourcesCarousel(processed);
 
-  // 4. Convert HTML to Markdown
+  // 4. Convert HTML to Markdown (Turndown rule converts spans to [^N])
   const markdown = htmlToMarkdown(processed);
 
-  // No References section (inline links are self-contained)
+  // 5. Add References section with all sources
+  if (links && links.sources.length > 0) {
+    return markdown + generateReferencesSection(links.sources);
+  }
 
   return markdown;
 }
@@ -195,6 +231,18 @@ turndown.addRule('inlineCode', {
   },
   replacement: content => {
     return `\`${content}\``;
+  },
+});
+
+// Custom rule for footnote reference placeholders
+// Converts <span data-footnote-ref="N">REF</span> to [^N]
+turndown.addRule('footnoteRef', {
+  filter: node => {
+    return node.nodeName === 'SPAN' && (node as HTMLElement).hasAttribute('data-footnote-ref');
+  },
+  replacement: (_content, node) => {
+    const index = (node as HTMLElement).getAttribute('data-footnote-ref');
+    return `[^${index}]`;
   },
 });
 
