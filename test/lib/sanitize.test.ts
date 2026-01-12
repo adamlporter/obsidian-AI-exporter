@@ -69,10 +69,24 @@ describe('sanitizeHtml', () => {
   });
 
   describe('enforces attribute restrictions', () => {
-    it('removes data-* attributes', () => {
+    it('removes general data-* attributes', () => {
       expect(sanitizeHtml('<div data-id="secret">Content</div>')).toBe(
         '<div>Content</div>'
       );
+    });
+
+    it('keeps data-turn-source-index attribute (Deep Research citations)', () => {
+      // This attribute is explicitly allowed for inline citation processing
+      expect(
+        sanitizeHtml('<sup data-turn-source-index="5">1</sup>')
+      ).toBe('<sup data-turn-source-index="5">1</sup>');
+    });
+
+    it('keeps data-turn-source-index in source-footnote structure', () => {
+      const html =
+        '<source-footnote><sup data-turn-source-index="1">1</sup></source-footnote>';
+      const result = sanitizeHtml(html);
+      expect(result).toContain('data-turn-source-index="1"');
     });
 
     it('keeps id attributes (allowed by DOMPurify profile)', () => {

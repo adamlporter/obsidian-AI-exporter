@@ -23,9 +23,40 @@ export interface ConversationData {
   url: string;
   source: 'gemini' | 'claude' | 'perplexity';
   type?: 'conversation' | 'deep-research';
+  /** Deep Research link information (optional) */
+  links?: DeepResearchLinks;
   messages: ConversationMessage[];
   extractedAt: Date;
   metadata: ConversationMetadata;
+}
+
+/**
+ * Deep Research source information
+ *
+ * Design: Sources are stored in DOM order (0-based array).
+ * Mapping to data-turn-source-index (1-based):
+ *   data-turn-source-index="N" → sources[N-1]
+ */
+export interface DeepResearchSource {
+  /** 0-based array index (DOM order) */
+  index: number;
+  /** Source URL */
+  url: string;
+  /** Source title */
+  title: string;
+  /** Domain name */
+  domain: string;
+}
+
+/**
+ * Deep Research links extraction result
+ *
+ * Design: Only sources array is stored. Inline citations are processed
+ * during HTML→Markdown conversion using data-turn-source-index attribute.
+ */
+export interface DeepResearchLinks {
+  /** Source list (DOM order, 0-based index) */
+  sources: DeepResearchSource[];
 }
 
 /**

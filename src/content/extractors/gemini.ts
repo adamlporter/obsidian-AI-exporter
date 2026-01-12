@@ -5,7 +5,12 @@
 
 import { BaseExtractor } from './base';
 import { sanitizeHtml } from '../../lib/sanitize';
-import type { ExtractionResult, ConversationMessage } from '../../lib/types';
+import type {
+  ExtractionResult,
+  ConversationMessage,
+  DeepResearchSource,
+  DeepResearchLinks,
+} from '../../lib/types';
 
 /**
  * CSS selectors for Gemini UI elements
@@ -62,6 +67,25 @@ const DEEP_RESEARCH_SELECTORS = {
   ],
 };
 
+/**
+ * Deep Research link extraction selectors
+ */
+const DEEP_RESEARCH_LINK_SELECTORS = {
+  // Inline citations
+  inlineCitation: [
+    'source-footnote sup.superscript[data-turn-source-index]',
+    'sup.superscript[data-turn-source-index]',
+  ],
+  // Source list container
+  sourceListContainer: ['deep-research-source-lists', '#used-sources-list'],
+  // Source list items
+  sourceListItem: ['a[data-test-id="browse-web-item-link"]', 'a[data-test-id="browse-chip-link"]'],
+  // Source title
+  sourceTitle: ['[data-test-id="title"]', '.sub-title'],
+  // Source domain
+  sourceDomain: ['[data-test-id="domain-name"]', '.display-name'],
+};
+
 export class GeminiExtractor extends BaseExtractor {
   readonly platform = 'gemini' as const;
 
@@ -100,6 +124,85 @@ export class GeminiExtractor extends BaseExtractor {
       return sanitizeHtml(contentEl.innerHTML);
     }
     return '';
+  }
+
+  /**
+   * Extract source list from Deep Research panel
+   * Sources are in the deep-research-source-lists element
+   *
+   * Important: data-turn-source-index is 1-based
+   * Mapping: data-turn-source-index="N" → sources[N-1]
+   */
+  extractSourceList(): DeepResearchSource[] {
+    const sources: DeepResearchSource[] = [];
+    const selector = DEEP_RESEARCH_LINK_SELECTORS.sourceListItem.join(',');
+    const sourceLinks = document.querySelectorAll(selector);
+
+    sourceLinks.forEach((link, index) => {
+      const anchor = link as HTMLAnchorElement;
+      const url = anchor.href;
+
+      // Extract title
+      const titleSelector = DEEP_RESEARCH_LINK_SELECTORS.sourceTitle.join(',');
+      const titleEl = anchor.querySelector(titleSelector);
+      const title = titleEl?.textContent?.trim() || 'Unknown Title';
+
+      // Extract domain (fallback to URL parsing)
+      const domainSelector = DEEP_RESEARCH_LINK_SELECTORS.sourceDomain.join(',');
+      const domainEl = anchor.querySelector(domainSelector);
+      let domain = domainEl?.textContent?.trim() || '';
+      if (!domain) {
+        try {
+          domain = new URL(url).hostname;
+        } catch {
+          domain = 'unknown';
+        }
+      }
+
+      sources.push({
+        index, // 0-based array index
+        url,
+        title: this.sanitizeText(title),
+        domain,
+      });
+    });
+
+    return sources;
+  }
+
+  /**
+   * Build a Map for accessing sources by data-turn-source-index
+   *
+   * @param sources Result from extractSourceList()
+   * @returns Map<data-turn-source-index, DeepResearchSource>
+   *
+   * Usage:
+   *   const map = buildSourceMap(sources);
+   *   const source = map.get(5); // data-turn-source-index="5"
+   */
+  buildSourceMap(sources: DeepResearchSource[]): Map<number, DeepResearchSource> {
+    const map = new Map<number, DeepResearchSource>();
+
+    sources.forEach((source, arrayIndex) => {
+      // data-turn-source-index is 1-based
+      // arrayIndex=0 → data-turn-source-index=1
+      const turnSourceIndex = arrayIndex + 1;
+      map.set(turnSourceIndex, source);
+    });
+
+    return map;
+  }
+
+  /**
+   * Extract all Deep Research link information
+   * Only extracts source list; inline citations are processed during Markdown conversion
+   */
+  extractDeepResearchLinks(): DeepResearchLinks {
+    const sources = this.extractSourceList();
+
+    return {
+      sources,
+    };
   }
 
   /**
@@ -313,6 +416,9 @@ export class GeminiExtractor extends BaseExtractor {
     const titleHash = this.generateHashValue(title);
     const conversationId = `deep-research-${titleHash}`;
 
+    // リンク情報を抽出
+    const links = this.extractDeepResearchLinks();
+
     return {
       success: true,
       data: {
@@ -321,6 +427,7 @@ export class GeminiExtractor extends BaseExtractor {
         url: window.location.href,
         source: 'gemini',
         type: 'deep-research',
+        links,
         messages: [
           {
             id: 'report-0',

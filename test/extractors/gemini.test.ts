@@ -10,6 +10,8 @@ import {
   resetLocation,
   createDeepResearchDOM,
   createEmptyDeepResearchPanel,
+  createDeepResearchDOMWithLinks,
+  createInlineCitation,
 } from '../fixtures/dom-helpers';
 
 describe('GeminiExtractor', () => {
@@ -447,6 +449,99 @@ describe('GeminiExtractor', () => {
 
         expect(result.success).toBe(true);
         expect(result.data?.type).toBe('deep-research');
+      });
+    });
+
+    describe('link extraction', () => {
+      const sampleSources = [
+        { url: 'https://example.com/article1', title: 'Article One', domain: 'example.com' },
+        { url: 'https://example.org/article2', title: 'Article Two', domain: 'example.org' },
+        { url: 'https://test.net/article3', title: 'Article Three', domain: 'test.net' },
+      ];
+
+      describe('extractSourceList', () => {
+        it('extracts sources from source list', () => {
+          setGeminiLocation('test123');
+          const content = `<p>Text${createInlineCitation(0)}</p>`;
+          loadFixture(createDeepResearchDOMWithLinks('Test', content, sampleSources));
+
+          const sources = extractor.extractSourceList();
+
+          expect(sources).toHaveLength(3);
+          expect(sources[0].url).toBe('https://example.com/article1');
+          expect(sources[0].title).toBe('Article One');
+          expect(sources[0].domain).toBe('example.com');
+          expect(sources[1].index).toBe(1);
+        });
+
+        it('returns empty array when no sources found', () => {
+          setGeminiLocation('test123');
+          loadFixture(createDeepResearchDOM('Test', '<p>No sources</p>'));
+
+          const sources = extractor.extractSourceList();
+
+          expect(sources).toHaveLength(0);
+        });
+      });
+
+      describe('buildSourceMap', () => {
+        it('creates 1-based index map from sources array', () => {
+          setGeminiLocation('test123');
+          const content = `<p>Text${createInlineCitation(0)}</p>`;
+          loadFixture(createDeepResearchDOMWithLinks('Test', content, sampleSources));
+
+          const sources = extractor.extractSourceList();
+          const sourceMap = extractor.buildSourceMap(sources);
+
+          // sources[0] -> data-turn-source-index=1
+          expect(sourceMap.get(1)?.url).toBe('https://example.com/article1');
+          // sources[1] -> data-turn-source-index=2
+          expect(sourceMap.get(2)?.url).toBe('https://example.org/article2');
+          // sources[2] -> data-turn-source-index=3
+          expect(sourceMap.get(3)?.url).toBe('https://test.net/article3');
+          // data-turn-source-index=0 should not exist (1-based)
+          expect(sourceMap.get(0)).toBeUndefined();
+        });
+      });
+
+      describe('extractDeepResearchLinks', () => {
+        it('returns sources only (no citations or usedIndices)', () => {
+          setGeminiLocation('test123');
+          const content = `<p>First${createInlineCitation(0)} and second${createInlineCitation(2)}</p>`;
+          loadFixture(createDeepResearchDOMWithLinks('Test', content, sampleSources));
+
+          const links = extractor.extractDeepResearchLinks();
+
+          expect(links.sources).toHaveLength(3);
+          // citations and usedIndices removed in v2.0
+          expect((links as unknown as Record<string, unknown>).citations).toBeUndefined();
+          expect((links as unknown as Record<string, unknown>).usedIndices).toBeUndefined();
+        });
+      });
+
+      describe('extractDeepResearch with links', () => {
+        it('includes links in extraction result', () => {
+          setGeminiLocation('test123');
+          const content = `<p>Content${createInlineCitation(0)}</p>`;
+          loadFixture(createDeepResearchDOMWithLinks('Test Report', content, sampleSources));
+
+          const result = extractor.extractDeepResearch();
+
+          expect(result.success).toBe(true);
+          expect(result.data?.links).toBeDefined();
+          expect(result.data?.links?.sources).toHaveLength(3);
+        });
+
+        it('handles missing links gracefully', () => {
+          setGeminiLocation('test123');
+          loadFixture(createDeepResearchDOM('Test', '<p>No links</p>'));
+
+          const result = extractor.extractDeepResearch();
+
+          expect(result.success).toBe(true);
+          expect(result.data?.links).toBeDefined();
+          expect(result.data?.links?.sources).toHaveLength(0);
+        });
       });
     });
   });

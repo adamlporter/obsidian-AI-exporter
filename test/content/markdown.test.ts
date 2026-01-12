@@ -4,8 +4,12 @@ import {
   generateFileName,
   generateContentHash,
   conversationToNote,
+  sanitizeUrl,
+  convertInlineCitationsToLinks,
+  removeSourcesCarousel,
+  convertDeepResearchContent,
 } from '../../src/content/markdown';
-import type { ConversationData, TemplateOptions } from '../../src/lib/types';
+import type { ConversationData, TemplateOptions, DeepResearchLinks } from '../../src/lib/types';
 
 describe('htmlToMarkdown', () => {
   describe('basic formatting', () => {
@@ -273,5 +277,232 @@ describe('conversationToNote', () => {
     expect(note.body).toContain('First answer');
     expect(note.body).toContain('Second question');
     expect(note.body).toContain('Second answer');
+  });
+});
+
+// ============================================================
+// Deep Research Link Processing Tests
+// ============================================================
+
+describe('sanitizeUrl', () => {
+  it('returns valid URLs unchanged', () => {
+    expect(sanitizeUrl('https://example.com')).toBe('https://example.com');
+    expect(sanitizeUrl('http://example.org/path')).toBe('http://example.org/path');
+  });
+
+  it('rejects javascript: URLs', () => {
+    expect(sanitizeUrl('javascript:alert(1)')).toBe('');
+    expect(sanitizeUrl('JAVASCRIPT:alert(1)')).toBe('');
+  });
+
+  it('rejects data: URLs', () => {
+    expect(sanitizeUrl('data:text/html,<script>alert(1)</script>')).toBe('');
+  });
+
+  it('rejects vbscript: URLs', () => {
+    expect(sanitizeUrl('vbscript:msgbox("XSS")')).toBe('');
+  });
+
+  it('handles whitespace', () => {
+    expect(sanitizeUrl('  javascript:alert(1)  ')).toBe('');
+    expect(sanitizeUrl('  https://example.com  ')).toBe('  https://example.com  ');
+  });
+});
+
+describe('convertInlineCitationsToLinks', () => {
+  // Helper to create source map (data-turn-source-index is 1-based)
+  const createSourceMap = () => {
+    const map = new Map<number, { index: number; url: string; title: string; domain: string }>();
+    map.set(1, { index: 0, url: 'https://example.com/a', title: 'Article A', domain: 'example.com' });
+    map.set(2, { index: 1, url: 'https://example.org/b', title: 'Article B', domain: 'example.org' });
+    map.set(5, { index: 4, url: 'https://test.net/c', title: 'Article C', domain: 'test.net' });
+    return map;
+  };
+
+  // Note: convertInlineCitationsToLinks now outputs <a> tags instead of Markdown links
+  // This allows Turndown to handle the Markdown conversion, avoiding double-escaping issues
+
+  it('converts source-footnote wrapped citations to anchor tags', () => {
+    const html =
+      'Text<source-footnote><sup class="superscript" data-turn-source-index="1"></sup></source-footnote>more';
+    const result = convertInlineCitationsToLinks(html, createSourceMap());
+    expect(result).toBe('Text<a href="https://example.com/a">Article A</a>more');
+  });
+
+  it('converts standalone sup citations to anchor tags', () => {
+    const html = 'Text<sup data-turn-source-index="5"></sup>more';
+    const result = convertInlineCitationsToLinks(html, createSourceMap());
+    expect(result).toBe('Text<a href="https://test.net/c">Article C</a>more');
+  });
+
+  it('handles multiple citations', () => {
+    const html =
+      'First<sup data-turn-source-index="1"></sup> second<sup data-turn-source-index="2"></sup>';
+    const result = convertInlineCitationsToLinks(html, createSourceMap());
+    expect(result).toBe('First<a href="https://example.com/a">Article A</a> second<a href="https://example.org/b">Article B</a>');
+  });
+
+  it('preserves non-citation content', () => {
+    const html = '<p>No citations here</p>';
+    const result = convertInlineCitationsToLinks(html, createSourceMap());
+    expect(result).toBe('<p>No citations here</p>');
+  });
+
+  it('removes citation when source not found in map', () => {
+    const html = 'Text<sup data-turn-source-index="99"></sup>more';
+    const result = convertInlineCitationsToLinks(html, createSourceMap());
+    expect(result).toBe('Textmore');
+  });
+
+  it('handles dangerous URLs by showing title only', () => {
+    const map = new Map<number, { index: number; url: string; title: string; domain: string }>();
+    map.set(1, { index: 0, url: 'javascript:alert(1)', title: 'Bad Source', domain: 'bad.com' });
+    const html = 'Text<sup data-turn-source-index="1"></sup>more';
+    const result = convertInlineCitationsToLinks(html, map);
+    expect(result).toBe('TextBad Sourcemore');
+    expect(result).not.toContain('javascript:');
+  });
+
+  it('escapes HTML special characters in title', () => {
+    const map = new Map<number, { index: number; url: string; title: string; domain: string }>();
+    map.set(1, { index: 0, url: 'https://example.com', title: 'Title <script> & "quotes"', domain: 'example.com' });
+    const html = 'Text<sup data-turn-source-index="1"></sup>';
+    const result = convertInlineCitationsToLinks(html, map);
+    expect(result).toContain('&lt;script&gt;');
+    expect(result).toContain('&amp;');
+    expect(result).toContain('&quot;');
+  });
+
+  it('preserves parentheses in URL (Turndown handles encoding)', () => {
+    const map = new Map<number, { index: number; url: string; title: string; domain: string }>();
+    map.set(1, { index: 0, url: 'https://example.com/page(1)', title: 'Page', domain: 'example.com' });
+    const html = 'Text<sup data-turn-source-index="1"></sup>';
+    const result = convertInlineCitationsToLinks(html, map);
+    // URL is preserved as-is in href, Turndown will handle Markdown encoding
+    expect(result).toContain('href="https://example.com/page(1)"');
+  });
+});
+
+describe('removeSourcesCarousel', () => {
+  it('removes sources-carousel-inline elements', () => {
+    const html = '<p>Content</p><sources-carousel-inline>carousel content</sources-carousel-inline>';
+    expect(removeSourcesCarousel(html)).toBe('<p>Content</p>');
+  });
+
+  it('handles nested content in carousel', () => {
+    const html = '<div><sources-carousel-inline><div>nested</div></sources-carousel-inline></div>';
+    expect(removeSourcesCarousel(html)).toBe('<div></div>');
+  });
+
+  it('preserves content without carousel', () => {
+    const html = '<p>Just content</p>';
+    expect(removeSourcesCarousel(html)).toBe('<p>Just content</p>');
+  });
+});
+
+// generateFootnoteDefinitions and generateReferencesSection removed in v2.0
+// Inline link format is now used instead of footnotes
+
+describe('convertDeepResearchContent', () => {
+  it('converts citations to inline links', () => {
+    // data-turn-source-index is 1-based, sources array is 0-based
+    const html = '<p>Text<sup data-turn-source-index="1"></sup></p>';
+    const links: DeepResearchLinks = {
+      sources: [{ index: 0, url: 'https://example.com', title: 'Source', domain: 'example.com' }],
+    };
+
+    const result = convertDeepResearchContent(html, links);
+
+    // With <a> tag approach, Turndown converts to clean Markdown (no escaping)
+    expect(result).toContain('[Source](https://example.com)');
+    // No footnotes or References section in v2.0 (inline links instead)
+    expect(result).not.toContain('[^');
+    expect(result).not.toContain('References');
+  });
+
+  it('removes sources carousel', () => {
+    const html = '<p>Text</p><sources-carousel-inline>carousel</sources-carousel-inline>';
+    const result = convertDeepResearchContent(html, undefined);
+
+    expect(result).not.toContain('carousel');
+    expect(result).toContain('Text');
+  });
+
+  it('works without links', () => {
+    const html = '<p>Simple content</p>';
+    const result = convertDeepResearchContent(html, undefined);
+
+    expect(result).toContain('Simple content');
+    expect(result).not.toContain('References');
+  });
+
+  it('handles multiple sources with 1-based index mapping', () => {
+    const html = '<p>First<sup data-turn-source-index="1"></sup> second<sup data-turn-source-index="2"></sup></p>';
+    const links: DeepResearchLinks = {
+      sources: [
+        { index: 0, url: 'https://example.com/a', title: 'Article A', domain: 'example.com' },
+        { index: 1, url: 'https://example.org/b', title: 'Article B', domain: 'example.org' },
+      ],
+    };
+
+    const result = convertDeepResearchContent(html, links);
+
+    // With <a> tag approach, Turndown converts to clean Markdown (no escaping)
+    expect(result).toContain('[Article A](https://example.com/a)');
+    expect(result).toContain('[Article B](https://example.org/b)');
+  });
+});
+
+describe('conversationToNote with Deep Research links', () => {
+  const defaultOptions: TemplateOptions = {
+    includeId: true,
+    includeTitle: true,
+    includeSource: true,
+    includeTags: true,
+    includeDates: true,
+    includeMessageCount: true,
+    messageFormat: 'callout',
+    userCalloutType: 'QUESTION',
+    assistantCalloutType: 'NOTE',
+  };
+
+  it('converts Deep Research with links to note with inline links', () => {
+    const links: DeepResearchLinks = {
+      sources: [{ index: 0, url: 'https://example.com', title: 'Source', domain: 'example.com' }],
+    };
+
+    const deepResearchData: ConversationData = {
+      id: 'dr123',
+      title: 'Research Report',
+      url: 'https://gemini.google.com/app/dr123',
+      source: 'gemini',
+      type: 'deep-research',
+      links,
+      messages: [
+        {
+          id: 'report-0',
+          role: 'assistant',
+          // data-turn-source-index is 1-based
+          content: '<p>Content<sup data-turn-source-index="1"></sup></p>',
+          index: 0,
+        },
+      ],
+      extractedAt: new Date('2024-01-01'),
+      metadata: {
+        messageCount: 1,
+        userMessageCount: 0,
+        assistantMessageCount: 1,
+        hasCodeBlocks: false,
+      },
+    };
+
+    const note = conversationToNote(deepResearchData, defaultOptions);
+
+    expect(note.frontmatter.type).toBe('deep-research');
+    expect(note.frontmatter.tags).toContain('deep-research');
+    // v2.0: inline links via <a> tags (Turndown converts to clean Markdown)
+    expect(note.body).toContain('[Source](https://example.com)');
+    expect(note.body).not.toContain('[^');
+    expect(note.body).not.toContain('## References');
   });
 });
