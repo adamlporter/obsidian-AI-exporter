@@ -92,11 +92,20 @@ export abstract class BaseExtractor implements IConversationExtractor {
 
   /**
    * Try multiple selectors and return first successful result
+   *
+   * @param selectors - Array of CSS selectors to try in order
+   * @param parent - Parent element to search within (defaults to document)
+   * @returns First matching element or null if none found or selectors empty
    */
   protected queryWithFallback<T extends Element>(
     selectors: string[],
     parent: Element | Document = document
   ): T | null {
+    // Guard clause: return null for empty or invalid selector arrays
+    if (!selectors || selectors.length === 0) {
+      return null;
+    }
+
     for (const selector of selectors) {
       const result = parent.querySelector<T>(selector);
       if (result) return result;
@@ -106,11 +115,20 @@ export abstract class BaseExtractor implements IConversationExtractor {
 
   /**
    * Try multiple selectors and return all results
+   *
+   * @param selectors - Array of CSS selectors to try in order
+   * @param parent - Parent element to search within (defaults to document)
+   * @returns All matching elements or empty array if none found or selectors empty
    */
   protected queryAllWithFallback<T extends Element>(
     selectors: string[],
     parent: Element | Document = document
   ): NodeListOf<T> | T[] {
+    // Guard clause: return empty array for empty or invalid selector arrays
+    if (!selectors || selectors.length === 0) {
+      return [] as unknown as NodeListOf<T>;
+    }
+
     for (const selector of selectors) {
       const results = parent.querySelectorAll<T>(selector);
       if (results.length > 0) return results;
