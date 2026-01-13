@@ -135,6 +135,45 @@ export function createRuntimeMock() {
     lastError: null as chrome.runtime.LastError | null,
     id: 'test-extension-id',
     getURL: vi.fn((path: string) => `chrome-extension://test-extension-id/${path}`),
+    // For offscreen document detection
+    getContexts: vi.fn(() => Promise.resolve([])),
+    ContextType: { OFFSCREEN_DOCUMENT: 'OFFSCREEN_DOCUMENT' },
+  };
+}
+
+/**
+ * Chrome Downloads Mock for file download testing
+ */
+export function createDownloadsMock() {
+  return {
+    download: vi.fn(
+      (
+        options: {
+          url: string;
+          filename: string;
+          saveAs?: boolean;
+          conflictAction?: string;
+        },
+        callback?: (downloadId: number | undefined) => void
+      ) => {
+        // Default: successful download with ID 1
+        if (callback) {
+          setTimeout(() => callback(1), 0);
+        }
+        return 1;
+      }
+    ),
+  };
+}
+
+/**
+ * Chrome Offscreen Mock for clipboard operations
+ */
+export function createOffscreenMock() {
+  return {
+    createDocument: vi.fn(() => Promise.resolve()),
+    closeDocument: vi.fn(() => Promise.resolve()),
+    Reason: { CLIPBOARD: 'CLIPBOARD' },
   };
 }
 
@@ -171,6 +210,8 @@ export function createChromeMock(options: { language?: string } = {}) {
     storage: createStorageMock(),
     runtime: createRuntimeMock(),
     i18n: createI18nMock(options.language),
+    downloads: createDownloadsMock(),
+    offscreen: createOffscreenMock(),
   };
 }
 
