@@ -20,9 +20,7 @@ import { DeepResearchSource } from './types';
  *   const map = buildSourceMap(sources);
  *   const source = map.get(5); // Gets source for data-turn-source-index="5"
  */
-export function buildSourceMap(
-  sources: DeepResearchSource[]
-): Map<number, DeepResearchSource> {
+export function buildSourceMap(sources: DeepResearchSource[]): Map<number, DeepResearchSource> {
   const map = new Map<number, DeepResearchSource>();
 
   sources.forEach((source, arrayIndex) => {

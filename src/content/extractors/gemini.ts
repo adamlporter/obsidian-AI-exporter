@@ -5,10 +5,7 @@
 
 import { BaseExtractor } from './base';
 import { sanitizeHtml } from '../../lib/sanitize';
-import {
-  MAX_DEEP_RESEARCH_TITLE_LENGTH,
-  MAX_CONVERSATION_TITLE_LENGTH,
-} from '../../lib/constants';
+import { MAX_DEEP_RESEARCH_TITLE_LENGTH, MAX_CONVERSATION_TITLE_LENGTH } from '../../lib/constants';
 import type {
   ExtractionResult,
   ConversationMessage,
@@ -216,7 +213,10 @@ export class GeminiExtractor extends BaseExtractor {
     // Fallback to sidebar title if available
     const sidebarTitle = this.queryWithFallback<HTMLElement>(SELECTORS.conversationTitle);
     if (sidebarTitle?.textContent) {
-      return this.sanitizeText(sidebarTitle.textContent).substring(0, MAX_CONVERSATION_TITLE_LENGTH);
+      return this.sanitizeText(sidebarTitle.textContent).substring(
+        0,
+        MAX_CONVERSATION_TITLE_LENGTH
+      );
     }
 
     return 'Untitled Gemini Conversation';

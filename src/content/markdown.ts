@@ -13,10 +13,7 @@ import type {
 } from '../lib/types';
 import { generateHash } from '../lib/hash';
 import { buildSourceMap } from '../lib/source-map';
-import {
-  MAX_FILENAME_BASE_LENGTH,
-  FILENAME_ID_SUFFIX_LENGTH,
-} from '../lib/constants';
+import { MAX_FILENAME_BASE_LENGTH, FILENAME_ID_SUFFIX_LENGTH } from '../lib/constants';
 
 // ============================================================
 // Deep Research Link Processing Functions (Obsidian Footnote Mode)
