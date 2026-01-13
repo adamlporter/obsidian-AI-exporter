@@ -3,7 +3,7 @@
  * Handles HTTP communication with Obsidian REST API
  */
 
-import { ObsidianApiClient, getErrorMessage, isObsidianApiError } from '../lib/obsidian-api';
+import { ObsidianApiClient, getErrorMessage } from '../lib/obsidian-api';
 import { getSettings, migrateSettings } from '../lib/storage';
 import { escapeYamlValue, escapeYamlListItem } from '../lib/yaml-utils';
 import { MAX_CONTENT_SIZE } from '../lib/constants';
@@ -231,19 +231,23 @@ async function handleTestConnection(
   }
 
   const client = new ObsidianApiClient(settings.obsidianPort, settings.obsidianApiKey);
+  const result = await client.testConnection();
 
-  try {
-    const connected = await client.testConnection();
-    if (connected) {
-      return { success: true };
-    }
-    return { success: false, error: 'Connection failed. Check if Obsidian is running.' };
-  } catch (error) {
-    if (isObsidianApiError(error)) {
-      return { success: false, error: error.message };
-    }
-    return { success: false, error: getErrorMessage(error) };
+  if (!result.reachable) {
+    return {
+      success: false,
+      error: result.error ?? 'Cannot reach Obsidian. Is it running?',
+    };
   }
+
+  if (!result.authenticated) {
+    return {
+      success: false,
+      error: result.error ?? 'Invalid API key. Please check your settings.',
+    };
+  }
+
+  return { success: true };
 }
 
 /**

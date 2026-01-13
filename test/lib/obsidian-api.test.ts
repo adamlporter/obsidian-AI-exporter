@@ -23,24 +23,27 @@ describe('ObsidianApiClient', () => {
     it('constructs with port and API key', () => {
       const client = new ObsidianApiClient(28000, 'my-key');
       // Verify by making a request and checking the URL
-      mockFetch.mockResolvedValue({ ok: true });
+      mockFetch.mockResolvedValue({ ok: true, status: 200 });
       void client.testConnection();
       expect(mockFetch).toHaveBeenCalledWith(
-        'http://127.0.0.1:28000/',
+        'http://127.0.0.1:28000/vault/',
         expect.any(Object)
       );
     });
   });
 
   describe('testConnection', () => {
-    it('returns true when connection succeeds', async () => {
-      mockFetch.mockResolvedValue({ ok: true });
+    it('returns success when connection and authentication succeed', async () => {
+      mockFetch.mockResolvedValue({ ok: true, status: 200 });
 
       const result = await client.testConnection();
 
-      expect(result).toBe(true);
+      expect(result).toEqual({
+        reachable: true,
+        authenticated: true,
+      });
       expect(mockFetch).toHaveBeenCalledWith(
-        'http://127.0.0.1:27123/',
+        'http://127.0.0.1:27123/vault/',
         expect.objectContaining({
           method: 'GET',
           headers: { Authorization: 'Bearer test-api-key' },
@@ -48,20 +51,65 @@ describe('ObsidianApiClient', () => {
       );
     });
 
-    it('returns false when connection fails with error status', async () => {
+    it('returns authenticated:false when API key is invalid (401)', async () => {
       mockFetch.mockResolvedValue({ ok: false, status: 401 });
 
       const result = await client.testConnection();
 
-      expect(result).toBe(false);
+      expect(result).toEqual({
+        reachable: true,
+        authenticated: false,
+        error: 'Invalid API key',
+      });
     });
 
-    it('returns false when fetch throws', async () => {
-      mockFetch.mockRejectedValue(new Error('Network error'));
+    it('returns authenticated:false when API key is forbidden (403)', async () => {
+      mockFetch.mockResolvedValue({ ok: false, status: 403 });
 
       const result = await client.testConnection();
 
-      expect(result).toBe(false);
+      expect(result).toEqual({
+        reachable: true,
+        authenticated: false,
+        error: 'Invalid API key',
+      });
+    });
+
+    it('returns authenticated:false for other server errors', async () => {
+      mockFetch.mockResolvedValue({ ok: false, status: 500 });
+
+      const result = await client.testConnection();
+
+      expect(result).toEqual({
+        reachable: true,
+        authenticated: false,
+        error: 'Server error: 500',
+      });
+    });
+
+    it('returns reachable:false when network error occurs', async () => {
+      mockFetch.mockRejectedValue(new TypeError('Failed to fetch'));
+
+      const result = await client.testConnection();
+
+      expect(result).toEqual({
+        reachable: false,
+        authenticated: false,
+        error: 'Cannot reach Obsidian. Is it running?',
+      });
+    });
+
+    it('returns timeout error when request times out', async () => {
+      const timeoutError = new DOMException('The operation timed out', 'TimeoutError');
+      mockFetch.mockRejectedValue(timeoutError);
+
+      const result = await client.testConnection();
+
+      expect(result).toEqual({
+        reachable: false,
+        authenticated: false,
+        error: 'Connection timed out',
+      });
     });
   });
 
@@ -233,15 +281,15 @@ describe('ObsidianApiClient', () => {
       vi.resetModules();
       const { ObsidianApiClient: FreshClient } = await import('../../src/lib/obsidian-api');
 
-      const freshMockFetch = vi.fn().mockResolvedValue({ ok: true });
+      const freshMockFetch = vi.fn().mockResolvedValue({ ok: true, status: 200 });
       vi.stubGlobal('fetch', freshMockFetch);
 
       const freshClient = new FreshClient(27123, 'test-key');
       await freshClient.testConnection();
 
-      // Verify fetch was called with an AbortSignal
+      // Verify fetch was called with an AbortSignal to /vault/ endpoint
       expect(freshMockFetch).toHaveBeenCalledWith(
-        expect.any(String),
+        'http://127.0.0.1:27123/vault/',
         expect.objectContaining({
           signal: expect.any(AbortSignal),
         })

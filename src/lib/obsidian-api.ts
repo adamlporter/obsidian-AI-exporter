@@ -68,6 +68,18 @@ function createTimeoutSignal(ms: number): AbortSignal {
   return controller.signal;
 }
 
+/**
+ * Connection test result with detailed status
+ */
+export interface ConnectionTestResult {
+  /** Server is reachable */
+  reachable: boolean;
+  /** API Key is valid (authentication succeeded) */
+  authenticated: boolean;
+  /** Error message (when failed) */
+  error?: string;
+}
+
 export interface ObsidianApiError {
   status: number;
   message: string;
@@ -92,18 +104,53 @@ export class ObsidianApiClient {
   }
 
   /**
-   * Test API connection
+   * Test API connection with authentication verification
+   *
+   * Uses /vault/ endpoint which requires authentication.
+   * This ensures the API key is validated, not just server reachability.
    */
-  async testConnection(): Promise<boolean> {
+  async testConnection(): Promise<ConnectionTestResult> {
     try {
-      const response = await fetch(`${this.baseUrl}/`, {
+      const response = await fetch(`${this.baseUrl}/vault/`, {
         method: 'GET',
         headers: this.getHeaders(),
         signal: createTimeoutSignal(DEFAULT_API_TIMEOUT),
       });
-      return response.ok;
-    } catch {
-      return false;
+
+      // Authentication error
+      if (response.status === 401 || response.status === 403) {
+        return {
+          reachable: true,
+          authenticated: false,
+          error: 'Invalid API key',
+        };
+      }
+
+      // Other server errors
+      if (!response.ok) {
+        return {
+          reachable: true,
+          authenticated: false,
+          error: `Server error: ${response.status}`,
+        };
+      }
+
+      // Success
+      return {
+        reachable: true,
+        authenticated: true,
+      };
+    } catch (error) {
+      // Network error
+      const errorType = classifyNetworkError(error);
+      return {
+        reachable: false,
+        authenticated: false,
+        error:
+          errorType === 'timeout'
+            ? 'Connection timed out'
+            : 'Cannot reach Obsidian. Is it running?',
+      };
     }
   }
 

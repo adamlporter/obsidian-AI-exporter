@@ -1,18 +1,55 @@
 /* Popup Settings Styles */
 
+/* Light theme (default) */
 :root {
-  --bg-primary: #1a1a2e;
-  --bg-secondary: #16213e;
-  --bg-tertiary: #0f3460;
-  --text-primary: #e8e8e8;
-  --text-secondary: #a0a0a0;
+  /* Background colors */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8f9fa;
+  --bg-tertiary: #e9ecef;
+
+  /* Text colors */
+  --text-primary: #212529;
+  --text-secondary: #6c757d;
+
+  /* Accent colors */
   --accent-primary: #7c3aed;
   --accent-secondary: #5b21b6;
+
+  /* Status colors */
   --success: #10b981;
   --error: #ef4444;
   --warning: #f59e0b;
-  --border: rgba(255, 255, 255, 0.1);
-  --shadow: rgba(0, 0, 0, 0.3);
+
+  /* Border & shadow */
+  --border: rgba(0, 0, 0, 0.1);
+  --shadow: rgba(0, 0, 0, 0.1);
+}
+
+/* Dark theme */
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Background colors */
+    --bg-primary: #1a1a2e;
+    --bg-secondary: #16213e;
+    --bg-tertiary: #0f3460;
+
+    /* Text colors */
+    --text-primary: #e8e8e8;
+    --text-secondary: #a0a0a0;
+
+    /* Accent colors (maintained) */
+    --accent-primary: #7c3aed;
+    --accent-secondary: #5b21b6;
+
+    /* Status colors (maintained) */
+    --success: #10b981;
+    --error: #ef4444;
+    --warning: #f59e0b;
+
+    /* Border & shadow */
+    --border: rgba(255, 255, 255, 0.1);
+    --shadow: rgba(0, 0, 0, 0.3);
+  }
 }
 
 * {
@@ -54,7 +91,9 @@ body {
 }
 
 .header .logo {
-  font-size: 24px;
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
 }
 
 .header .subtitle {
@@ -291,16 +330,23 @@ select {
   background: var(--text-secondary);
 }
 
-/* API Key Toggle */
-.api-key-container {
+/* API Key Input Container */
+.api-key-wrapper {
   position: relative;
   display: flex;
   align-items: center;
 }
 
+.api-key-wrapper input {
+  flex: 1;
+  padding-right: 40px; /* Space for toggle button */
+}
+
 .api-key-toggle {
   position: absolute;
-  right: 8px;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
   background: none;
   border: none;
   cursor: pointer;
@@ -314,6 +360,10 @@ select {
   color: var(--text-primary);
 }
 
-#apiKey {
-  padding-right: 36px;
+/* Help text placement */
+.form-group .help {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--text-secondary);
 }
