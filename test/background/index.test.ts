@@ -327,8 +327,11 @@ describe('background/index', () => {
   describe('testConnection handler', () => {
     const validSender = { url: `chrome-extension://${chrome.runtime.id}/popup.html` };
 
-    it('returns success on successful connection', async () => {
-      mockClient.testConnection.mockResolvedValue(true);
+    it('returns success on successful connection and authentication', async () => {
+      mockClient.testConnection.mockResolvedValue({
+        reachable: true,
+        authenticated: true,
+      });
 
       const sendResponse = vi.fn();
       capturedListener(
@@ -341,8 +344,12 @@ describe('background/index', () => {
       expect(sendResponse).toHaveBeenCalledWith({ success: true });
     });
 
-    it('returns error on failed connection', async () => {
-      mockClient.testConnection.mockResolvedValue(false);
+    it('returns error when server is unreachable', async () => {
+      mockClient.testConnection.mockResolvedValue({
+        reachable: false,
+        authenticated: false,
+        error: 'Cannot reach Obsidian. Is it running?',
+      });
 
       const sendResponse = vi.fn();
       capturedListener(
@@ -354,7 +361,28 @@ describe('background/index', () => {
       await vi.waitFor(() => expect(sendResponse).toHaveBeenCalled());
       expect(sendResponse).toHaveBeenCalledWith({
         success: false,
-        error: 'Connection failed. Check if Obsidian is running.',
+        error: 'Cannot reach Obsidian. Is it running?',
+      });
+    });
+
+    it('returns error when API key is invalid', async () => {
+      mockClient.testConnection.mockResolvedValue({
+        reachable: true,
+        authenticated: false,
+        error: 'Invalid API key',
+      });
+
+      const sendResponse = vi.fn();
+      capturedListener(
+        { action: 'testConnection' },
+        validSender as chrome.runtime.MessageSender,
+        sendResponse
+      );
+
+      await vi.waitFor(() => expect(sendResponse).toHaveBeenCalled());
+      expect(sendResponse).toHaveBeenCalledWith({
+        success: false,
+        error: 'Invalid API key',
       });
     });
 
@@ -518,12 +546,14 @@ describe('background/index', () => {
     });
   });
 
-  describe('testConnection error handling', () => {
+  describe('testConnection additional scenarios', () => {
     const validSender = { url: `chrome-extension://${chrome.runtime.id}/popup.html` };
 
-    it('handles ObsidianApiError with specific message', async () => {
-      const apiError = { status: 401, message: 'Invalid API key' };
-      mockClient.testConnection.mockRejectedValue(apiError);
+    it('uses fallback error message when reachable is false without error', async () => {
+      mockClient.testConnection.mockResolvedValue({
+        reachable: false,
+        authenticated: false,
+      });
 
       const sendResponse = vi.fn();
       capturedListener(
@@ -533,11 +563,17 @@ describe('background/index', () => {
       );
 
       await vi.waitFor(() => expect(sendResponse).toHaveBeenCalled());
-      expect(sendResponse).toHaveBeenCalledWith({ success: false, error: 'Invalid API key' });
+      expect(sendResponse).toHaveBeenCalledWith({
+        success: false,
+        error: 'Cannot reach Obsidian. Is it running?',
+      });
     });
 
-    it('handles generic errors with getErrorMessage', async () => {
-      mockClient.testConnection.mockRejectedValue(new Error('Connection refused'));
+    it('uses fallback error message when authenticated is false without error', async () => {
+      mockClient.testConnection.mockResolvedValue({
+        reachable: true,
+        authenticated: false,
+      });
 
       const sendResponse = vi.fn();
       capturedListener(
@@ -547,21 +583,10 @@ describe('background/index', () => {
       );
 
       await vi.waitFor(() => expect(sendResponse).toHaveBeenCalled());
-      expect(sendResponse).toHaveBeenCalledWith({ success: false, error: 'Connection refused' });
-    });
-
-    it('handles unknown error types', async () => {
-      mockClient.testConnection.mockRejectedValue('string error');
-
-      const sendResponse = vi.fn();
-      capturedListener(
-        { action: 'testConnection' },
-        validSender as chrome.runtime.MessageSender,
-        sendResponse
-      );
-
-      await vi.waitFor(() => expect(sendResponse).toHaveBeenCalled());
-      expect(sendResponse).toHaveBeenCalledWith({ success: false, error: 'An unknown error occurred' });
+      expect(sendResponse).toHaveBeenCalledWith({
+        success: false,
+        error: 'Invalid API key. Please check your settings.',
+      });
     });
   });
 });

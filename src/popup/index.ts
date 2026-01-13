@@ -137,11 +137,10 @@ function setupEventListeners(): void {
  */
 function setupApiKeyToggle(): void {
   const apiKeyInput = elements.apiKey;
-  const container = apiKeyInput.parentElement;
-  if (!container) return;
 
-  // Wrap input in container for positioning
-  container.classList.add('api-key-container');
+  // Find the .api-key-wrapper container (defined in HTML)
+  const wrapper = apiKeyInput.closest('.api-key-wrapper');
+  if (!wrapper) return;
 
   const toggleBtn = document.createElement('button');
   toggleBtn.type = 'button';
@@ -161,7 +160,7 @@ function setupApiKeyToggle(): void {
     }
   });
 
-  container.appendChild(toggleBtn);
+  wrapper.appendChild(toggleBtn);
 }
 
 /**
