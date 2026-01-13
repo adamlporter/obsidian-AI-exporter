@@ -589,4 +589,461 @@ describe('background/index', () => {
       });
     });
   });
+
+  // ============================================================================
+  // Multi-Output Tests (saveToOutputs action)
+  // ============================================================================
+
+  describe('offscreen message handling', () => {
+    it('ignores messages targeted at offscreen document', () => {
+      const sendResponse = vi.fn();
+      const result = capturedListener(
+        { action: 'clipboardWrite', target: 'offscreen', content: 'test' },
+        { url: `chrome-extension://${chrome.runtime.id}/popup.html` } as chrome.runtime.MessageSender,
+        sendResponse
+      );
+
+      expect(result).toBe(false);
+      expect(sendResponse).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('saveToOutputs validation', () => {
+    const validSender = { url: `chrome-extension://${chrome.runtime.id}/popup.html` };
+    const validNote: ObsidianNote = {
+      fileName: 'test.md',
+      body: '# Test',
+      contentHash: 'abc123',
+      frontmatter: {
+        id: 'test-id',
+        title: 'Test Title',
+        source: 'gemini',
+        url: 'https://gemini.google.com/app/123',
+        created: '2024-01-01',
+        modified: '2024-01-01',
+        tags: ['test'],
+        message_count: 2,
+      },
+    };
+
+    it('rejects missing outputs array', () => {
+      const sendResponse = vi.fn();
+      capturedListener(
+        { action: 'saveToOutputs', data: validNote },
+        validSender as chrome.runtime.MessageSender,
+        sendResponse
+      );
+
+      expect(sendResponse).toHaveBeenCalledWith({
+        success: false,
+        error: 'Invalid message content',
+      });
+    });
+
+    it('rejects empty outputs array', () => {
+      const sendResponse = vi.fn();
+      capturedListener(
+        { action: 'saveToOutputs', data: validNote, outputs: [] },
+        validSender as chrome.runtime.MessageSender,
+        sendResponse
+      );
+
+      expect(sendResponse).toHaveBeenCalledWith({
+        success: false,
+        error: 'Invalid message content',
+      });
+    });
+
+    it('rejects invalid output destination', () => {
+      const sendResponse = vi.fn();
+      capturedListener(
+        { action: 'saveToOutputs', data: validNote, outputs: ['invalid'] },
+        validSender as chrome.runtime.MessageSender,
+        sendResponse
+      );
+
+      expect(sendResponse).toHaveBeenCalledWith({
+        success: false,
+        error: 'Invalid message content',
+      });
+    });
+
+    it('accepts valid outputs array with obsidian', async () => {
+      mockClient.getFile.mockResolvedValue(null);
+      mockClient.putFile.mockResolvedValue(undefined);
+
+      const sendResponse = vi.fn();
+      capturedListener(
+        { action: 'saveToOutputs', data: validNote, outputs: ['obsidian'] },
+        validSender as chrome.runtime.MessageSender,
+        sendResponse
+      );
+
+      await vi.waitFor(() => expect(sendResponse).toHaveBeenCalled());
+      expect(sendResponse).toHaveBeenCalledWith(
+        expect.objectContaining({ results: expect.any(Array) })
+      );
+    });
+
+    it('accepts valid outputs array with file', async () => {
+      const sendResponse = vi.fn();
+      capturedListener(
+        { action: 'saveToOutputs', data: validNote, outputs: ['file'] },
+        validSender as chrome.runtime.MessageSender,
+        sendResponse
+      );
+
+      await vi.waitFor(() => expect(sendResponse).toHaveBeenCalled());
+      expect(sendResponse).toHaveBeenCalledWith(
+        expect.objectContaining({ results: expect.any(Array) })
+      );
+    });
+
+    it('accepts valid outputs array with clipboard', async () => {
+      vi.mocked(chrome.runtime.sendMessage).mockResolvedValue({ success: true });
+
+      const sendResponse = vi.fn();
+      capturedListener(
+        { action: 'saveToOutputs', data: validNote, outputs: ['clipboard'] },
+        validSender as chrome.runtime.MessageSender,
+        sendResponse
+      );
+
+      await vi.waitFor(() => expect(sendResponse).toHaveBeenCalled());
+      expect(sendResponse).toHaveBeenCalledWith(
+        expect.objectContaining({ results: expect.any(Array) })
+      );
+    });
+  });
+
+  describe('handleMultiOutput', () => {
+    const validSender = { url: `chrome-extension://${chrome.runtime.id}/popup.html` };
+    const validNote: ObsidianNote = {
+      fileName: 'test.md',
+      body: '# Test Content',
+      contentHash: 'abc123',
+      frontmatter: {
+        id: 'test-id',
+        title: 'Test Title',
+        source: 'gemini',
+        url: 'https://gemini.google.com/app/123',
+        created: '2024-01-01',
+        modified: '2024-01-01',
+        tags: ['test'],
+        message_count: 2,
+      },
+    };
+
+    beforeEach(() => {
+      // Setup mocks for successful operations
+      mockClient.getFile.mockResolvedValue(null);
+      mockClient.putFile.mockResolvedValue(undefined);
+      vi.mocked(chrome.runtime.sendMessage).mockResolvedValue({ success: true });
+    });
+
+    it('executes single obsidian output', async () => {
+      const sendResponse = vi.fn();
+      capturedListener(
+        { action: 'saveToOutputs', data: validNote, outputs: ['obsidian'] },
+        validSender as chrome.runtime.MessageSender,
+        sendResponse
+      );
+
+      await vi.waitFor(() => expect(sendResponse).toHaveBeenCalled());
+      const response = sendResponse.mock.calls[0][0] as {
+        results: Array<{ destination: string; success: boolean }>;
+        allSuccessful: boolean;
+        anySuccessful: boolean;
+      };
+      expect(response.results).toHaveLength(1);
+      expect(response.results[0].destination).toBe('obsidian');
+      expect(response.results[0].success).toBe(true);
+      expect(response.allSuccessful).toBe(true);
+      expect(response.anySuccessful).toBe(true);
+    });
+
+    it('executes multiple outputs in parallel', async () => {
+      const sendResponse = vi.fn();
+      capturedListener(
+        { action: 'saveToOutputs', data: validNote, outputs: ['obsidian', 'file'] },
+        validSender as chrome.runtime.MessageSender,
+        sendResponse
+      );
+
+      await vi.waitFor(() => expect(sendResponse).toHaveBeenCalled());
+      const response = sendResponse.mock.calls[0][0] as {
+        results: Array<{ destination: string; success: boolean }>;
+        allSuccessful: boolean;
+        anySuccessful: boolean;
+      };
+      expect(response.results).toHaveLength(2);
+      const destinations = response.results.map((r) => r.destination);
+      expect(destinations).toContain('obsidian');
+      expect(destinations).toContain('file');
+      expect(response.allSuccessful).toBe(true);
+      expect(response.anySuccessful).toBe(true);
+    });
+
+    it('handles partial failures correctly', async () => {
+      // Obsidian fails, file succeeds
+      mockClient.putFile.mockRejectedValue(new Error('API error'));
+
+      const sendResponse = vi.fn();
+      capturedListener(
+        { action: 'saveToOutputs', data: validNote, outputs: ['obsidian', 'file'] },
+        validSender as chrome.runtime.MessageSender,
+        sendResponse
+      );
+
+      await vi.waitFor(() => expect(sendResponse).toHaveBeenCalled());
+      const response = sendResponse.mock.calls[0][0] as {
+        results: Array<{ destination: string; success: boolean; error?: string }>;
+        allSuccessful: boolean;
+        anySuccessful: boolean;
+      };
+      expect(response.allSuccessful).toBe(false);
+      expect(response.anySuccessful).toBe(true);
+      // Find the obsidian result
+      const obsidianResult = response.results.find((r) => r.destination === 'obsidian');
+      expect(obsidianResult?.success).toBe(false);
+      expect(obsidianResult?.error).toBeDefined();
+    });
+
+    it('executes all three outputs', async () => {
+      const sendResponse = vi.fn();
+      capturedListener(
+        { action: 'saveToOutputs', data: validNote, outputs: ['obsidian', 'file', 'clipboard'] },
+        validSender as chrome.runtime.MessageSender,
+        sendResponse
+      );
+
+      await vi.waitFor(() => expect(sendResponse).toHaveBeenCalled());
+      const response = sendResponse.mock.calls[0][0] as {
+        results: Array<{ destination: string; success: boolean }>;
+        allSuccessful: boolean;
+        anySuccessful: boolean;
+      };
+      expect(response.results).toHaveLength(3);
+      expect(response.allSuccessful).toBe(true);
+    });
+  });
+
+  describe('handleDownloadToFile', () => {
+    const validSender = { url: `chrome-extension://${chrome.runtime.id}/popup.html` };
+    const validNote: ObsidianNote = {
+      fileName: 'test-conversation',
+      body: '# Test Content',
+      contentHash: 'abc123',
+      frontmatter: {
+        id: 'test-id',
+        title: 'Test Title',
+        source: 'gemini',
+        url: 'https://gemini.google.com/app/123',
+        created: '2024-01-01',
+        modified: '2024-01-01',
+        tags: ['test'],
+        message_count: 2,
+      },
+    };
+
+    it('downloads file successfully', async () => {
+      const sendResponse = vi.fn();
+      capturedListener(
+        { action: 'saveToOutputs', data: validNote, outputs: ['file'] },
+        validSender as chrome.runtime.MessageSender,
+        sendResponse
+      );
+
+      await vi.waitFor(() => expect(sendResponse).toHaveBeenCalled());
+      expect(chrome.downloads.download).toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: expect.stringContaining('data:text/markdown'),
+          filename: expect.stringContaining('.md'),
+        }),
+        expect.any(Function)
+      );
+
+      const response = sendResponse.mock.calls[0][0] as {
+        results: Array<{ destination: string; success: boolean }>;
+      };
+      const fileResult = response.results.find((r) => r.destination === 'file');
+      expect(fileResult?.success).toBe(true);
+    });
+
+    it('handles download failure with lastError', async () => {
+      vi.mocked(chrome.downloads.download).mockImplementation((_options, callback) => {
+        // Simulate chrome.runtime.lastError
+        (chrome.runtime as { lastError: chrome.runtime.LastError | null }).lastError = {
+          message: 'Download blocked',
+        };
+        if (callback) callback(undefined);
+        (chrome.runtime as { lastError: chrome.runtime.LastError | null }).lastError = null;
+        return 0;
+      });
+
+      const sendResponse = vi.fn();
+      capturedListener(
+        { action: 'saveToOutputs', data: validNote, outputs: ['file'] },
+        validSender as chrome.runtime.MessageSender,
+        sendResponse
+      );
+
+      await vi.waitFor(() => expect(sendResponse).toHaveBeenCalled());
+      const response = sendResponse.mock.calls[0][0] as {
+        results: Array<{ destination: string; success: boolean; error?: string }>;
+        allSuccessful: boolean;
+        anySuccessful: boolean;
+      };
+      const fileResult = response.results.find((r) => r.destination === 'file');
+      expect(fileResult?.success).toBe(false);
+      expect(fileResult?.error).toBe('Download blocked');
+    });
+
+    it('handles undefined downloadId', async () => {
+      vi.mocked(chrome.downloads.download).mockImplementation((_options, callback) => {
+        if (callback) callback(undefined);
+        return 0;
+      });
+
+      const sendResponse = vi.fn();
+      capturedListener(
+        { action: 'saveToOutputs', data: validNote, outputs: ['file'] },
+        validSender as chrome.runtime.MessageSender,
+        sendResponse
+      );
+
+      await vi.waitFor(() => expect(sendResponse).toHaveBeenCalled());
+      const response = sendResponse.mock.calls[0][0] as {
+        results: Array<{ destination: string; success: boolean; error?: string }>;
+      };
+      const fileResult = response.results.find((r) => r.destination === 'file');
+      expect(fileResult?.success).toBe(false);
+      expect(fileResult?.error).toBe('Download failed');
+    });
+  });
+
+  describe('handleCopyToClipboard', () => {
+    const validSender = { url: `chrome-extension://${chrome.runtime.id}/popup.html` };
+    const validNote: ObsidianNote = {
+      fileName: 'test.md',
+      body: '# Test Content',
+      contentHash: 'abc123',
+      frontmatter: {
+        id: 'test-id',
+        title: 'Test Title',
+        source: 'gemini',
+        url: 'https://gemini.google.com/app/123',
+        created: '2024-01-01',
+        modified: '2024-01-01',
+        tags: ['test'],
+        message_count: 2,
+      },
+    };
+
+    it('copies to clipboard successfully', async () => {
+      vi.mocked(chrome.runtime.sendMessage).mockResolvedValue({ success: true });
+
+      const sendResponse = vi.fn();
+      capturedListener(
+        { action: 'saveToOutputs', data: validNote, outputs: ['clipboard'] },
+        validSender as chrome.runtime.MessageSender,
+        sendResponse
+      );
+
+      await vi.waitFor(() => expect(sendResponse).toHaveBeenCalled());
+      expect(chrome.runtime.sendMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'clipboardWrite',
+          target: 'offscreen',
+          content: expect.any(String),
+        })
+      );
+
+      const response = sendResponse.mock.calls[0][0] as {
+        results: Array<{ destination: string; success: boolean }>;
+      };
+      const clipboardResult = response.results.find((r) => r.destination === 'clipboard');
+      expect(clipboardResult?.success).toBe(true);
+    });
+
+    it('handles clipboard write failure', async () => {
+      vi.mocked(chrome.runtime.sendMessage).mockResolvedValue({
+        success: false,
+        error: 'Clipboard access denied',
+      });
+
+      const sendResponse = vi.fn();
+      capturedListener(
+        { action: 'saveToOutputs', data: validNote, outputs: ['clipboard'] },
+        validSender as chrome.runtime.MessageSender,
+        sendResponse
+      );
+
+      await vi.waitFor(() => expect(sendResponse).toHaveBeenCalled());
+      const response = sendResponse.mock.calls[0][0] as {
+        results: Array<{ destination: string; success: boolean; error?: string }>;
+        allSuccessful: boolean;
+        anySuccessful: boolean;
+      };
+      const clipboardResult = response.results.find((r) => r.destination === 'clipboard');
+      expect(clipboardResult?.success).toBe(false);
+      expect(clipboardResult?.error).toBe('Clipboard access denied');
+      expect(response.allSuccessful).toBe(false);
+      expect(response.anySuccessful).toBe(false);
+    });
+
+    it('creates offscreen document when needed', async () => {
+      vi.mocked(chrome.runtime.getContexts).mockResolvedValue([]);
+      vi.mocked(chrome.runtime.sendMessage).mockResolvedValue({ success: true });
+
+      const sendResponse = vi.fn();
+      capturedListener(
+        { action: 'saveToOutputs', data: validNote, outputs: ['clipboard'] },
+        validSender as chrome.runtime.MessageSender,
+        sendResponse
+      );
+
+      await vi.waitFor(() => expect(sendResponse).toHaveBeenCalled());
+      expect(chrome.offscreen.createDocument).toHaveBeenCalled();
+    });
+
+    it('reuses existing offscreen document', async () => {
+      vi.mocked(chrome.runtime.getContexts).mockResolvedValue([
+        { contextType: 'OFFSCREEN_DOCUMENT' } as chrome.runtime.ExtensionContext,
+      ]);
+      vi.mocked(chrome.runtime.sendMessage).mockResolvedValue({ success: true });
+
+      const sendResponse = vi.fn();
+      capturedListener(
+        { action: 'saveToOutputs', data: validNote, outputs: ['clipboard'] },
+        validSender as chrome.runtime.MessageSender,
+        sendResponse
+      );
+
+      await vi.waitFor(() => expect(sendResponse).toHaveBeenCalled());
+      expect(chrome.offscreen.createDocument).not.toHaveBeenCalled();
+    });
+
+    it('handles offscreen document creation failure', async () => {
+      vi.mocked(chrome.runtime.getContexts).mockResolvedValue([]);
+      vi.mocked(chrome.offscreen.createDocument).mockRejectedValue(
+        new Error('Failed to create offscreen document')
+      );
+
+      const sendResponse = vi.fn();
+      capturedListener(
+        { action: 'saveToOutputs', data: validNote, outputs: ['clipboard'] },
+        validSender as chrome.runtime.MessageSender,
+        sendResponse
+      );
+
+      await vi.waitFor(() => expect(sendResponse).toHaveBeenCalled());
+      const response = sendResponse.mock.calls[0][0] as {
+        results: Array<{ destination: string; success: boolean; error?: string }>;
+      };
+      const clipboardResult = response.results.find((r) => r.destination === 'clipboard');
+      expect(clipboardResult?.success).toBe(false);
+      expect(clipboardResult?.error).toContain('Failed to create offscreen document');
+    });
+  });
 });

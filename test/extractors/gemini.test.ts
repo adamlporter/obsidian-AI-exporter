@@ -547,4 +547,165 @@ describe('GeminiExtractor', () => {
       });
     });
   });
+
+  describe('extractModelResponseContent fallbacks', () => {
+    it('uses .markdown-main-panel fallback when primary selector not found', async () => {
+      setGeminiLocation('test123');
+      // Create DOM with only .markdown-main-panel (not .markdown.markdown-main-panel)
+      loadFixture(`
+        <div class="conversation-container" data-turn-index="0">
+          <user-query>
+            <div class="query-content">
+              <p class="query-text-line">Test question</p>
+            </div>
+          </user-query>
+          <model-response>
+            <div class="response-content">
+              <div class="markdown-main-panel">Fallback response content</div>
+            </div>
+          </model-response>
+        </div>
+      `);
+
+      const messages = extractor.extractMessages();
+      expect(messages.length).toBe(2);
+      expect(messages[1].role).toBe('assistant');
+      expect(messages[1].htmlContent).toContain('Fallback response content');
+    });
+
+    it('uses message-content .markdown fallback when markdown-main-panel not found', async () => {
+      setGeminiLocation('test123');
+      // Create DOM with message-content .markdown structure
+      loadFixture(`
+        <div class="conversation-container" data-turn-index="0">
+          <user-query>
+            <div class="query-content">
+              <p class="query-text-line">Test question</p>
+            </div>
+          </user-query>
+          <model-response>
+            <div class="response-content">
+              <message-content>
+                <div class="markdown">Message content fallback</div>
+              </message-content>
+            </div>
+          </model-response>
+        </div>
+      `);
+
+      const messages = extractor.extractMessages();
+      expect(messages.length).toBe(2);
+      expect(messages[1].htmlContent).toContain('Message content fallback');
+    });
+
+    it('uses .model-response-text fallback when message-content not found', async () => {
+      setGeminiLocation('test123');
+      // Create DOM with .model-response-text structure
+      loadFixture(`
+        <div class="conversation-container" data-turn-index="0">
+          <user-query>
+            <div class="query-content">
+              <p class="query-text-line">Test question</p>
+            </div>
+          </user-query>
+          <model-response>
+            <div class="response-content">
+              <div class="model-response-text">Model response text fallback</div>
+            </div>
+          </model-response>
+        </div>
+      `);
+
+      const messages = extractor.extractMessages();
+      expect(messages.length).toBe(2);
+      expect(messages[1].htmlContent).toContain('Model response text fallback');
+    });
+
+    it('uses element innerHTML as final fallback', async () => {
+      setGeminiLocation('test123');
+      // Create DOM with no recognized content selectors
+      loadFixture(`
+        <div class="conversation-container" data-turn-index="0">
+          <user-query>
+            <div class="query-content">
+              <p class="query-text-line">Test question</p>
+            </div>
+          </user-query>
+          <model-response>
+            <div class="response-content">
+              <span>Final fallback content</span>
+            </div>
+          </model-response>
+        </div>
+      `);
+
+      const messages = extractor.extractMessages();
+      expect(messages.length).toBe(2);
+      expect(messages[1].htmlContent).toContain('Final fallback content');
+    });
+  });
+
+  describe('extractSourceList edge cases', () => {
+    it('extracts domain from URL when domain element is missing', () => {
+      setGeminiLocation('test123');
+      // Create source list without domain elements
+      loadFixture(`
+        <deep-research-immersive-panel class="ng-star-inserted">
+          <div class="container">
+            <response-container>
+              <message-content id="extended-response-message-content">
+                <div id="extended-response-markdown-content" class="markdown markdown-main-panel">
+                  <p>Content</p>
+                </div>
+              </message-content>
+            </response-container>
+          </div>
+        </deep-research-immersive-panel>
+        <deep-research-source-lists>
+          <div id="used-sources-list">
+            <a data-test-id="browse-web-item-link" href="https://example.com/page">
+              <span data-test-id="title" class="sub-title">Test Title</span>
+              <!-- no domain element -->
+            </a>
+          </div>
+        </deep-research-source-lists>
+      `);
+
+      const sources = extractor.extractSourceList();
+      expect(sources).toHaveLength(1);
+      expect(sources[0].domain).toBe('example.com');
+      expect(sources[0].title).toBe('Test Title');
+    });
+
+    it('falls back to URL hostname extraction when domain element is empty', () => {
+      setGeminiLocation('test123');
+      // Create source list with empty domain element
+      loadFixture(`
+        <deep-research-immersive-panel class="ng-star-inserted">
+          <div class="container">
+            <response-container>
+              <message-content id="extended-response-message-content">
+                <div id="extended-response-markdown-content" class="markdown markdown-main-panel">
+                  <p>Content</p>
+                </div>
+              </message-content>
+            </response-container>
+          </div>
+        </deep-research-immersive-panel>
+        <deep-research-source-lists>
+          <div id="used-sources-list">
+            <a data-test-id="browse-web-item-link" href="https://another-domain.org/path">
+              <span data-test-id="title" class="sub-title">Test Source</span>
+              <span data-test-id="domain-name" class="display-name">  </span>
+            </a>
+          </div>
+        </deep-research-source-lists>
+      `);
+
+      const sources = extractor.extractSourceList();
+      expect(sources).toHaveLength(1);
+      // Falls back to extracting from URL when domain element is whitespace-only
+      expect(sources[0].domain).toBe('another-domain.org');
+    });
+  });
 });
