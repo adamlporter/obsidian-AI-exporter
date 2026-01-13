@@ -6,6 +6,7 @@
 import { ObsidianApiClient, getErrorMessage, isObsidianApiError } from '../lib/obsidian-api';
 import { getSettings, migrateSettings } from '../lib/storage';
 import { escapeYamlValue, escapeYamlListItem } from '../lib/yaml-utils';
+import { MAX_CONTENT_SIZE } from '../lib/constants';
 import type { ExtensionMessage, ObsidianNote, SaveResponse, ExtensionSettings } from '../lib/types';
 
 // Run settings migration on service worker startup (C-01)
@@ -72,8 +73,7 @@ function validateMessageContent(message: ExtensionMessage): boolean {
       return false;
     }
 
-    // Content size limit (DoS prevention: 1MB)
-    const MAX_CONTENT_SIZE = 1024 * 1024;
+    // Content size limit (DoS prevention)
     if (note.body.length > MAX_CONTENT_SIZE) {
       return false;
     }

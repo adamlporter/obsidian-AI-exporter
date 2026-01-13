@@ -7,6 +7,7 @@
  */
 
 import type { ExtensionSettings, SecureSettings, SyncSettings, TemplateOptions } from './types';
+import { DEFAULT_OBSIDIAN_PORT } from './constants';
 
 const DEFAULT_TEMPLATE_OPTIONS: TemplateOptions = {
   includeId: true,
@@ -25,7 +26,7 @@ const DEFAULT_SECURE_SETTINGS: SecureSettings = {
 };
 
 const DEFAULT_SYNC_SETTINGS: SyncSettings = {
-  obsidianPort: 27123,
+  obsidianPort: DEFAULT_OBSIDIAN_PORT,
   vaultPath: 'AI/Gemini',
   templateOptions: DEFAULT_TEMPLATE_OPTIONS,
 };
