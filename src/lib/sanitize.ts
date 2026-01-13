@@ -42,13 +42,14 @@ export function sanitizeHtml(html: string): string {
     }
   });
 
-  const result = DOMPurify.sanitize(html, {
-    USE_PROFILES: { html: true }, // デフォルトの安全なHTML（SVG/MathML除外）
-    FORBID_TAGS: ['style'], // CSSインジェクション防止
-  });
-
-  // Remove the hook after use to avoid affecting other sanitization calls
-  DOMPurify.removeHook('uponSanitizeAttribute');
-
-  return result;
+  try {
+    return DOMPurify.sanitize(html, {
+      USE_PROFILES: { html: true }, // デフォルトの安全なHTML（SVG/MathML除外）
+      FORBID_TAGS: ['style'], // CSSインジェクション防止
+    });
+  } finally {
+    // Remove the hook after use to avoid affecting other sanitization calls
+    // Using try/finally ensures hook cleanup even if sanitize() throws
+    DOMPurify.removeHook('uponSanitizeAttribute');
+  }
 }

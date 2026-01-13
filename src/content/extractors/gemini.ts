@@ -5,6 +5,7 @@
 
 import { BaseExtractor } from './base';
 import { sanitizeHtml } from '../../lib/sanitize';
+import { MAX_DEEP_RESEARCH_TITLE_LENGTH, MAX_CONVERSATION_TITLE_LENGTH } from '../../lib/constants';
 import type {
   ExtractionResult,
   ConversationMessage,
@@ -86,6 +87,16 @@ const DEEP_RESEARCH_LINK_SELECTORS = {
   sourceDomain: ['[data-test-id="domain-name"]', '.display-name'],
 };
 
+/**
+ * Pre-computed selector strings for performance optimization
+ * Avoids repeated .join(',') calls inside loops
+ */
+const COMPUTED_SELECTORS = {
+  sourceListItem: DEEP_RESEARCH_LINK_SELECTORS.sourceListItem.join(','),
+  sourceTitle: DEEP_RESEARCH_LINK_SELECTORS.sourceTitle.join(','),
+  sourceDomain: DEEP_RESEARCH_LINK_SELECTORS.sourceDomain.join(','),
+} as const;
+
 export class GeminiExtractor extends BaseExtractor {
   readonly platform = 'gemini' as const;
 
@@ -110,7 +121,7 @@ export class GeminiExtractor extends BaseExtractor {
   getDeepResearchTitle(): string {
     const titleEl = this.queryWithFallback<HTMLElement>(DEEP_RESEARCH_SELECTORS.title);
     if (titleEl?.textContent) {
-      return this.sanitizeText(titleEl.textContent).substring(0, 200);
+      return this.sanitizeText(titleEl.textContent).substring(0, MAX_DEEP_RESEARCH_TITLE_LENGTH);
     }
     return 'Untitled Deep Research Report';
   }
@@ -135,21 +146,18 @@ export class GeminiExtractor extends BaseExtractor {
    */
   extractSourceList(): DeepResearchSource[] {
     const sources: DeepResearchSource[] = [];
-    const selector = DEEP_RESEARCH_LINK_SELECTORS.sourceListItem.join(',');
-    const sourceLinks = document.querySelectorAll(selector);
+    const sourceLinks = document.querySelectorAll(COMPUTED_SELECTORS.sourceListItem);
 
     sourceLinks.forEach((link, index) => {
       const anchor = link as HTMLAnchorElement;
       const url = anchor.href;
 
-      // Extract title
-      const titleSelector = DEEP_RESEARCH_LINK_SELECTORS.sourceTitle.join(',');
-      const titleEl = anchor.querySelector(titleSelector);
+      // Extract title using pre-computed selector
+      const titleEl = anchor.querySelector(COMPUTED_SELECTORS.sourceTitle);
       const title = titleEl?.textContent?.trim() || 'Unknown Title';
 
-      // Extract domain (fallback to URL parsing)
-      const domainSelector = DEEP_RESEARCH_LINK_SELECTORS.sourceDomain.join(',');
-      const domainEl = anchor.querySelector(domainSelector);
+      // Extract domain (fallback to URL parsing) using pre-computed selector
+      const domainEl = anchor.querySelector(COMPUTED_SELECTORS.sourceDomain);
       let domain = domainEl?.textContent?.trim() || '';
       if (!domain) {
         try {
@@ -168,29 +176,6 @@ export class GeminiExtractor extends BaseExtractor {
     });
 
     return sources;
-  }
-
-  /**
-   * Build a Map for accessing sources by data-turn-source-index
-   *
-   * @param sources Result from extractSourceList()
-   * @returns Map<data-turn-source-index, DeepResearchSource>
-   *
-   * Usage:
-   *   const map = buildSourceMap(sources);
-   *   const source = map.get(5); // data-turn-source-index="5"
-   */
-  buildSourceMap(sources: DeepResearchSource[]): Map<number, DeepResearchSource> {
-    const map = new Map<number, DeepResearchSource>();
-
-    sources.forEach((source, arrayIndex) => {
-      // data-turn-source-index is 1-based
-      // arrayIndex=0 → data-turn-source-index=1
-      const turnSourceIndex = arrayIndex + 1;
-      map.set(turnSourceIndex, source);
-    });
-
-    return map;
   }
 
   /**
@@ -222,13 +207,16 @@ export class GeminiExtractor extends BaseExtractor {
     const firstQueryText = this.queryWithFallback<HTMLElement>(SELECTORS.queryTextLine);
     if (firstQueryText?.textContent) {
       const title = this.sanitizeText(firstQueryText.textContent);
-      return title.substring(0, 100);
+      return title.substring(0, MAX_CONVERSATION_TITLE_LENGTH);
     }
 
     // Fallback to sidebar title if available
     const sidebarTitle = this.queryWithFallback<HTMLElement>(SELECTORS.conversationTitle);
     if (sidebarTitle?.textContent) {
-      return this.sanitizeText(sidebarTitle.textContent).substring(0, 100);
+      return this.sanitizeText(sidebarTitle.textContent).substring(
+        0,
+        MAX_CONVERSATION_TITLE_LENGTH
+      );
     }
 
     return 'Untitled Gemini Conversation';

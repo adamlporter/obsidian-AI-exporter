@@ -3,29 +3,49 @@
  * API docs: https://github.com/coddingtonbear/obsidian-local-rest-api
  */
 
-/**
- * デフォルトタイムアウト（5秒）
- */
-const DEFAULT_TIMEOUT = 5000;
+import { DEFAULT_API_TIMEOUT } from './constants';
 
 /**
- * ネットワークエラーの判定
+ * Network error type classification
  */
-function isNetworkError(error: unknown): boolean {
+export type NetworkErrorType = 'connection' | 'timeout' | 'abort' | 'unknown';
+
+/**
+ * Classify the type of network error
+ *
+ * @param error - The caught error
+ * @returns The classified error type
+ */
+export function classifyNetworkError(error: unknown): NetworkErrorType {
   // TypeError: Failed to fetch (Chrome)
   // TypeError: NetworkError when attempting to fetch resource (Firefox)
   if (error instanceof TypeError) {
-    return true;
+    return 'connection';
   }
-  // DOMException: The operation was aborted (timeout)
-  // 注意: AbortSignal.timeout()はTimeoutError、AbortController.abort()はAbortErrorを投げる
-  if (
-    error instanceof DOMException &&
-    (error.name === 'AbortError' || error.name === 'TimeoutError')
-  ) {
-    return true;
+
+  // DOMException handling
+  if (error instanceof DOMException) {
+    // TimeoutError: AbortSignal.timeout() triggered
+    if (error.name === 'TimeoutError') {
+      return 'timeout';
+    }
+    // AbortError: User-initiated abort or AbortController.abort()
+    if (error.name === 'AbortError') {
+      return 'abort';
+    }
   }
-  return false;
+
+  return 'unknown';
+}
+
+/**
+ * Check if an error is a network-related error
+ *
+ * @param error - The caught error
+ * @returns True if the error is network-related
+ */
+function isNetworkError(error: unknown): boolean {
+  return classifyNetworkError(error) !== 'unknown';
 }
 
 /**
@@ -79,7 +99,7 @@ export class ObsidianApiClient {
       const response = await fetch(`${this.baseUrl}/`, {
         method: 'GET',
         headers: this.getHeaders(),
-        signal: createTimeoutSignal(DEFAULT_TIMEOUT),
+        signal: createTimeoutSignal(DEFAULT_API_TIMEOUT),
       });
       return response.ok;
     } catch {
@@ -98,7 +118,7 @@ export class ObsidianApiClient {
       const response = await fetch(`${this.baseUrl}/vault/${encodedPath}`, {
         method: 'GET',
         headers: this.getHeaders(),
-        signal: createTimeoutSignal(DEFAULT_TIMEOUT),
+        signal: createTimeoutSignal(DEFAULT_API_TIMEOUT),
       });
 
       if (response.status === 404) {
@@ -133,7 +153,7 @@ export class ObsidianApiClient {
           'Content-Type': 'text/markdown',
         },
         body: content,
-        signal: createTimeoutSignal(DEFAULT_TIMEOUT),
+        signal: createTimeoutSignal(DEFAULT_API_TIMEOUT),
       });
 
       if (!response.ok) {

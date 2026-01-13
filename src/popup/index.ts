@@ -6,6 +6,7 @@
 import { getSettings, saveSettings } from '../lib/storage';
 import type { ExtensionSettings, TemplateOptions } from '../lib/types';
 import { validateCalloutType, validateVaultPath, validateApiKey } from '../lib/validation';
+import { DEFAULT_OBSIDIAN_PORT, MIN_PORT, MAX_PORT } from '../lib/constants';
 
 /**
  * Get localized message with fallback
@@ -97,7 +98,7 @@ async function initialize(): Promise<void> {
  */
 function populateForm(settings: ExtensionSettings): void {
   elements.apiKey.value = settings.obsidianApiKey || '';
-  elements.port.value = String(settings.obsidianPort || 27123);
+  elements.port.value = String(settings.obsidianPort || DEFAULT_OBSIDIAN_PORT);
   elements.vaultPath.value = settings.vaultPath || '';
 
   const { templateOptions } = settings;
@@ -181,7 +182,7 @@ function collectSettings(): ExtensionSettings {
 
   return {
     obsidianApiKey: elements.apiKey.value.trim(),
-    obsidianPort: parseInt(elements.port.value, 10) || 27123,
+    obsidianPort: parseInt(elements.port.value, 10) || DEFAULT_OBSIDIAN_PORT,
     vaultPath: elements.vaultPath.value.trim(),
     templateOptions,
   };
@@ -208,7 +209,7 @@ async function handleSave(): Promise<void> {
     }
 
     // Validate port
-    if (settings.obsidianPort < 1024 || settings.obsidianPort > 65535) {
+    if (settings.obsidianPort < MIN_PORT || settings.obsidianPort > MAX_PORT) {
       showStatus(getMessage('error_invalidPort'), 'error');
       elements.saveBtn.disabled = false;
       return;

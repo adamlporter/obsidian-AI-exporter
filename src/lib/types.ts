@@ -6,11 +6,17 @@
  * Represents a single message in a conversation
  */
 export interface ConversationMessage {
+  /** Unique message identifier */
   id: string;
+  /** Message author role */
   role: 'user' | 'assistant';
+  /** Message content (plain text for user, may contain HTML for assistant) */
   content: string;
+  /** Original HTML content (for assistant messages, used in HTML→Markdown conversion) */
   htmlContent?: string;
+  /** Message timestamp (reserved for future use - not currently extracted) */
   timestamp?: Date;
+  /** Zero-based message order in conversation */
   index: number;
 }
 
@@ -63,10 +69,15 @@ export interface DeepResearchLinks {
  * Additional metadata about the conversation
  */
 export interface ConversationMetadata {
+  /** Total number of messages */
   messageCount: number;
+  /** Number of user messages */
   userMessageCount: number;
+  /** Number of assistant (AI) messages */
   assistantMessageCount: number;
+  /** Whether conversation contains code blocks */
   hasCodeBlocks: boolean;
+  /** Estimated token count (reserved for future use - not currently calculated) */
   estimatedTokens?: number;
 }
 
@@ -115,10 +126,12 @@ export interface SyncSettings {
 
 /**
  * Extension settings stored in chrome.storage
- * SecureSettingsとSyncSettingsの統合インターフェース
+ * Combined interface merging SecureSettings and SyncSettings
  */
 export interface ExtensionSettings extends SecureSettings, SyncSettings {
+  /** OpenAI API key for AI-powered features (reserved for future use) */
   openaiApiKey?: string;
+  /** Enable automatic tag generation (reserved for future use) */
   enableAutoTags?: boolean;
 }
 
@@ -126,15 +139,25 @@ export interface ExtensionSettings extends SecureSettings, SyncSettings {
  * Template customization options
  */
 export interface TemplateOptions {
+  /** Include conversation ID in frontmatter */
   includeId: boolean;
+  /** Include title in frontmatter */
   includeTitle: boolean;
+  /** Include tags in frontmatter */
   includeTags: boolean;
+  /** Include source platform in frontmatter */
   includeSource: boolean;
+  /** Include created/modified dates in frontmatter */
   includeDates: boolean;
+  /** Include message count in frontmatter */
   includeMessageCount: boolean;
+  /** Message formatting style */
   messageFormat: 'callout' | 'plain' | 'blockquote';
+  /** Callout type for user messages (e.g., 'QUESTION') */
   userCalloutType: string;
+  /** Callout type for assistant messages (e.g., 'NOTE') */
   assistantCalloutType: string;
+  /** Custom frontmatter fields (reserved for future use) */
   customFrontmatter?: Record<string, string>;
 }
 

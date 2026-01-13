@@ -12,6 +12,8 @@ import type {
   DeepResearchSource,
 } from '../lib/types';
 import { generateHash } from '../lib/hash';
+import { buildSourceMap } from '../lib/source-map';
+import { MAX_FILENAME_BASE_LENGTH, FILENAME_ID_SUFFIX_LENGTH } from '../lib/constants';
 
 // ============================================================
 // Deep Research Link Processing Functions (Obsidian Footnote Mode)
@@ -33,25 +35,7 @@ export function sanitizeUrl(url: string): string {
   return url;
 }
 
-/**
- * Build a Map for accessing sources by data-turn-source-index (1-based)
- *
- * @param sources Array of DeepResearchSource (0-based index)
- * @returns Map<data-turn-source-index, DeepResearchSource>
- */
-function buildSourceMap(sources: DeepResearchSource[]): Map<number, DeepResearchSource> {
-  const map = new Map<number, DeepResearchSource>();
-
-  sources.forEach((source, arrayIndex) => {
-    // data-turn-source-index is 1-based
-    // arrayIndex=0 → data-turn-source-index=1
-    const turnSourceIndex = arrayIndex + 1;
-    map.set(turnSourceIndex, source);
-  });
-
-  return map;
-}
-
+// Note: buildSourceMap moved to src/lib/source-map.ts for DRY compliance
 // Note: escapeHtml was removed in v3.0 - no longer needed with placeholder span approach
 // Previously used for inline link generation, now using Obsidian native footnotes
 
@@ -85,7 +69,9 @@ export function convertInlineCitationsToFootnoteRefs(
         // The custom Turndown rule will convert this to [^N]
         return `<span data-footnote-ref="${index}">REF</span>`;
       }
-      return ''; // Source not found: remove marker
+      // Source not found: log warning and remove marker silently
+      console.warn(`[G2O] Citation reference ${index} not found in source map`);
+      return '';
     }
   );
 
@@ -98,6 +84,8 @@ export function convertInlineCitationsToFootnoteRefs(
       if (source) {
         return `<span data-footnote-ref="${index}">REF</span>`;
       }
+      // Source not found: log warning and remove marker silently
+      console.warn(`[G2O] Citation reference ${index} not found in source map`);
       return '';
     }
   );
@@ -311,9 +299,9 @@ export function generateFileName(title: string, conversationId: string): string 
     .toLowerCase()
     .replace(/[^a-z0-9\u3000-\u9fff\uac00-\ud7af]+/g, '-') // Keep Japanese/Korean chars
     .replace(/^-+|-+$/g, '')
-    .substring(0, 50);
+    .substring(0, MAX_FILENAME_BASE_LENGTH);
 
-  const idSuffix = conversationId.substring(0, 8);
+  const idSuffix = conversationId.substring(0, FILENAME_ID_SUFFIX_LENGTH);
   return `${sanitized || 'conversation'}-${idSuffix}.md`;
 }
 

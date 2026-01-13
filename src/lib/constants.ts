@@ -1,0 +1,89 @@
+/**
+ * Application-wide constants
+ *
+ * Centralizes magic numbers and configuration values for consistency
+ * and maintainability.
+ */
+
+// ============================================================
+// String Length Limits
+// ============================================================
+
+/** Maximum length for Deep Research report title (characters) */
+export const MAX_DEEP_RESEARCH_TITLE_LENGTH = 200;
+
+/** Maximum length for conversation title (characters) */
+export const MAX_CONVERSATION_TITLE_LENGTH = 100;
+
+/** Maximum length for filename base (characters) */
+export const MAX_FILENAME_BASE_LENGTH = 50;
+
+/** Length of conversation ID suffix in filenames */
+export const FILENAME_ID_SUFFIX_LENGTH = 8;
+
+// ============================================================
+// Network Configuration
+// ============================================================
+
+/** Default Obsidian Local REST API port */
+export const DEFAULT_OBSIDIAN_PORT = 27123;
+
+/** Minimum valid port number */
+export const MIN_PORT = 1024;
+
+/** Maximum valid port number */
+export const MAX_PORT = 65535;
+
+/** Default timeout for API requests (milliseconds) */
+export const DEFAULT_API_TIMEOUT = 5000;
+
+/** Maximum content size for API requests (1MB) */
+export const MAX_CONTENT_SIZE = 1024 * 1024;
+
+// ============================================================
+// UI Timing
+// ============================================================
+
+/** Default toast notification duration (milliseconds) */
+export const DEFAULT_TOAST_DURATION = 4000;
+
+/** Success toast duration (milliseconds) */
+export const SUCCESS_TOAST_DURATION = 5000;
+
+/** Error toast duration (milliseconds) */
+export const ERROR_TOAST_DURATION = 6000;
+
+/** Warning toast duration (milliseconds) */
+export const WARNING_TOAST_DURATION = 5000;
+
+/** Info toast duration (milliseconds) */
+export const INFO_TOAST_DURATION = 2000;
+
+/** Auto-save check interval (milliseconds) */
+export const AUTO_SAVE_CHECK_INTERVAL = 10000;
+
+/** Event throttle delay (milliseconds) */
+export const EVENT_THROTTLE_DELAY = 1000;
+
+// ============================================================
+// UI Layout
+// ============================================================
+
+/** Base z-index for overlay UI elements */
+export const UI_BASE_Z_INDEX = 10000;
+
+/** Z-index for toast notifications (above base) */
+export const TOAST_Z_INDEX = 10001;
+
+// ============================================================
+// Logging Prefixes
+// ============================================================
+
+/** Log prefix for content scripts and general extension code */
+export const LOG_PREFIX = '[G2O]';
+
+/** Log prefix for background service worker */
+export const LOG_PREFIX_BACKGROUND = '[G2O Background]';
+
+/** Log prefix for popup UI */
+export const LOG_PREFIX_POPUP = '[G2O Popup]';

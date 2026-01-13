@@ -3,6 +3,13 @@
  * Floating button, toast notifications, loading states
  */
 
+import {
+  DEFAULT_TOAST_DURATION,
+  SUCCESS_TOAST_DURATION,
+  ERROR_TOAST_DURATION,
+  WARNING_TOAST_DURATION,
+} from '../lib/constants';
+
 /**
  * Get localized message with fallback
  */
@@ -221,7 +228,7 @@ const TOAST_ICONS: Record<ToastType, string> = {
 export function showToast(
   message: string,
   type: ToastType = 'info',
-  duration: number = 4000
+  duration: number = DEFAULT_TOAST_DURATION
 ): void {
   injectStyles();
 
@@ -264,19 +271,19 @@ function escapeHtml(text: string): string {
  */
 export function showSuccessToast(fileName: string, isNewFile: boolean): void {
   const messageKey = isNewFile ? 'toast_success_created' : 'toast_success_updated';
-  showToast(getMessage(messageKey, fileName), 'success', 5000);
+  showToast(getMessage(messageKey, fileName), 'success', SUCCESS_TOAST_DURATION);
 }
 
 /**
  * Show error toast with details
  */
 export function showErrorToast(error: string): void {
-  showToast(error, 'error', 6000);
+  showToast(error, 'error', ERROR_TOAST_DURATION);
 }
 
 /**
  * Show warning toast
  */
 export function showWarningToast(message: string): void {
-  showToast(message, 'warning', 5000);
+  showToast(message, 'warning', WARNING_TOAST_DURATION);
 }

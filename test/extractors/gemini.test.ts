@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { GeminiExtractor } from '../../src/content/extractors/gemini';
+import { buildSourceMap } from '../../src/lib/source-map';
 import {
   loadFixture,
   clearFixture,
@@ -484,14 +485,15 @@ describe('GeminiExtractor', () => {
         });
       });
 
-      describe('buildSourceMap', () => {
+      describe('buildSourceMap (shared utility)', () => {
         it('creates 1-based index map from sources array', () => {
           setGeminiLocation('test123');
           const content = `<p>Text${createInlineCitation(0)}</p>`;
           loadFixture(createDeepResearchDOMWithLinks('Test', content, sampleSources));
 
           const sources = extractor.extractSourceList();
-          const sourceMap = extractor.buildSourceMap(sources);
+          // Use shared buildSourceMap utility (moved from extractor method)
+          const sourceMap = buildSourceMap(sources);
 
           // sources[0] -> data-turn-source-index=1
           expect(sourceMap.get(1)?.url).toBe('https://example.com/article1');
