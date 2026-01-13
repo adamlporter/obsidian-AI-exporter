@@ -7,7 +7,15 @@ import { ObsidianApiClient, getErrorMessage } from '../lib/obsidian-api';
 import { getSettings, migrateSettings } from '../lib/storage';
 import { escapeYamlValue, escapeYamlListItem } from '../lib/yaml-utils';
 import { MAX_CONTENT_SIZE } from '../lib/constants';
-import type { ExtensionMessage, ObsidianNote, SaveResponse, ExtensionSettings } from '../lib/types';
+import type {
+  ExtensionMessage,
+  ObsidianNote,
+  SaveResponse,
+  ExtensionSettings,
+  OutputDestination,
+  OutputResult,
+  MultiOutputResponse,
+} from '../lib/types';
 
 // Run settings migration on service worker startup (C-01)
 // Note: top-level await not available in service workers, use .catch() for error handling
@@ -54,44 +62,74 @@ function validateSender(sender: chrome.runtime.MessageSender): boolean {
  */
 function validateMessageContent(message: ExtensionMessage): boolean {
   // Validate action against whitelist
-  const validActions = ['getSettings', 'getExistingFile', 'testConnection', 'saveToObsidian'];
+  const validActions = [
+    'getSettings',
+    'getExistingFile',
+    'testConnection',
+    'saveToObsidian',
+    'saveToOutputs',
+  ];
   if (!validActions.includes(message.action)) {
     return false;
   }
 
   // Detailed validation for saveToObsidian action
   if (message.action === 'saveToObsidian' && message.data) {
-    const note = message.data;
-
-    // Required field validation
-    if (typeof note.fileName !== 'string' || typeof note.body !== 'string') {
+    if (!validateNoteData(message.data)) {
       return false;
     }
+  }
 
-    // File name length limits (filesystem constraints)
-    if (note.fileName.length === 0 || note.fileName.length > 200) {
+  // Detailed validation for saveToOutputs action
+  if (message.action === 'saveToOutputs') {
+    if (!validateNoteData(message.data)) {
       return false;
     }
-
-    // Content size limit (DoS prevention)
-    if (note.body.length > MAX_CONTENT_SIZE) {
+    // Validate outputs array
+    if (!Array.isArray(message.outputs) || message.outputs.length === 0) {
       return false;
     }
+    const validOutputs: OutputDestination[] = ['obsidian', 'file', 'clipboard'];
+    if (!message.outputs.every(o => validOutputs.includes(o))) {
+      return false;
+    }
+  }
 
-    // Frontmatter validation
-    if (note.frontmatter) {
-      if (typeof note.frontmatter.title !== 'string' || note.frontmatter.title.length > 500) {
-        return false;
-      }
-      if (
-        typeof note.frontmatter.source !== 'string' ||
-        !['gemini', 'claude', 'perplexity'].includes(note.frontmatter.source)
-      ) {
-        return false;
-      }
-      if (!Array.isArray(note.frontmatter.tags) || note.frontmatter.tags.length > 50) {
-        return false;
-      }
+  return true;
+}
+
+/**
+ * Validate note data structure
+ */
+function validateNoteData(note: ObsidianNote): boolean {
+  // Required field validation
+  if (typeof note.fileName !== 'string' || typeof note.body !== 'string') {
+    return false;
+  }
+
+  // File name length limits (filesystem constraints)
+  if (note.fileName.length === 0 || note.fileName.length > 200) {
+    return false;
+  }
+
+  // Content size limit (DoS prevention)
+  if (note.body.length > MAX_CONTENT_SIZE) {
+    return false;
+  }
+
+  // Frontmatter validation
+  if (note.frontmatter) {
+    if (typeof note.frontmatter.title !== 'string' || note.frontmatter.title.length > 500) {
+      return false;
+    }
+    if (
+      typeof note.frontmatter.source !== 'string' ||
+      !['gemini', 'claude', 'perplexity'].includes(note.frontmatter.source)
+    ) {
+      return false;
+    }
+    if (!Array.isArray(note.frontmatter.tags) || note.frontmatter.tags.length > 50) {
+      return false;
     }
   }
 
@@ -107,6 +145,17 @@ chrome.runtime.onMessage.addListener(
     sender: chrome.runtime.MessageSender,
     sendResponse: (response: unknown) => void
   ) => {
+    // Ignore messages targeted at offscreen document
+    // These are handled by the offscreen document's own listener
+    if (
+      message &&
+      typeof message === 'object' &&
+      'target' in message &&
+      message.target === 'offscreen'
+    ) {
+      return false;
+    }
+
     // Sender validation (M-02)
     if (!validateSender(sender)) {
       console.warn('[G2O Background] Rejected message from unauthorized sender');
@@ -140,6 +189,9 @@ async function handleMessage(message: ExtensionMessage): Promise<unknown> {
   switch (message.action) {
     case 'saveToObsidian':
       return handleSave(settings, message.data);
+
+    case 'saveToOutputs':
+      return handleMultiOutput(message.data, message.outputs, settings);
 
     case 'getExistingFile':
       return handleGetFile(settings, message.fileName, message.vaultPath);
@@ -297,6 +349,233 @@ function generateNoteContent(note: ObsidianNote, settings: ExtensionSettings): s
   lines.push(note.body);
 
   return lines.join('\n');
+}
+
+// ============================================================================
+// Multi-Output Handlers
+// ============================================================================
+
+/** Offscreen document のタイムアウト (ミリ秒) */
+const OFFSCREEN_TIMEOUT_MS = 5000;
+
+/** Offscreen document 自動クローズ用タイマー */
+let offscreenCloseTimer: ReturnType<typeof setTimeout> | null = null;
+
+/**
+ * Offscreen document の自動クローズをスケジュール
+ * 連続操作時はタイマーリセットで効率的に再利用
+ */
+function scheduleOffscreenClose(): void {
+  if (offscreenCloseTimer) {
+    clearTimeout(offscreenCloseTimer);
+  }
+
+  offscreenCloseTimer = setTimeout(async () => {
+    try {
+      await chrome.offscreen.closeDocument();
+    } catch {
+      // Already closed or doesn't exist - ignore
+    }
+    offscreenCloseTimer = null;
+  }, OFFSCREEN_TIMEOUT_MS);
+}
+
+/**
+ * Ensure offscreen document exists for clipboard operations
+ */
+async function ensureOffscreenDocument(): Promise<void> {
+  const existingContexts = await chrome.runtime.getContexts({
+    contextTypes: [chrome.runtime.ContextType.OFFSCREEN_DOCUMENT],
+  });
+
+  if (existingContexts.length > 0) {
+    return;
+  }
+
+  await chrome.offscreen.createDocument({
+    url: 'src/offscreen/offscreen.html',
+    reasons: [chrome.offscreen.Reason.CLIPBOARD],
+    justification: 'Copy markdown content to clipboard',
+  });
+}
+
+/**
+ * Save to Obsidian and return OutputResult
+ */
+async function handleSaveToObsidian(
+  note: ObsidianNote,
+  settings: ExtensionSettings
+): Promise<OutputResult> {
+  try {
+    const result = await handleSave(settings, note);
+    return {
+      destination: 'obsidian',
+      success: result.success,
+      error: result.error,
+    };
+  } catch (error) {
+    return {
+      destination: 'obsidian',
+      success: false,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
+/**
+ * Download note as file
+ */
+/**
+ * Convert string to base64 with proper Unicode handling
+ * Service Worker doesn't support Blob/URL.createObjectURL
+ */
+function stringToBase64(str: string): string {
+  const bytes = new TextEncoder().encode(str);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
+/**
+ * Download note as file
+ */
+async function handleDownloadToFile(
+  note: ObsidianNote,
+  settings: ExtensionSettings
+): Promise<OutputResult> {
+  try {
+    const content = generateNoteContent(note, settings);
+    const filename = `${note.fileName}.md`;
+
+    // Use data URL (Service Worker doesn't support Blob/URL.createObjectURL)
+    const base64Content = stringToBase64(content);
+    const dataUrl = `data:text/markdown;charset=utf-8;base64,${base64Content}`;
+
+    return new Promise(resolve => {
+      chrome.downloads.download(
+        {
+          url: dataUrl,
+          filename,
+          saveAs: false,
+          conflictAction: 'uniquify',
+        },
+        downloadId => {
+          if (chrome.runtime.lastError) {
+            resolve({
+              destination: 'file',
+              success: false,
+              error: chrome.runtime.lastError.message,
+            });
+          } else if (downloadId === undefined) {
+            resolve({
+              destination: 'file',
+              success: false,
+              error: 'Download failed',
+            });
+          } else {
+            resolve({ destination: 'file', success: true });
+          }
+        }
+      );
+    });
+  } catch (error) {
+    return {
+      destination: 'file',
+      success: false,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
+/**
+ * Copy note content to clipboard via offscreen document
+ */
+async function handleCopyToClipboard(
+  note: ObsidianNote,
+  settings: ExtensionSettings
+): Promise<OutputResult> {
+  try {
+    const content = generateNoteContent(note, settings);
+
+    await ensureOffscreenDocument();
+
+    const response = await chrome.runtime.sendMessage({
+      action: 'clipboardWrite',
+      target: 'offscreen',
+      content,
+    });
+
+    scheduleOffscreenClose();
+
+    if (response?.success) {
+      return { destination: 'clipboard', success: true };
+    } else {
+      return {
+        destination: 'clipboard',
+        success: false,
+        error: response?.error || 'Clipboard write failed',
+      };
+    }
+  } catch (error) {
+    return {
+      destination: 'clipboard',
+      success: false,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
+/**
+ * Execute output to specific destination
+ */
+async function executeOutput(
+  dest: OutputDestination,
+  note: ObsidianNote,
+  settings: ExtensionSettings
+): Promise<OutputResult> {
+  switch (dest) {
+    case 'obsidian':
+      return handleSaveToObsidian(note, settings);
+    case 'file':
+      return handleDownloadToFile(note, settings);
+    case 'clipboard':
+      return handleCopyToClipboard(note, settings);
+  }
+}
+
+/**
+ * Handle multi-output operation
+ * Executes all outputs in parallel, aggregates results
+ */
+async function handleMultiOutput(
+  note: ObsidianNote,
+  outputs: OutputDestination[],
+  settings: ExtensionSettings
+): Promise<MultiOutputResponse> {
+  const promises = outputs.map(dest => executeOutput(dest, note, settings));
+
+  // Promise.allSettled: 1つの失敗が他をブロックしない
+  const settled = await Promise.allSettled(promises);
+
+  const results: OutputResult[] = settled.map((result, index) => {
+    if (result.status === 'fulfilled') {
+      return result.value;
+    } else {
+      return {
+        destination: outputs[index],
+        success: false,
+        error: String(result.reason),
+      };
+    }
+  });
+
+  return {
+    results,
+    allSuccessful: results.every(r => r.success),
+    anySuccessful: results.some(r => r.success),
+  };
 }
 
 // Log when service worker starts

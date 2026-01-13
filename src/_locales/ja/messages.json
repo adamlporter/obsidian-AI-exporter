@@ -156,5 +156,66 @@
   },
   "status_testing": {
     "message": "接続をテスト中..."
+  },
+
+  "settings_outputDestinations": {
+    "message": "出力先"
+  },
+  "settings_outputHelp": {
+    "message": "会話の保存先を選択"
+  },
+  "settings_outputObsidian": {
+    "message": "Obsidian (API)"
+  },
+  "settings_outputFile": {
+    "message": "ファイルをダウンロード"
+  },
+  "settings_outputClipboard": {
+    "message": "クリップボードにコピー"
+  },
+  "success_allOutputs": {
+    "message": "すべての出力先に保存しました"
+  },
+  "success_partialOutputs": {
+    "message": "一部成功: $DETAILS$",
+    "placeholders": {
+      "details": { "content": "$1" }
+    }
+  },
+  "error_noOutputSelected": {
+    "message": "出力先を1つ以上選択してください"
+  },
+  "error_allOutputsFailed": {
+    "message": "保存に失敗しました"
+  },
+  "tooltip_obsidianDisabled": {
+    "message": "Obsidian出力を有効にすると設定できます"
+  },
+  "error_downloadCanceled": {
+    "message": "ダウンロードがキャンセルされました"
+  },
+  "error_networkError": {
+    "message": "ネットワークエラーが発生しました"
+  },
+  "error_permissionDenied": {
+    "message": "アクセス権限がありません"
+  },
+  "error_clipboardFailed": {
+    "message": "クリップボードへのコピーに失敗しました"
+  },
+  "error_outputFailed": {
+    "message": "$OUTPUT$への保存に失敗しました",
+    "placeholders": {
+      "output": { "content": "$1" }
+    }
+  },
+  "output_obsidian": {
+    "message": "Obsidian"
+  },
+  "output_file": {
+    "message": "ファイル"
+  },
+  "output_clipboard": {
+    "message": "クリップボード"
   }
 }

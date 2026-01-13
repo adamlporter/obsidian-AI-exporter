@@ -4,7 +4,7 @@
  */
 
 import { getSettings, saveSettings } from '../lib/storage';
-import type { ExtensionSettings, TemplateOptions } from '../lib/types';
+import type { ExtensionSettings, TemplateOptions, OutputOptions } from '../lib/types';
 import { validateCalloutType, validateVaultPath, validateApiKey } from '../lib/validation';
 import { DEFAULT_OBSIDIAN_PORT, MIN_PORT, MAX_PORT } from '../lib/constants';
 
@@ -61,6 +61,12 @@ function initializeI18n(): void {
 
 // DOM Elements
 const elements = {
+  // Output destinations
+  outputObsidian: document.getElementById('outputObsidian') as HTMLInputElement,
+  outputFile: document.getElementById('outputFile') as HTMLInputElement,
+  outputClipboard: document.getElementById('outputClipboard') as HTMLInputElement,
+  obsidianSettings: document.getElementById('obsidianSettings') as HTMLElement,
+  // Obsidian settings
   apiKey: document.getElementById('apiKey') as HTMLInputElement,
   port: document.getElementById('port') as HTMLInputElement,
   vaultPath: document.getElementById('vaultPath') as HTMLInputElement,
@@ -97,6 +103,16 @@ async function initialize(): Promise<void> {
  * Populate form with current settings
  */
 function populateForm(settings: ExtensionSettings): void {
+  // Output destinations
+  const { outputOptions } = settings;
+  elements.outputObsidian.checked = outputOptions?.obsidian ?? true;
+  elements.outputFile.checked = outputOptions?.file ?? false;
+  elements.outputClipboard.checked = outputOptions?.clipboard ?? false;
+
+  // Update Obsidian settings section visibility
+  updateObsidianSettingsVisibility();
+
+  // Obsidian API settings
   elements.apiKey.value = settings.obsidianApiKey || '';
   elements.port.value = String(settings.obsidianPort || DEFAULT_OBSIDIAN_PORT);
   elements.vaultPath.value = settings.vaultPath || '';
@@ -115,11 +131,32 @@ function populateForm(settings: ExtensionSettings): void {
 }
 
 /**
+ * Update Obsidian settings section visibility based on output selection
+ */
+function updateObsidianSettingsVisibility(): void {
+  const isObsidianEnabled = elements.outputObsidian.checked;
+  const obsidianSection = elements.obsidianSettings;
+
+  if (obsidianSection) {
+    if (isObsidianEnabled) {
+      obsidianSection.classList.remove('disabled');
+      obsidianSection.removeAttribute('data-disabled-reason');
+    } else {
+      obsidianSection.classList.add('disabled');
+      obsidianSection.setAttribute('data-disabled-reason', getMessage('tooltip_obsidianDisabled'));
+    }
+  }
+}
+
+/**
  * Setup event listeners
  */
 function setupEventListeners(): void {
   elements.saveBtn.addEventListener('click', handleSave);
   elements.testBtn.addEventListener('click', handleTest);
+
+  // Output destination checkbox listeners
+  elements.outputObsidian.addEventListener('change', updateObsidianSettingsVisibility);
 
   // Enable/disable callout inputs based on message format
   elements.messageFormat.addEventListener('change', () => {
@@ -164,6 +201,24 @@ function setupApiKeyToggle(): void {
 }
 
 /**
+ * Collect output options from form
+ */
+function collectOutputOptions(): OutputOptions {
+  return {
+    obsidian: elements.outputObsidian.checked,
+    file: elements.outputFile.checked,
+    clipboard: elements.outputClipboard.checked,
+  };
+}
+
+/**
+ * Validate that at least one output is selected
+ */
+function validateOutputOptions(outputOptions: OutputOptions): boolean {
+  return outputOptions.obsidian || outputOptions.file || outputOptions.clipboard;
+}
+
+/**
  * Collect settings from form
  */
 function collectSettings(): ExtensionSettings {
@@ -179,11 +234,14 @@ function collectSettings(): ExtensionSettings {
     includeMessageCount: elements.includeMessageCount.checked,
   };
 
+  const outputOptions = collectOutputOptions();
+
   return {
     obsidianApiKey: elements.apiKey.value.trim(),
     obsidianPort: parseInt(elements.port.value, 10) || DEFAULT_OBSIDIAN_PORT,
     vaultPath: elements.vaultPath.value.trim(),
     templateOptions,
+    outputOptions,
   };
 }
 
@@ -198,29 +256,39 @@ async function handleSave(): Promise<void> {
   try {
     const settings = collectSettings();
 
-    // Validate API key (NEW-03)
-    try {
-      settings.obsidianApiKey = validateApiKey(settings.obsidianApiKey);
-    } catch (error) {
-      showStatus(error instanceof Error ? error.message : 'Invalid API key', 'error');
+    // Validate output options - at least one must be selected
+    if (!validateOutputOptions(settings.outputOptions)) {
+      showStatus(getMessage('error_noOutputSelected'), 'error');
       elements.saveBtn.disabled = false;
       return;
     }
 
-    // Validate port
-    if (settings.obsidianPort < MIN_PORT || settings.obsidianPort > MAX_PORT) {
-      showStatus(getMessage('error_invalidPort'), 'error');
-      elements.saveBtn.disabled = false;
-      return;
-    }
+    // Validate Obsidian-specific settings only if Obsidian output is enabled
+    if (settings.outputOptions.obsidian) {
+      // Validate API key (NEW-03)
+      try {
+        settings.obsidianApiKey = validateApiKey(settings.obsidianApiKey);
+      } catch (error) {
+        showStatus(error instanceof Error ? error.message : 'Invalid API key', 'error');
+        elements.saveBtn.disabled = false;
+        return;
+      }
 
-    // Validate vault path (NEW-03)
-    try {
-      settings.vaultPath = validateVaultPath(settings.vaultPath);
-    } catch (error) {
-      showStatus(error instanceof Error ? error.message : 'Invalid vault path', 'error');
-      elements.saveBtn.disabled = false;
-      return;
+      // Validate port
+      if (settings.obsidianPort < MIN_PORT || settings.obsidianPort > MAX_PORT) {
+        showStatus(getMessage('error_invalidPort'), 'error');
+        elements.saveBtn.disabled = false;
+        return;
+      }
+
+      // Validate vault path (NEW-03)
+      try {
+        settings.vaultPath = validateVaultPath(settings.vaultPath);
+      } catch (error) {
+        showStatus(error instanceof Error ? error.message : 'Invalid vault path', 'error');
+        elements.saveBtn.disabled = false;
+        return;
+      }
     }
 
     // Validate callout types (NEW-03)

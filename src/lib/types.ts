@@ -107,6 +107,55 @@ export interface NoteFrontmatter {
 }
 
 /**
+ * 出力先の識別子
+ */
+export type OutputDestination = 'obsidian' | 'file' | 'clipboard';
+
+/**
+ * 出力オプション設定
+ * 各出力先の有効/無効を管理
+ */
+export interface OutputOptions {
+  /** Obsidian REST API経由での保存 */
+  obsidian: boolean;
+  /** ダウンロードフォルダへのファイル保存 */
+  file: boolean;
+  /** システムクリップボードへのコピー */
+  clipboard: boolean;
+}
+
+/**
+ * 個別出力の実行結果
+ */
+export interface OutputResult {
+  destination: OutputDestination;
+  success: boolean;
+  error?: string;
+}
+
+/**
+ * 複数出力の集約結果
+ */
+export interface MultiOutputResponse {
+  results: OutputResult[];
+  /** すべての出力が成功したか */
+  allSuccessful: boolean;
+  /** 少なくとも1つの出力が成功したか */
+  anySuccessful: boolean;
+}
+
+/**
+ * 出力設定のバリデーション結果
+ * 注意: 既存の ValidationResult (src/lib/types.ts) とは別の用途
+ * - 既存: 抽出結果の品質検証 (isValid, warnings, errors)
+ * - 本型: 出力設定の妥当性検証 (isValid, errors のみ)
+ */
+export interface OutputValidationResult {
+  isValid: boolean;
+  errors: string[];
+}
+
+/**
  * セキュア設定（local storage用）
  * API Keyなどの機密データはsyncではなくlocalに保存
  */
@@ -122,6 +171,7 @@ export interface SyncSettings {
   obsidianPort: number;
   vaultPath: string;
   templateOptions: TemplateOptions;
+  outputOptions: OutputOptions;
 }
 
 /**
@@ -166,6 +216,7 @@ export interface TemplateOptions {
  */
 export type ExtensionMessage =
   | { action: 'saveToObsidian'; data: ObsidianNote }
+  | { action: 'saveToOutputs'; data: ObsidianNote; outputs: OutputDestination[] }
   | { action: 'getExistingFile'; fileName: string; vaultPath: string }
   | { action: 'getSettings' }
   | { action: 'testConnection' };

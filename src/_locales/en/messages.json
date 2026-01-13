@@ -213,5 +213,90 @@
   "status_testing": {
     "message": "Testing connection...",
     "description": "Status while testing connection"
+  },
+
+  "settings_outputDestinations": {
+    "message": "Output Destinations",
+    "description": "Section title for output destinations"
+  },
+  "settings_outputHelp": {
+    "message": "Select where to save conversations",
+    "description": "Help text for output destinations"
+  },
+  "settings_outputObsidian": {
+    "message": "Obsidian (API)",
+    "description": "Obsidian output option"
+  },
+  "settings_outputFile": {
+    "message": "Download File",
+    "description": "File download output option"
+  },
+  "settings_outputClipboard": {
+    "message": "Copy to Clipboard",
+    "description": "Clipboard output option"
+  },
+  "success_allOutputs": {
+    "message": "Saved to all destinations",
+    "description": "Success message when all outputs succeed"
+  },
+  "success_partialOutputs": {
+    "message": "Partial success: $DETAILS$",
+    "description": "Warning message for partial success",
+    "placeholders": {
+      "details": {
+        "content": "$1",
+        "example": "Obsidian ✓, File ✗"
+      }
+    }
+  },
+  "error_noOutputSelected": {
+    "message": "Please select at least one output destination",
+    "description": "Error when no output is selected"
+  },
+  "error_allOutputsFailed": {
+    "message": "Failed to save",
+    "description": "Error when all outputs fail"
+  },
+  "tooltip_obsidianDisabled": {
+    "message": "Enable Obsidian output to configure",
+    "description": "Tooltip when Obsidian settings are disabled"
+  },
+  "error_downloadCanceled": {
+    "message": "Download was canceled",
+    "description": "Error when download is canceled"
+  },
+  "error_networkError": {
+    "message": "Network error occurred",
+    "description": "Error for network issues"
+  },
+  "error_permissionDenied": {
+    "message": "Permission denied",
+    "description": "Error for permission issues"
+  },
+  "error_clipboardFailed": {
+    "message": "Failed to copy to clipboard",
+    "description": "Error when clipboard copy fails"
+  },
+  "error_outputFailed": {
+    "message": "Failed to save to $OUTPUT$",
+    "description": "Error for specific output failure",
+    "placeholders": {
+      "output": {
+        "content": "$1",
+        "example": "Obsidian"
+      }
+    }
+  },
+  "output_obsidian": {
+    "message": "Obsidian",
+    "description": "Obsidian output name"
+  },
+  "output_file": {
+    "message": "file",
+    "description": "File output name"
+  },
+  "output_clipboard": {
+    "message": "clipboard",
+    "description": "Clipboard output name"
   }
 }

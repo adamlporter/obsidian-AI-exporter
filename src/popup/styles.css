@@ -367,3 +367,40 @@ select {
   font-size: 11px;
   color: var(--text-secondary);
 }
+
+/* Disabled section state (for conditional settings) */
+.section.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+  position: relative;
+}
+
+.section.disabled input,
+.section.disabled select {
+  background-color: var(--bg-tertiary);
+  cursor: not-allowed;
+}
+
+/* Tooltip for disabled section */
+.section.disabled::after {
+  content: attr(data-disabled-reason);
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: var(--bg-tertiary);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+/* Output destinations section - single column layout */
+.output-destinations-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.output-destinations-grid .checkbox-label {
+  padding: 10px 12px;
+}

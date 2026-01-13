@@ -6,7 +6,13 @@
  * - storage.sync: Non-sensitive settings - synced across devices
  */
 
-import type { ExtensionSettings, SecureSettings, SyncSettings, TemplateOptions } from './types';
+import type {
+  ExtensionSettings,
+  SecureSettings,
+  SyncSettings,
+  TemplateOptions,
+  OutputOptions,
+} from './types';
 import { DEFAULT_OBSIDIAN_PORT } from './constants';
 
 const DEFAULT_TEMPLATE_OPTIONS: TemplateOptions = {
@@ -21,6 +27,12 @@ const DEFAULT_TEMPLATE_OPTIONS: TemplateOptions = {
   assistantCalloutType: 'NOTE',
 };
 
+const DEFAULT_OUTPUT_OPTIONS: OutputOptions = {
+  obsidian: true, // 後方互換性のためデフォルトtrue
+  file: false,
+  clipboard: false,
+};
+
 const DEFAULT_SECURE_SETTINGS: SecureSettings = {
   obsidianApiKey: '',
 };
@@ -29,6 +41,7 @@ const DEFAULT_SYNC_SETTINGS: SyncSettings = {
   obsidianPort: DEFAULT_OBSIDIAN_PORT,
   vaultPath: 'AI/Gemini',
   templateOptions: DEFAULT_TEMPLATE_OPTIONS,
+  outputOptions: DEFAULT_OUTPUT_OPTIONS,
 };
 
 const DEFAULT_SETTINGS: ExtensionSettings = {
@@ -57,6 +70,10 @@ export async function getSettings(): Promise<ExtensionSettings> {
       templateOptions: {
         ...DEFAULT_TEMPLATE_OPTIONS,
         ...syncResult.settings?.templateOptions,
+      },
+      outputOptions: {
+        ...DEFAULT_OUTPUT_OPTIONS,
+        ...syncResult.settings?.outputOptions,
       },
     };
   } catch (error) {
@@ -94,6 +111,12 @@ export async function saveSettings(settings: Partial<ExtensionSettings>): Promis
       syncData.templateOptions = {
         ...current.templateOptions,
         ...settings.templateOptions,
+      };
+    }
+    if (settings.outputOptions !== undefined) {
+      syncData.outputOptions = {
+        ...current.outputOptions,
+        ...settings.outputOptions,
       };
     }
 
