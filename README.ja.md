@@ -10,6 +10,7 @@ Google Gemini の AI 会話を Obsidian に保存する Chrome 拡張機能で�
 ## 機能
 
 - **ワンクリック保存**: Gemini ページに表示される「Sync」ボタンで即座に保存
+- **複数の出力オプション**: Obsidian への保存、ファイルダウンロード、クリップボードへコピー
 - **Deep Research 対応**: Gemini Deep Research レポートを構造を維持したまま保存
 - **追記モード**: 既存ノートには新しいメッセージのみを追加
 - **Obsidian コールアウト**: `[!QUESTION]` と `[!NOTE]` による見やすいフォーマット
@@ -68,7 +69,10 @@ Google Gemini の AI 会話を Obsidian に保存する Chrome 拡張機能で�
 
 1. [gemini.google.com](https://gemini.google.com) で会話を開く
 2. 右下に表示される紫色の「Sync」ボタンをクリック
-3. 会話が Obsidian の指定フォルダに保存されます
+3. 選択した出力方法に応じて会話がエクスポートされます：
+   - **Obsidian**（デフォルト）: Local REST API 経由で vault に直接保存
+   - **ファイル**: Markdown ファイルとしてダウンロード
+   - **クリップボード**: クリップボードにコピー（どこにでも貼り付け可能）
 
 ### Deep Research の保存
 

@@ -10,6 +10,7 @@ Chrome Extension that exports AI conversations from Google Gemini to Obsidian vi
 ## Features
 
 - **One-click export**: Floating "Sync" button on Gemini pages
+- **Multiple output options**: Save to Obsidian, download as file, or copy to clipboard
 - **Deep Research support**: Export Gemini Deep Research reports with full structure
 - **Append mode**: Only new messages are added to existing notes
 - **Obsidian callouts**: Formatted output with `[!QUESTION]` and `[!NOTE]` callouts
@@ -68,7 +69,10 @@ Chrome Extension that exports AI conversations from Google Gemini to Obsidian vi
 
 1. Open a conversation on [gemini.google.com](https://gemini.google.com)
 2. Click the purple "Sync" button in the bottom-right corner
-3. The conversation will be saved to your Obsidian vault
+3. The conversation will be exported based on your selected output method:
+   - **Obsidian** (default): Saved directly to your vault via Local REST API
+   - **File**: Downloaded as a Markdown file
+   - **Clipboard**: Copied to clipboard for pasting anywhere
 
 ### Deep Research Export
 
