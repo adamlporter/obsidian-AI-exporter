@@ -14,6 +14,11 @@ import {
   showToast,
 } from './ui';
 import { sendMessage } from '../lib/messaging';
+import {
+  AUTO_SAVE_CHECK_INTERVAL,
+  EVENT_THROTTLE_DELAY,
+  INFO_TOAST_DURATION,
+} from '../lib/constants';
 import type { ExtensionSettings, SaveResponse, ObsidianNote } from '../lib/types';
 
 /**
@@ -34,9 +39,15 @@ function throttle<T extends (...args: unknown[]) => void>(
   };
 }
 
+/** Debounce delay for MutationObserver callback (milliseconds) */
+const MUTATION_DEBOUNCE_DELAY = 100;
+
 /**
  * Wait for conversation container to appear (L-03)
- * Uses MutationObserver instead of fixed timeout
+ * Uses MutationObserver with debouncing instead of fixed timeout
+ *
+ * Performance: Debouncing prevents excessive DOM queries during
+ * rapid mutation bursts (e.g., page load, dynamic content updates)
  */
 function waitForConversationContainer(): Promise<void> {
   return new Promise(resolve => {
@@ -47,13 +58,28 @@ function waitForConversationContainer(): Promise<void> {
       return;
     }
 
-    // Use MutationObserver to watch for container
-    const observer = new MutationObserver((_mutations, obs) => {
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+    // Debounced check function
+    const checkForContainer = (obs: MutationObserver) => {
       const container = document.querySelector('.conversation-container, [class*="conversation"]');
       if (container) {
         obs.disconnect();
+        if (debounceTimer) {
+          window.clearTimeout(debounceTimer);
+        }
         resolve();
       }
+    };
+
+    // Use MutationObserver to watch for container with debouncing
+    const observer = new MutationObserver((_mutations, obs) => {
+      // Clear previous debounce timer
+      if (debounceTimer) {
+        window.clearTimeout(debounceTimer);
+      }
+      // Schedule check after debounce delay
+      debounceTimer = setTimeout(() => checkForContainer(obs), MUTATION_DEBOUNCE_DELAY);
     });
 
     observer.observe(document.body, {
@@ -61,11 +87,14 @@ function waitForConversationContainer(): Promise<void> {
       subtree: true,
     });
 
-    // Fallback timeout: 10 seconds
+    // Fallback timeout
     setTimeout(() => {
       observer.disconnect();
+      if (debounceTimer) {
+        window.clearTimeout(debounceTimer);
+      }
       resolve();
-    }, 10000);
+    }, AUTO_SAVE_CHECK_INTERVAL);
   });
 }
 
@@ -92,7 +121,7 @@ async function initialize(): Promise<void> {
   await waitForConversationContainer();
 
   // Apply throttle to sync handler (NEW-06)
-  const throttledHandleSync = throttle(handleSync, 1000);
+  const throttledHandleSync = throttle(handleSync, EVENT_THROTTLE_DELAY);
   injectSyncButton(throttledHandleSync);
   console.info('[G2O] Sync button injected');
 }
@@ -131,7 +160,7 @@ async function handleSync(): Promise<void> {
       return;
     }
 
-    showToast('Extracting conversation...', 'info', 2000);
+    showToast('Extracting conversation...', 'info', INFO_TOAST_DURATION);
     const result = await extractor.extract();
 
     // Validate extraction
@@ -166,7 +195,7 @@ async function handleSync(): Promise<void> {
     });
 
     // Save to Obsidian
-    showToast('Saving to Obsidian...', 'info', 2000);
+    showToast('Saving to Obsidian...', 'info', INFO_TOAST_DURATION);
     const saveResult = await saveToObsidian(note);
 
     if (saveResult.success) {
@@ -176,7 +205,7 @@ async function handleSync(): Promise<void> {
       if (result.warnings && result.warnings.length > 0) {
         setTimeout(() => {
           showWarningToast(result.warnings!.join('. '));
-        }, 2000);
+        }, INFO_TOAST_DURATION);
       }
     } else {
       showErrorToast(saveResult.error || 'Failed to save to Obsidian');
