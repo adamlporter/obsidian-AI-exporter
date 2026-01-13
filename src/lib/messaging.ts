@@ -3,7 +3,12 @@
  * Promise-based wrapper for chrome.runtime.sendMessage
  */
 
-import type { ExtensionMessage, ExtensionSettings, SaveResponse } from './types';
+import type {
+  ExtensionMessage,
+  ExtensionSettings,
+  SaveResponse,
+  MultiOutputResponse,
+} from './types';
 
 /**
  * メッセージレスポンスの型マッピング
@@ -12,6 +17,7 @@ interface MessageResponseMap {
   getSettings: ExtensionSettings;
   testConnection: { success: boolean; error?: string };
   saveToObsidian: SaveResponse;
+  saveToOutputs: MultiOutputResponse;
   getExistingFile: string | null;
 }
 

@@ -19,7 +19,13 @@ import {
   EVENT_THROTTLE_DELAY,
   INFO_TOAST_DURATION,
 } from '../lib/constants';
-import type { ExtensionSettings, SaveResponse, ObsidianNote } from '../lib/types';
+import type {
+  ExtensionSettings,
+  ObsidianNote,
+  OutputDestination,
+  OutputResult,
+  MultiOutputResponse,
+} from '../lib/types';
 
 /**
  * Throttle function (NEW-06)
@@ -127,6 +133,20 @@ async function initialize(): Promise<void> {
 }
 
 /**
+ * Get enabled output destinations from settings
+ */
+function getEnabledOutputs(settings: ExtensionSettings): OutputDestination[] {
+  const outputs: OutputDestination[] = [];
+  const { outputOptions } = settings;
+
+  if (outputOptions?.obsidian) outputs.push('obsidian');
+  if (outputOptions?.file) outputs.push('file');
+  if (outputOptions?.clipboard) outputs.push('clipboard');
+
+  return outputs;
+}
+
+/**
  * Handle sync button click
  */
 async function handleSync(): Promise<void> {
@@ -137,18 +157,30 @@ async function handleSync(): Promise<void> {
     // Get settings first (L-01: use type-safe messaging)
     const settings = await getSettings();
 
-    if (!settings.obsidianApiKey) {
-      showErrorToast('Please configure your Obsidian API key in the extension settings');
+    // Get enabled outputs
+    const enabledOutputs = getEnabledOutputs(settings);
+
+    if (enabledOutputs.length === 0) {
+      showErrorToast('Please select at least one output destination in settings');
       setButtonLoading(false);
       return;
     }
 
-    // Test connection first
-    const connectionTest = await testConnection();
-    if (!connectionTest.success) {
-      showErrorToast(connectionTest.error || 'Cannot connect to Obsidian');
-      setButtonLoading(false);
-      return;
+    // Validate Obsidian settings if Obsidian output is enabled
+    if (enabledOutputs.includes('obsidian')) {
+      if (!settings.obsidianApiKey) {
+        showErrorToast('Please configure your Obsidian API key in the extension settings');
+        setButtonLoading(false);
+        return;
+      }
+
+      // Test Obsidian connection first
+      const connectionTest = await testConnection();
+      if (!connectionTest.success) {
+        showErrorToast(connectionTest.error || 'Cannot connect to Obsidian');
+        setButtonLoading(false);
+        return;
+      }
     }
 
     // Extract conversation
@@ -192,23 +224,41 @@ async function handleSync(): Promise<void> {
     console.info('[G2O] Generated note:', {
       fileName: note.fileName,
       messageCount: result.data.messages.length,
+      outputs: enabledOutputs,
     });
 
-    // Save to Obsidian
-    showToast('Saving to Obsidian...', 'info', INFO_TOAST_DURATION);
-    const saveResult = await saveToObsidian(note);
+    // Save to enabled outputs
+    showToast('Saving...', 'info', INFO_TOAST_DURATION);
+    const saveResult = await saveToOutputs(note, enabledOutputs);
 
-    if (saveResult.success) {
-      showSuccessToast(note.fileName, saveResult.isNewFile ?? true);
-
-      // Show warnings from extraction if any
-      if (result.warnings && result.warnings.length > 0) {
-        setTimeout(() => {
-          showWarningToast(result.warnings!.join('. '));
-        }, INFO_TOAST_DURATION);
-      }
+    // Handle multi-output result
+    if (saveResult.allSuccessful) {
+      showSuccessToast(note.fileName, true);
+    } else if (saveResult.anySuccessful) {
+      // Partial success - show which ones succeeded/failed
+      const successList = saveResult.results
+        .filter((r: OutputResult) => r.success)
+        .map((r: OutputResult) => r.destination)
+        .join(', ');
+      const failedList = saveResult.results
+        .filter((r: OutputResult) => !r.success)
+        .map((r: OutputResult) => `${r.destination}: ${r.error}`)
+        .join('; ');
+      showWarningToast(`Saved to: ${successList}. Failed: ${failedList}`);
     } else {
-      showErrorToast(saveResult.error || 'Failed to save to Obsidian');
+      // All failed
+      const errorMsg = saveResult.results
+        .map((r: OutputResult) => r.error)
+        .filter(Boolean)
+        .join('; ');
+      showErrorToast(errorMsg || 'Failed to save');
+    }
+
+    // Show warnings from extraction if any
+    if (result.warnings && result.warnings.length > 0 && saveResult.anySuccessful) {
+      setTimeout(() => {
+        showWarningToast(result.warnings!.join('. '));
+      }, INFO_TOAST_DURATION);
     }
   } catch (error) {
     console.error('[G2O] Sync error:', error);
@@ -235,9 +285,12 @@ function testConnection(): Promise<{ success: boolean; error?: string }> {
 }
 
 /**
- * Save note to Obsidian via background script (L-01)
+ * Save note to multiple outputs via background script
  * Uses type-safe messaging utility
  */
-function saveToObsidian(note: ObsidianNote): Promise<SaveResponse> {
-  return sendMessage({ action: 'saveToObsidian', data: note });
+function saveToOutputs(
+  note: ObsidianNote,
+  outputs: OutputDestination[]
+): Promise<MultiOutputResponse> {
+  return sendMessage({ action: 'saveToOutputs', data: note, outputs });
 }

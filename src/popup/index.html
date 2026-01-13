@@ -18,6 +18,25 @@
 
       <main class="settings">
         <section class="section">
+          <h2 data-i18n="settings_outputDestinations">Output Destinations</h2>
+          <p class="help" data-i18n="settings_outputHelp">Select where to save conversations</p>
+          <div class="output-destinations-grid">
+            <label class="checkbox-label">
+              <input type="checkbox" id="outputObsidian" checked />
+              <span data-i18n="settings_outputObsidian">Obsidian (API)</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="outputFile" />
+              <span data-i18n="settings_outputFile">Download File</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="outputClipboard" />
+              <span data-i18n="settings_outputClipboard">Copy to Clipboard</span>
+            </label>
+          </div>
+        </section>
+
+        <section class="section" id="obsidianSettings">
           <h2 data-i18n="settings_title">Settings</h2>
 
           <div class="form-group">
