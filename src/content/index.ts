@@ -118,7 +118,8 @@ async function initialize(): Promise<void> {
   console.info('[G2O] Content script initializing on:', window.location.href);
 
   // Only run on Gemini conversation pages
-  if (!window.location.hostname.includes('gemini.google.com')) {
+  // Use strict comparison to prevent substring attacks (CodeQL: js/incomplete-url-substring-sanitization)
+  if (window.location.hostname !== 'gemini.google.com') {
     console.info('[G2O] Not a Gemini page, skipping initialization');
     return;
   }

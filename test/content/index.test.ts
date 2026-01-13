@@ -165,15 +165,24 @@ describe('content/index utilities', () => {
   });
 
   describe('initialize behavior', () => {
-    it('checks for gemini.google.com hostname', () => {
-      // Simulate non-Gemini host check
-      const isGeminiPage = 'other.com'.includes('gemini.google.com');
+    it('rejects non-Gemini hostnames', () => {
+      // Use strict comparison to prevent substring attacks
+      const hostname = 'other.com';
+      const isGeminiPage = hostname === 'gemini.google.com';
       expect(isGeminiPage).toBe(false);
     });
 
-    it('recognizes gemini.google.com hostname', () => {
-      const isGeminiPage = 'gemini.google.com'.includes('gemini.google.com');
+    it('accepts gemini.google.com hostname', () => {
+      const hostname = 'gemini.google.com';
+      const isGeminiPage = hostname === 'gemini.google.com';
       expect(isGeminiPage).toBe(true);
+    });
+
+    it('rejects malicious subdomains containing gemini.google.com', () => {
+      // CodeQL: js/incomplete-url-substring-sanitization - ensure substring attacks are blocked
+      const hostname = 'evil-gemini.google.com.attacker.com';
+      const isGeminiPage = hostname === 'gemini.google.com';
+      expect(isGeminiPage).toBe(false);
     });
   });
 

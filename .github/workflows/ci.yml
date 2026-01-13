@@ -9,6 +9,8 @@ on:
 jobs:
   ci:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read  # Principle of least privilege (CodeQL: actions/missing-workflow-permissions)
 
     steps:
       - name: Checkout repository
