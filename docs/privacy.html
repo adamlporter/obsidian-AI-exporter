@@ -48,7 +48,8 @@
   <h2>Data Transmission</h2>
   <p>This extension only communicates with:</p>
   <ul>
-    <li><strong>gemini.google.com</strong>: To extract conversation content (read-only)</li>
+    <li><strong>gemini.google.com</strong>: To extract Gemini conversation content (read-only)</li>
+    <li><strong>claude.ai</strong>: To extract Claude conversation content (read-only)</li>
     <li><strong>127.0.0.1 (localhost)</strong>: To save files to your local Obsidian vault (when Obsidian output is enabled)</li>
   </ul>
   <p>No data is ever sent to external servers or third parties.</p>
@@ -66,11 +67,11 @@
   <table>
     <tr><th>Permission</th><th>Purpose</th></tr>
     <tr><td>storage</td><td>Save your settings locally</td></tr>
-    <tr><td>activeTab</td><td>Read the current Gemini conversation</td></tr>
     <tr><td>downloads</td><td>Save conversations as downloaded files</td></tr>
     <tr><td>offscreen</td><td>Enable clipboard operations in background</td></tr>
     <tr><td>clipboardWrite</td><td>Copy conversation content to clipboard</td></tr>
     <tr><td>Host: gemini.google.com</td><td>Inject the sync button on Gemini pages</td></tr>
+    <tr><td>Host: claude.ai</td><td>Inject the sync button on Claude pages</td></tr>
     <tr><td>Host: 127.0.0.1</td><td>Communicate with Obsidian's local API</td></tr>
   </table>
 
