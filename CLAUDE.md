@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Chrome Extension that extracts Gemini AI conversations and saves them to Obsidian via the Local REST API. Built with CRXJS + Vite + TypeScript.
+Chrome Extension that extracts AI conversations from Google Gemini and Claude AI and saves them to Obsidian via the Local REST API. Built with CRXJS + Vite + TypeScript.
 
 ## ⚠️ Absolute Rules
 
@@ -73,8 +73,8 @@ Load the extension in Chrome: `chrome://extensions` → Load unpacked → select
 ## Architecture
 
 ```
-Content Script (gemini.google.com)
-    ↓ extracts conversation
+Content Script (gemini.google.com, claude.ai)
+    ↓ extracts conversation / Deep Research / Artifacts
 Background Service Worker
     ↓ sends to Obsidian
 Obsidian Local REST API (127.0.0.1:27123)
@@ -82,15 +82,16 @@ Obsidian Local REST API (127.0.0.1:27123)
 
 ### Key Components
 
-| Path                               | Purpose                                           |
-| ---------------------------------- | ------------------------------------------------- |
-| `src/content/extractors/gemini.ts` | DOM extraction for Gemini conversations           |
-| `src/content/extractors/base.ts`   | Abstract extractor with selector fallback helpers |
-| `src/content/markdown.ts`          | HTML→Markdown via Turndown with custom rules      |
-| `src/lib/obsidian-api.ts`          | REST API client for Obsidian                      |
-| `src/lib/types.ts`                 | Shared TypeScript interfaces                      |
-| `src/background/index.ts`          | Service worker handling API calls                 |
-| `src/popup/`                       | Settings UI                                       |
+| Path                               | Purpose                                                    |
+| ---------------------------------- | ---------------------------------------------------------- |
+| `src/content/extractors/gemini.ts` | DOM extraction for Gemini conversations & Deep Research    |
+| `src/content/extractors/claude.ts` | DOM extraction for Claude conversations & Artifacts        |
+| `src/content/extractors/base.ts`   | Abstract extractor with selector fallback helpers          |
+| `src/content/markdown.ts`          | HTML→Markdown via Turndown with custom rules               |
+| `src/lib/obsidian-api.ts`          | REST API client for Obsidian                               |
+| `src/lib/types.ts`                 | Shared TypeScript interfaces                               |
+| `src/background/index.ts`          | Service worker handling API calls                          |
+| `src/popup/`                       | Settings UI                                                |
 
 ### Extractor Pattern
 
@@ -102,14 +103,21 @@ Extractors implement `IConversationExtractor` from `src/lib/types.ts`. The `Base
 
 ### DOM Selectors
 
-Gemini uses Angular components. Key selectors in `gemini.ts`:
+**Gemini** uses Angular components. Key selectors in `gemini.ts`:
 
 - `.conversation-container` - each Q&A turn
 - `user-query` / `model-response` - Angular component tags
 - `.query-text-line` - user message lines (multiple per query)
 - `.markdown.markdown-main-panel` - assistant response content
 
-When Gemini's DOM changes, update `SELECTORS` in `gemini.ts` and test with sample HTML in `test/element-sample.html`.
+**Claude** uses React components. Key selectors in `claude.ts`:
+
+- `.whitespace-pre-wrap.break-words` - user message content
+- `.font-claude-response` - assistant response content
+- `#markdown-artifact` - Deep Research / Artifact content
+- `span.inline-flex a[href^="http"]` - inline citations
+
+When DOM changes, update `SELECTORS` in the respective extractor file.
 
 ## Output Format
 
@@ -129,6 +137,11 @@ source: gemini
 > response text
 ```
 
+## Supported Platforms
+
+- **Gemini** (`gemini.google.com`): Conversations and Deep Research reports
+- **Claude** (`claude.ai`): Conversations, Extended Thinking, and Artifacts with inline citations
+
 ## Future Platforms
 
-Types support `claude` and `perplexity` sources. Add new extractors by extending `BaseExtractor` and implementing `IConversationExtractor`.
+Types support `perplexity` source. Add new extractors by extending `BaseExtractor` and implementing `IConversationExtractor`.

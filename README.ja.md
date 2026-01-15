@@ -1,6 +1,6 @@
 # Obsidian AI Exporter
 
-Google Gemini の AI 会話を Obsidian に保存する Chrome 拡張機能です。Local REST API を使用してローカル環境で動作します。
+Google Gemini と Claude AI の会話を Obsidian に保存する Chrome 拡張機能です。Local REST API を使用してローカル環境で動作します。
 
 [English version](README.md)
 
@@ -9,9 +9,11 @@ Google Gemini の AI 会話を Obsidian に保存する Chrome 拡張機能で�
 
 ## 機能
 
-- **ワンクリック保存**: Gemini ページに表示される「Sync」ボタンで即座に保存
+- **マルチプラットフォーム対応**: Google Gemini と Claude AI の両方からエクスポート
+- **ワンクリック保存**: 対応 AI ページに表示される「Sync」ボタンで即座に保存
 - **複数の出力オプション**: Obsidian への保存、ファイルダウンロード、クリップボードへコピー
-- **Deep Research 対応**: Gemini Deep Research レポートを構造を維持したまま保存
+- **Deep Research 対応**: Gemini Deep Research と Claude Extended Thinking レポートを保存
+- **Artifact 対応**: Claude Artifacts をインライン引用とソース付きで抽出
 - **追記モード**: 既存ノートには新しいメッセージのみを追加
 - **Obsidian コールアウト**: `[!QUESTION]` と `[!NOTE]` による見やすいフォーマット
 - **YAML フロントマター**: タイトル、ソース、URL、日時、タグなどのメタデータを自動生成
@@ -67,6 +69,8 @@ Google Gemini の AI 会話を Obsidian に保存する Chrome 拡張機能で�
 
 ## 使い方
 
+### Gemini
+
 1. [gemini.google.com](https://gemini.google.com) で会話を開く
 2. 右下に表示される紫色の「Sync」ボタンをクリック
 3. 選択した出力方法に応じて会話がエクスポートされます：
@@ -74,12 +78,23 @@ Google Gemini の AI 会話を Obsidian に保存する Chrome 拡張機能で�
    - **ファイル**: Markdown ファイルとしてダウンロード
    - **クリップボード**: クリップボードにコピー（どこにでも貼り付け可能）
 
-### Deep Research の保存
+### Claude
 
-Gemini で Deep Research レポートを表示している場合:
+1. [claude.ai](https://claude.ai) で会話を開く
+2. 右下に表示される紫色の「Sync」ボタンをクリック
+3. Gemini と同じ出力オプションで会話がエクスポートされます
+
+### Deep Research / Extended Thinking の保存
+
+**Gemini Deep Research:**
 1. Deep Research パネルを開く（展開表示）
 2. 「Sync」ボタンをクリック
 3. レポート全体が見出し構造を維持したまま保存されます
+
+**Claude Extended Thinking（Artifacts）:**
+1. Artifact を含む会話を開く
+2. 「Sync」ボタンをクリック
+3. インライン引用とソース付きで Artifact の内容が抽出されます
 
 ## 出力フォーマット
 
@@ -164,8 +179,8 @@ npm run test:coverage
 ## アーキテクチャ
 
 ```
-Content Script (gemini.google.com)
-    ↓ 会話 / Deep Research を抽出
+Content Script (gemini.google.com, claude.ai)
+    ↓ 会話 / Deep Research / Artifacts を抽出
 Background Service Worker
     ↓ Obsidian に送信
 Obsidian Local REST API (127.0.0.1:27123)
@@ -177,6 +192,7 @@ Obsidian Local REST API (127.0.0.1:27123)
 |---------------|------|
 | `src/content/` | DOM 抽出と UI 用のコンテンツスクリプト |
 | `src/content/extractors/gemini.ts` | Gemini 会話 & Deep Research 抽出 |
+| `src/content/extractors/claude.ts` | Claude 会話 & Artifact 抽出 |
 | `src/background/` | API 通信用のサービスワーカー |
 | `src/popup/` | 設定 UI |
 | `src/lib/` | 共有ユーティリティと型定義 |
