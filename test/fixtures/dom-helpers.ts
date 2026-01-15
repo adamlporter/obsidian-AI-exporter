@@ -373,3 +373,200 @@ export function createEmptyDeepResearchPanel(): string {
     </deep-research-immersive-panel>
   `;
 }
+
+
+// ========== Claude DOM Helpers ==========
+
+/**
+ * Message structure for creating Claude conversation DOM
+ */
+interface ClaudeConversationMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+/**
+ * Create Claude conversation DOM structure
+ *
+ * Replicates the structure used by Claude AI
+ * @see docs/design/DES-002-claude-extractor.md Section 5.7.1
+ */
+export function createClaudeConversationDOM(messages: ClaudeConversationMessage[]): string {
+  const blocks: string[] = [];
+
+  messages.forEach((msg, index) => {
+    if (msg.role === 'user') {
+      blocks.push(`
+        <div data-test-render-count="2" class="group" style="height: auto;">
+          <div class="bg-bg-300 rounded-xl pl-2.5 py-2.5">
+            <div data-testid="user-message">
+              <p class="whitespace-pre-wrap break-words">${escapeHtmlForClaude(msg.content)}</p>
+            </div>
+            <span class="text-text-500 text-xs" data-state="closed">Dec 6, 2025</span>
+          </div>
+        </div>
+      `);
+    } else {
+      blocks.push(`
+        <div data-test-render-count="2" class="group" style="height: auto;">
+          <div class="font-claude-response" data-is-streaming="false">
+            <div class="standard-markdown">
+              ${msg.content}
+            </div>
+          </div>
+        </div>
+      `);
+    }
+  });
+
+  return `
+    <div class="conversation-thread">
+      ${blocks.join('\n')}
+    </div>
+  `;
+}
+
+/**
+ * Create Claude Deep Research DOM structure
+ *
+ * @see docs/design/DES-002-claude-extractor.md Section 5.7.2
+ */
+export function createClaudeDeepResearchDOM(
+  title: string,
+  content: string,
+  citations?: Array<{ url: string; title: string }>
+): string {
+  // Generate inline citations if provided
+  let contentWithCitations = content;
+  if (citations && citations.length > 0) {
+    citations.forEach((citation, index) => {
+      const citationHtml = createClaudeInlineCitation(citation.url, citation.title);
+      // Append citation markers to content (for testing)
+      contentWithCitations += `<p>Reference ${index + 1}: ${citationHtml}</p>`;
+    });
+  }
+
+  return `
+    <div id="markdown-artifact" class="font-claude-response">
+      <div class="standard-markdown">
+        <h1 class="text-text-100">${escapeHtmlForClaude(title)}</h1>
+        ${contentWithCitations}
+      </div>
+    </div>
+  `;
+}
+
+/**
+ * Set window.location for Claude URL testing
+ *
+ * @param conversationId UUID format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+ */
+export function setClaudeLocation(conversationId: string): void {
+  Object.defineProperty(window, 'location', {
+    value: {
+      hostname: 'claude.ai',
+      pathname: `/chat/${conversationId}`,
+      href: `https://claude.ai/chat/${conversationId}`,
+      origin: 'https://claude.ai',
+      protocol: 'https:',
+      host: 'claude.ai',
+      search: '',
+      hash: '',
+    },
+    writable: true,
+    configurable: true,
+  });
+}
+
+/**
+ * Set window.location for non-Claude URL (security testing)
+ *
+ * Used to test hostname validation against subdomain attacks
+ */
+export function setNonClaudeLocation(hostname: string, pathname = '/'): void {
+  Object.defineProperty(window, 'location', {
+    value: {
+      hostname,
+      pathname,
+      href: `https://${hostname}${pathname}`,
+      origin: `https://${hostname}`,
+      protocol: 'https:',
+      host: hostname,
+      search: '',
+      hash: '',
+    },
+    writable: true,
+    configurable: true,
+  });
+}
+
+/**
+ * Create Claude inline citation element
+ *
+ * @param url Source URL
+ * @param title Link text/title
+ */
+export function createClaudeInlineCitation(url: string, title: string): string {
+  // Note: URL is not escaped to preserve the href^="http" selector compatibility
+  return `
+    <span class="inline-flex">
+      <a href="${url}" target="_blank" rel="noopener">
+        <span class="text-text-300">${escapeHtmlForClaude(title)}</span>
+      </a>
+    </span>
+  `;
+}
+
+/**
+ * Create a complete Claude conversation page
+ */
+export function createClaudePage(
+  conversationId: string,
+  messages: ClaudeConversationMessage[]
+): void {
+  setClaudeLocation(conversationId);
+  loadFixture(`
+    <div class="app-container">
+      ${createClaudeConversationDOM(messages)}
+    </div>
+  `);
+}
+
+/**
+ * Create a Claude Deep Research page
+ */
+export function createClaudeDeepResearchPage(
+  conversationId: string,
+  title: string,
+  content: string,
+  citations?: Array<{ url: string; title: string }>
+): void {
+  setClaudeLocation(conversationId);
+  loadFixture(`
+    <div class="app-container">
+      ${createClaudeDeepResearchDOM(title, content, citations)}
+    </div>
+  `);
+}
+
+/**
+ * Create empty Claude Deep Research panel (no content)
+ */
+export function createEmptyClaudeDeepResearchPanel(): string {
+  return `
+    <div id="markdown-artifact" class="font-claude-response">
+      <div class="standard-markdown">
+        <h1 class="text-text-100">Test Report</h1>
+      </div>
+    </div>
+  `;
+}
+
+/**
+ * Escape HTML entities for Claude DOM helpers
+ */
+function escapeHtmlForClaude(text: string): string {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
