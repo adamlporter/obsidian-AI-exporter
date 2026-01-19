@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "__MSG_extName__",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "description": "__MSG_extDescription__",
   "default_locale": "en",
   "minimum_chrome_version": "88",
@@ -13,7 +13,11 @@
     "128": "icons/icon128.png"
   },
   "permissions": ["storage", "downloads", "offscreen", "clipboardWrite"],
-  "host_permissions": ["https://gemini.google.com/*", "http://127.0.0.1:27123/*"],
+  "host_permissions": [
+    "https://gemini.google.com/*",
+    "https://claude.ai/*",
+    "http://127.0.0.1:27123/*"
+  ],
   "content_security_policy": {
     "extension_pages": "default-src 'self'; script-src 'self'; connect-src 'self' http://127.0.0.1:*; object-src 'none'; style-src 'self' 'unsafe-inline'"
   },
@@ -23,7 +27,7 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://gemini.google.com/*"],
+      "matches": ["https://gemini.google.com/*", "https://claude.ai/*"],
       "js": ["src/content/index.ts"],
       "run_at": "document_idle"
     }

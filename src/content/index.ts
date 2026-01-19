@@ -4,6 +4,8 @@
  */
 
 import { GeminiExtractor } from './extractors/gemini';
+import { ClaudeExtractor } from './extractors/claude';
+import type { IConversationExtractor } from '../lib/types';
 import { conversationToNote } from './markdown';
 import {
   injectSyncButton,
@@ -104,6 +106,26 @@ function waitForConversationContainer(): Promise<void> {
   });
 }
 
+/**
+ * Get the appropriate extractor for the current page
+ *
+ * Uses strict hostname comparison to prevent subdomain attacks
+ * @see CodeQL: js/incomplete-url-substring-sanitization
+ */
+function getExtractor(): IConversationExtractor | null {
+  const hostname = window.location.hostname;
+
+  // Strict comparison prevents attacks like "evil-gemini.google.com.attacker.com"
+  if (hostname === 'gemini.google.com') {
+    return new GeminiExtractor();
+  }
+  if (hostname === 'claude.ai') {
+    return new ClaudeExtractor();
+  }
+
+  return null;
+}
+
 // Initialize when DOM is ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initialize);
@@ -117,12 +139,14 @@ if (document.readyState === 'loading') {
 async function initialize(): Promise<void> {
   console.info('[G2O] Content script initializing on:', window.location.href);
 
-  // Only run on Gemini conversation pages
-  // Use strict comparison to prevent substring attacks (CodeQL: js/incomplete-url-substring-sanitization)
-  if (window.location.hostname !== 'gemini.google.com') {
-    console.info('[G2O] Not a Gemini page, skipping initialization');
+  // Check if we have a valid extractor for this page
+  const extractor = getExtractor();
+  if (!extractor) {
+    console.info('[G2O] No extractor available for this page, skipping initialization');
     return;
   }
+
+  console.info(`[G2O] Using ${extractor.platform} extractor`);
 
   // Wait for conversation container (L-03)
   await waitForConversationContainer();
@@ -184,11 +208,11 @@ async function handleSync(): Promise<void> {
       }
     }
 
-    // Extract conversation
-    const extractor = new GeminiExtractor();
+    // Extract conversation using appropriate extractor
+    const extractor = getExtractor();
 
-    if (!extractor.canExtract()) {
-      showErrorToast('Not on a valid Gemini conversation page');
+    if (!extractor || !extractor.canExtract()) {
+      showErrorToast('Not on a valid conversation page');
       setButtonLoading(false);
       return;
     }

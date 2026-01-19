@@ -1,6 +1,6 @@
 # Obsidian AI Exporter
 
-Chrome Extension that exports AI conversations from Google Gemini to Obsidian via the Local REST API.
+Chrome Extension that exports AI conversations from Google Gemini and Claude AI to Obsidian via the Local REST API.
 
 [日本語版はこちら](README.ja.md)
 
@@ -9,9 +9,11 @@ Chrome Extension that exports AI conversations from Google Gemini to Obsidian vi
 
 ## Features
 
-- **One-click export**: Floating "Sync" button on Gemini pages
+- **Multi-platform support**: Export from both Google Gemini and Claude AI
+- **One-click export**: Floating "Sync" button on supported AI pages
 - **Multiple output options**: Save to Obsidian, download as file, or copy to clipboard
-- **Deep Research support**: Export Gemini Deep Research reports with full structure
+- **Deep Research support**: Export Gemini Deep Research and Claude Extended Thinking reports
+- **Artifact support**: Extract Claude Artifacts with inline citations and sources
 - **Append mode**: Only new messages are added to existing notes
 - **Obsidian callouts**: Formatted output with `[!QUESTION]` and `[!NOTE]` callouts
 - **YAML frontmatter**: Metadata including title, source, URL, dates, and tags
@@ -67,6 +69,8 @@ Chrome Extension that exports AI conversations from Google Gemini to Obsidian vi
 
 ## Usage
 
+### Gemini
+
 1. Open a conversation on [gemini.google.com](https://gemini.google.com)
 2. Click the purple "Sync" button in the bottom-right corner
 3. The conversation will be exported based on your selected output method:
@@ -74,12 +78,23 @@ Chrome Extension that exports AI conversations from Google Gemini to Obsidian vi
    - **File**: Downloaded as a Markdown file
    - **Clipboard**: Copied to clipboard for pasting anywhere
 
-### Deep Research Export
+### Claude
 
-When viewing a Deep Research report in Gemini:
+1. Open a conversation on [claude.ai](https://claude.ai)
+2. Click the purple "Sync" button in the bottom-right corner
+3. The conversation will be exported with the same output options as Gemini
+
+### Deep Research / Extended Thinking Export
+
+**Gemini Deep Research:**
 1. Open the Deep Research panel (expanded view)
 2. Click the "Sync" button
 3. The full report will be saved with its original heading structure
+
+**Claude Extended Thinking (Artifacts):**
+1. Open a conversation with an Artifact
+2. Click the "Sync" button
+3. The Artifact content with inline citations and sources will be extracted
 
 ## Output Format
 
@@ -164,8 +179,8 @@ npm run test:coverage
 ## Architecture
 
 ```
-Content Script (gemini.google.com)
-    ↓ extracts conversation / Deep Research
+Content Script (gemini.google.com, claude.ai)
+    ↓ extracts conversation / Deep Research / Artifacts
 Background Service Worker
     ↓ sends to Obsidian
 Obsidian Local REST API (127.0.0.1:27123)
@@ -177,6 +192,7 @@ Obsidian Local REST API (127.0.0.1:27123)
 |-----------|-------------|
 | `src/content/` | Content script for DOM extraction and UI |
 | `src/content/extractors/gemini.ts` | Gemini conversation & Deep Research extractor |
+| `src/content/extractors/claude.ts` | Claude conversation & Artifact extractor |
 | `src/background/` | Service worker for API communication |
 | `src/popup/` | Settings UI |
 | `src/lib/` | Shared utilities and types |

@@ -26,7 +26,7 @@ migrateSettings().catch(error => {
 /**
  * Allowed origins for content script messages (M-02)
  */
-const ALLOWED_ORIGINS = ['https://gemini.google.com'] as const;
+const ALLOWED_ORIGINS = ['https://gemini.google.com', 'https://claude.ai'] as const;
 
 /**
  * Validate message sender (M-02)
