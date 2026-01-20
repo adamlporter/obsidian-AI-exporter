@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2025-01-15
+
+### Added
+- Claude AI conversation extractor support
+- Extended Thinking content extraction for Claude
+- Artifacts extraction with inline citations
+- Privacy Policy updated for Claude AI support
+
+### Security
+- Resolved CodeQL security alerts
+
 ## [0.4.1] - 2025-01-13
 
 ### Changed

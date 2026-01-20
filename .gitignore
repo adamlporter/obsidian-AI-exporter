@@ -2,6 +2,7 @@
 .mcp.json
 data/
 .serena/
+.claude/
 
 # Dependencies
 node_modules/
