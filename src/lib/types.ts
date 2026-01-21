@@ -27,7 +27,7 @@ export interface ConversationData {
   id: string;
   title: string;
   url: string;
-  source: 'gemini' | 'claude' | 'perplexity';
+  source: 'gemini' | 'claude' | 'perplexity' | 'chatgpt';
   type?: 'conversation' | 'deep-research';
   /** Deep Research link information (optional) */
   links?: DeepResearchLinks;
@@ -254,7 +254,7 @@ export interface ValidationResult {
  * Interface for AI platform extractors
  */
 export interface IConversationExtractor {
-  readonly platform: 'gemini' | 'claude' | 'perplexity';
+  readonly platform: 'gemini' | 'claude' | 'perplexity' | 'chatgpt';
   canExtract(): boolean;
   extract(): Promise<ExtractionResult>;
   getConversationId(): string | null;

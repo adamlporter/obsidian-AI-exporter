@@ -141,6 +141,22 @@ source: gemini
 
 - **Gemini** (`gemini.google.com`): Conversations and Deep Research reports
 - **Claude** (`claude.ai`): Conversations, Extended Thinking, and Artifacts with inline citations
+- **ChatGPT** (`chatgpt.com`): Conversations (including custom GPTs via `/g/` URLs)
+
+## Adding New Platforms
+
+When adding a new platform extractor:
+
+1. Add platform to union types in `src/lib/types.ts` (`source`, `platform`)
+2. Add platform to `BaseExtractor` in `src/content/extractors/base.ts`
+3. Create new extractor class extending `BaseExtractor`
+4. Add routing in `src/content/index.ts` (`getExtractor()`)
+5. Update `waitForConversationContainer()` selectors if needed
+6. **Add origin to `ALLOWED_ORIGINS` in `src/background/index.ts`** ← CRITICAL
+7. Update `src/manifest.json`:
+   - `host_permissions`
+   - `content_scripts.matches`
+8. Add DOM helpers and tests
 
 ## Future Platforms
 

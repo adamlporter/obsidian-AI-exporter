@@ -10,6 +10,7 @@ node_modules/
 # Build output
 dist/
 gemini2obsidian-*.zip
+obsidian-ai-exporter-*.zip
 
 # IDE
 .vscode/

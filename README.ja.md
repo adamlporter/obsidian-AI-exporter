@@ -1,6 +1,6 @@
 # Obsidian AI Exporter
 
-Google Gemini と Claude AI の会話を Obsidian に保存する Chrome 拡張機能です。Local REST API を使用してローカル環境で動作します。
+Google Gemini、Claude AI、ChatGPT の会話を Obsidian に保存する Chrome 拡張機能です。Local REST API を使用してローカル環境で動作します。
 
 [English version](README.md)
 
@@ -9,7 +9,7 @@ Google Gemini と Claude AI の会話を Obsidian に保存する Chrome 拡張�
 
 ## 機能
 
-- **マルチプラットフォーム対応**: Google Gemini と Claude AI の両方からエクスポート
+- **マルチプラットフォーム対応**: Google Gemini、Claude AI、ChatGPT からエクスポート
 - **ワンクリック保存**: 対応 AI ページに表示される「Sync」ボタンで即座に保存
 - **複数の出力オプション**: Obsidian への保存、ファイルダウンロード、クリップボードへコピー
 - **Deep Research 対応**: Gemini Deep Research と Claude Extended Thinking レポートを保存
@@ -81,6 +81,12 @@ Google Gemini と Claude AI の会話を Obsidian に保存する Chrome 拡張�
 ### Claude
 
 1. [claude.ai](https://claude.ai) で会話を開く
+2. 右下に表示される紫色の「Sync」ボタンをクリック
+3. Gemini と同じ出力オプションで会話がエクスポートされます
+
+### ChatGPT
+
+1. [chatgpt.com](https://chatgpt.com) で会話を開く
 2. 右下に表示される紫色の「Sync」ボタンをクリック
 3. Gemini と同じ出力オプションで会話がエクスポートされます
 
@@ -179,7 +185,7 @@ npm run test:coverage
 ## アーキテクチャ
 
 ```
-Content Script (gemini.google.com, claude.ai)
+Content Script (gemini.google.com, claude.ai, chatgpt.com)
     ↓ 会話 / Deep Research / Artifacts を抽出
 Background Service Worker
     ↓ Obsidian に送信
@@ -193,6 +199,7 @@ Obsidian Local REST API (127.0.0.1:27123)
 | `src/content/` | DOM 抽出と UI 用のコンテンツスクリプト |
 | `src/content/extractors/gemini.ts` | Gemini 会話 & Deep Research 抽出 |
 | `src/content/extractors/claude.ts` | Claude 会話 & Artifact 抽出 |
+| `src/content/extractors/chatgpt.ts` | ChatGPT 会話抽出 |
 | `src/background/` | API 通信用のサービスワーカー |
 | `src/popup/` | 設定 UI |
 | `src/lib/` | 共有ユーティリティと型定義 |

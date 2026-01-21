@@ -5,6 +5,7 @@
 
 import { GeminiExtractor } from './extractors/gemini';
 import { ClaudeExtractor } from './extractors/claude';
+import { ChatGPTExtractor } from './extractors/chatgpt';
 import type { IConversationExtractor } from '../lib/types';
 import { conversationToNote } from './markdown';
 import {
@@ -60,7 +61,10 @@ const MUTATION_DEBOUNCE_DELAY = 100;
 function waitForConversationContainer(): Promise<void> {
   return new Promise(resolve => {
     // Check if already exists
-    const existing = document.querySelector('.conversation-container, [class*="conversation"]');
+    // ChatGPT uses article[data-turn-id] instead of conversation-container
+    const existing = document.querySelector(
+      '.conversation-container, [class*="conversation"], article[data-turn-id]'
+    );
     if (existing) {
       resolve();
       return;
@@ -70,7 +74,10 @@ function waitForConversationContainer(): Promise<void> {
 
     // Debounced check function
     const checkForContainer = (obs: MutationObserver) => {
-      const container = document.querySelector('.conversation-container, [class*="conversation"]');
+      // ChatGPT uses article[data-turn-id] instead of conversation-container
+      const container = document.querySelector(
+        '.conversation-container, [class*="conversation"], article[data-turn-id]'
+      );
       if (container) {
         obs.disconnect();
         if (debounceTimer) {
@@ -121,6 +128,9 @@ function getExtractor(): IConversationExtractor | null {
   }
   if (hostname === 'claude.ai') {
     return new ClaudeExtractor();
+  }
+  if (hostname === 'chatgpt.com') {
+    return new ChatGPTExtractor();
   }
 
   return null;
