@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.2] - 2025-01-21
+
+### Changed
+- Updated extension description and locales for multi-platform support
+
+## [0.6.1] - 2025-01-21
+
+### Added
+- ChatGPT conversation extractor support
+- Dynamic assistant labels in callout format (ChatGPT, Claude, Gemini)
+
+### Changed
+- Privacy Policy updated for ChatGPT support
+
 ## [0.5.0] - 2025-01-15
 
 ### Added
