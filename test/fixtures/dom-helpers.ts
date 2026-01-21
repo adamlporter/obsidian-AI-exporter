@@ -570,3 +570,163 @@ function escapeHtmlForClaude(text: string): string {
   div.textContent = text;
   return div.innerHTML;
 }
+
+
+// ========== ChatGPT DOM Helpers ==========
+
+/**
+ * Message structure for creating ChatGPT conversation DOM
+ */
+interface ChatGPTConversationMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  id?: string;
+}
+
+/**
+ * Create ChatGPT conversation DOM structure
+ *
+ * Replicates the structure used by ChatGPT
+ * @see docs/design/DES-003-chatgpt-extractor.md Section 5.8.1
+ */
+export function createChatGPTConversationDOM(messages: ChatGPTConversationMessage[]): string {
+  const turns: string[] = [];
+
+  messages.forEach((msg, index) => {
+    const turnId = msg.id || `turn-${index}`;
+    const messageId = `msg-${index}`;
+
+    if (msg.role === 'user') {
+      turns.push(`
+        <article
+          data-turn-id="${turnId}"
+          data-testid="conversation-turn-${index + 1}"
+          data-turn="user"
+        >
+          <div data-message-author-role="user"
+               data-message-id="${messageId}">
+            <div class="whitespace-pre-wrap">
+              ${escapeHtmlForChatGPT(msg.content)}
+            </div>
+          </div>
+        </article>
+      `);
+    } else {
+      turns.push(`
+        <article
+          data-turn-id="${turnId}"
+          data-testid="conversation-turn-${index + 1}"
+          data-turn="assistant"
+        >
+          <div data-message-author-role="assistant"
+               data-message-id="${messageId}"
+               data-message-model-slug="gpt-5-2">
+            <div class="markdown prose dark:prose-invert w-full break-words light markdown-new-styling">
+              ${msg.content}
+            </div>
+          </div>
+        </article>
+      `);
+    }
+  });
+
+  return `
+    <div class="flex flex-col text-sm pb-25">
+      ${turns.join('\n')}
+    </div>
+  `;
+}
+
+/**
+ * Set window.location for ChatGPT URL testing
+ *
+ * @param conversationId UUID format or custom ID
+ * @param prefix URL prefix: 'c' for chat, 'g' for GPT mode
+ */
+export function setChatGPTLocation(conversationId: string, prefix: 'c' | 'g' = 'c'): void {
+  Object.defineProperty(window, 'location', {
+    value: {
+      hostname: 'chatgpt.com',
+      pathname: `/${prefix}/${conversationId}`,
+      href: `https://chatgpt.com/${prefix}/${conversationId}`,
+      origin: 'https://chatgpt.com',
+      protocol: 'https:',
+      host: 'chatgpt.com',
+      search: '',
+      hash: '',
+    },
+    writable: true,
+    configurable: true,
+  });
+}
+
+/**
+ * Set window.location for non-ChatGPT URL (security testing)
+ *
+ * Used to test hostname validation against subdomain attacks
+ */
+export function setNonChatGPTLocation(hostname: string, pathname = '/'): void {
+  Object.defineProperty(window, 'location', {
+    value: {
+      hostname,
+      pathname,
+      href: `https://${hostname}${pathname}`,
+      origin: `https://${hostname}`,
+      protocol: 'https:',
+      host: hostname,
+      search: '',
+      hash: '',
+    },
+    writable: true,
+    configurable: true,
+  });
+}
+
+/**
+ * Create ChatGPT inline citation element
+ *
+ * @param url Source URL (with or without utm_source)
+ * @param displayText Link display text
+ */
+export function createChatGPTInlineCitation(url: string, displayText: string): string {
+  return `
+    <span class="" data-state="closed">
+      <span class="ms-1 inline-flex max-w-full items-center select-none relative top-[-0.094rem]"
+            data-testid="webpage-citation-pill">
+        <a href="${url}"
+           target="_blank"
+           rel="noopener"
+           class="flex h-4.5 overflow-hidden rounded-xl px-2 text-[9px] font-medium">
+          <span class="max-w-[15ch] grow truncate overflow-hidden text-center">
+            ${escapeHtmlForChatGPT(displayText)}
+          </span>
+        </a>
+      </span>
+    </span>
+  `;
+}
+
+/**
+ * Create a complete ChatGPT conversation page
+ */
+export function createChatGPTPage(
+  conversationId: string,
+  messages: ChatGPTConversationMessage[],
+  prefix: 'c' | 'g' = 'c'
+): void {
+  setChatGPTLocation(conversationId, prefix);
+  loadFixture(`
+    <div class="app-container">
+      ${createChatGPTConversationDOM(messages)}
+    </div>
+  `);
+}
+
+/**
+ * Escape HTML entities for ChatGPT DOM helpers
+ */
+function escapeHtmlForChatGPT(text: string): string {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}

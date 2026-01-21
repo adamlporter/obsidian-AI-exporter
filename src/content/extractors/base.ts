@@ -15,7 +15,7 @@ import { generateHash } from '../../lib/hash';
  * Provides common functionality for all AI platform extractors
  */
 export abstract class BaseExtractor implements IConversationExtractor {
-  abstract readonly platform: 'gemini' | 'claude' | 'perplexity';
+  abstract readonly platform: 'gemini' | 'claude' | 'perplexity' | 'chatgpt';
 
   abstract canExtract(): boolean;
   abstract extract(): Promise<ExtractionResult>;

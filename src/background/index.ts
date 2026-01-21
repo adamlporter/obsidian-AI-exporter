@@ -26,7 +26,11 @@ migrateSettings().catch(error => {
 /**
  * Allowed origins for content script messages (M-02)
  */
-const ALLOWED_ORIGINS = ['https://gemini.google.com', 'https://claude.ai'] as const;
+const ALLOWED_ORIGINS = [
+  'https://gemini.google.com',
+  'https://claude.ai',
+  'https://chatgpt.com',
+] as const;
 
 /**
  * Validate message sender (M-02)
@@ -124,7 +128,7 @@ function validateNoteData(note: ObsidianNote): boolean {
     }
     if (
       typeof note.frontmatter.source !== 'string' ||
-      !['gemini', 'claude', 'perplexity'].includes(note.frontmatter.source)
+      !['gemini', 'claude', 'perplexity', 'chatgpt'].includes(note.frontmatter.source)
     ) {
       return false;
     }
