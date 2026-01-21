@@ -200,7 +200,10 @@ export class ChatGPTExtractor extends BaseExtractor {
     }
 
     // Fallback: try assistantResponse selectors
-    const assistantEl = this.queryWithFallback<HTMLElement>(SELECTORS.assistantResponse, turnElement);
+    const assistantEl = this.queryWithFallback<HTMLElement>(
+      SELECTORS.assistantResponse,
+      turnElement
+    );
     if (assistantEl) {
       const cleanedHtml = this.cleanCitationUrls(assistantEl.innerHTML);
       return sanitizeHtml(cleanedHtml);
@@ -217,13 +220,9 @@ export class ChatGPTExtractor extends BaseExtractor {
    */
   private cleanCitationUrls(html: string): string {
     // Replace utm_source parameter in href attributes
-    return html.replace(
-      /href="([^"]+)\?utm_source=chatgpt\.com"/g,
-      (_, url) => `href="${url}"`
-    ).replace(
-      /href="([^"]+)&utm_source=chatgpt\.com"/g,
-      (_, url) => `href="${url}"`
-    );
+    return html
+      .replace(/href="([^"]+)\?utm_source=chatgpt\.com"/g, (_, url) => `href="${url}"`)
+      .replace(/href="([^"]+)&utm_source=chatgpt\.com"/g, (_, url) => `href="${url}"`);
   }
 
   // ========== Main Entry Point ==========
