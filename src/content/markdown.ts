@@ -313,20 +313,40 @@ export function generateContentHash(content: string): string {
 }
 
 /**
+ * Get display label for AI assistant based on source platform
+ */
+function getAssistantLabel(source: string): string {
+  switch (source) {
+    case 'gemini':
+      return 'Gemini';
+    case 'claude':
+      return 'Claude';
+    case 'chatgpt':
+      return 'ChatGPT';
+    case 'perplexity':
+      return 'Perplexity';
+    default:
+      return 'Assistant';
+  }
+}
+
+/**
  * Format a single message according to template options
  */
 function formatMessage(
   content: string,
   role: 'user' | 'assistant',
-  options: TemplateOptions
+  options: TemplateOptions,
+  source: string
 ): string {
   // Convert HTML to Markdown for assistant messages
   const markdown = role === 'assistant' ? htmlToMarkdown(content) : content;
+  const assistantLabel = getAssistantLabel(source);
 
   switch (options.messageFormat) {
     case 'callout': {
       const calloutType = role === 'user' ? options.userCalloutType : options.assistantCalloutType;
-      const label = role === 'user' ? 'User' : 'Gemini';
+      const label = role === 'user' ? 'User' : assistantLabel;
       // Format as Obsidian callout with proper line handling
       const lines = markdown.split('\n');
       const formattedLines = lines.map((line, i) =>
@@ -336,14 +356,14 @@ function formatMessage(
     }
 
     case 'blockquote': {
-      const label = role === 'user' ? '**User:**' : '**Gemini:**';
+      const label = role === 'user' ? '**User:**' : `**${assistantLabel}:**`;
       const lines = markdown.split('\n').map(line => `> ${line}`);
       return `${label}\n${lines.join('\n')}`;
     }
 
     case 'plain':
     default: {
-      const label = role === 'user' ? '**User:**' : '**Gemini:**';
+      const label = role === 'user' ? '**User:**' : `**${assistantLabel}:**`;
       return `${label}\n\n${markdown}`;
     }
   }
@@ -382,7 +402,7 @@ export function conversationToNote(data: ConversationData, options: TemplateOpti
     const bodyParts: string[] = [];
 
     for (const message of data.messages) {
-      const formatted = formatMessage(message.content, message.role, options);
+      const formatted = formatMessage(message.content, message.role, options, data.source);
       bodyParts.push(formatted);
     }
 
