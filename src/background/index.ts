@@ -6,7 +6,12 @@
 import { ObsidianApiClient, getErrorMessage } from '../lib/obsidian-api';
 import { getSettings, migrateSettings } from '../lib/storage';
 import { escapeYamlValue, escapeYamlListItem } from '../lib/yaml-utils';
-import { MAX_CONTENT_SIZE } from '../lib/constants';
+import {
+  MAX_CONTENT_SIZE,
+  MAX_FILENAME_LENGTH,
+  MAX_FRONTMATTER_TITLE_LENGTH,
+  MAX_TAGS_COUNT,
+} from '../lib/constants';
 import type {
   ExtensionMessage,
   ObsidianNote,
@@ -112,7 +117,7 @@ function validateNoteData(note: ObsidianNote): boolean {
   }
 
   // File name length limits (filesystem constraints)
-  if (note.fileName.length === 0 || note.fileName.length > 200) {
+  if (note.fileName.length === 0 || note.fileName.length > MAX_FILENAME_LENGTH) {
     return false;
   }
 
@@ -123,7 +128,10 @@ function validateNoteData(note: ObsidianNote): boolean {
 
   // Frontmatter validation
   if (note.frontmatter) {
-    if (typeof note.frontmatter.title !== 'string' || note.frontmatter.title.length > 500) {
+    if (
+      typeof note.frontmatter.title !== 'string' ||
+      note.frontmatter.title.length > MAX_FRONTMATTER_TITLE_LENGTH
+    ) {
       return false;
     }
     if (
@@ -132,7 +140,7 @@ function validateNoteData(note: ObsidianNote): boolean {
     ) {
       return false;
     }
-    if (!Array.isArray(note.frontmatter.tags) || note.frontmatter.tags.length > 50) {
+    if (!Array.isArray(note.frontmatter.tags) || note.frontmatter.tags.length > MAX_TAGS_COUNT) {
       return false;
     }
   }
