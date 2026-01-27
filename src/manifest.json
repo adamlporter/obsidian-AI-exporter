@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "__MSG_extName__",
-  "version": "0.6.2",
+  "version": "0.6.3",
   "description": "__MSG_extDescription__",
   "default_locale": "en",
   "minimum_chrome_version": "88",
@@ -12,7 +12,12 @@
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
-  "permissions": ["storage", "downloads", "offscreen", "clipboardWrite"],
+  "permissions": [
+    "storage",
+    "downloads",
+    "offscreen",
+    "clipboardWrite"
+  ],
   "host_permissions": [
     "https://gemini.google.com/*",
     "https://claude.ai/*",
@@ -28,8 +33,14 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://gemini.google.com/*", "https://claude.ai/*", "https://chatgpt.com/*"],
-      "js": ["src/content/index.ts"],
+      "matches": [
+        "https://gemini.google.com/*",
+        "https://claude.ai/*",
+        "https://chatgpt.com/*"
+      ],
+      "js": [
+        "src/content/index.ts"
+      ],
       "run_at": "document_idle"
     }
   ],

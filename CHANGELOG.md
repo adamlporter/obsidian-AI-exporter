@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.3](https://github.com/sho7650/obsidian-AI-exporter/compare/v0.6.2...v0.6.3) (2026-01-27)
+
+
+### Bug Fixes
+
+* 🔧 update commitlint config for Release Please compatibility ([c95f9c9](https://github.com/sho7650/obsidian-AI-exporter/commit/c95f9c9e1323b804d5bb3ae5817dafc35a5e8509))
+* 🔧 update commitlint config for Release Please compatibility ([87637e6](https://github.com/sho7650/obsidian-AI-exporter/commit/87637e6dac4b7250f6cbdd130204ffa3daeceaa3))
+
 ## [Unreleased]
 
 ## [0.6.2] - 2025-01-21
