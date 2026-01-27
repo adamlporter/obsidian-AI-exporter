@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.4](https://github.com/sho7650/obsidian-AI-exporter/compare/v0.6.3...v0.6.4) (2026-01-27)
+
+
+### Code Refactoring
+
+* improve code quality and cleanup project structure ([ee0b70e](https://github.com/sho7650/obsidian-AI-exporter/commit/ee0b70e93e7c0e48f5c29b28954bfdcdc87b731f))
+* improve code quality and cleanup project structure ([49b42b0](https://github.com/sho7650/obsidian-AI-exporter/commit/49b42b0c9b1f4124663e35200ed4fc94149dc000))
+
 ## [0.6.3](https://github.com/sho7650/obsidian-AI-exporter/compare/v0.6.2...v0.6.3) (2026-01-27)
 
 
