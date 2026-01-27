@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.5](https://github.com/sho7650/obsidian-AI-exporter/compare/v0.6.4...v0.6.5) (2026-01-27)
+
+
+### Bug Fixes
+
+* remove duplicate .md extension in file download ([57eb01d](https://github.com/sho7650/obsidian-AI-exporter/commit/57eb01d5d4b1fa2dc01cc67d997a1b9dce5e38a8))
+* remove duplicate .md extension in file download ([4857cb8](https://github.com/sho7650/obsidian-AI-exporter/commit/4857cb8c50c41fcbecd8ce7981bfb83f76f80ed4))
+
 ## [0.6.4](https://github.com/sho7650/obsidian-AI-exporter/compare/v0.6.3...v0.6.4) (2026-01-27)
 
 
