@@ -459,7 +459,7 @@ async function handleDownloadToFile(
 ): Promise<OutputResult> {
   try {
     const content = generateNoteContent(note, settings);
-    const filename = `${note.fileName}.md`;
+    const filename = note.fileName;
 
     // Use data URL (Service Worker doesn't support Blob/URL.createObjectURL)
     const base64Content = stringToBase64(content);

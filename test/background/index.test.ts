@@ -831,7 +831,7 @@ describe('background/index', () => {
   describe('handleDownloadToFile', () => {
     const validSender = { url: `chrome-extension://${chrome.runtime.id}/popup.html` };
     const validNote: ObsidianNote = {
-      fileName: 'test-conversation',
+      fileName: 'test-conversation.md',
       body: '# Test Content',
       contentHash: 'abc123',
       frontmatter: {
