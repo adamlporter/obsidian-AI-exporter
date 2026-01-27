@@ -126,13 +126,13 @@ export abstract class BaseExtractor implements IConversationExtractor {
   ): NodeListOf<T> | T[] {
     // Guard clause: return empty array for empty or invalid selector arrays
     if (!selectors || selectors.length === 0) {
-      return [] as unknown as NodeListOf<T>;
+      return [];
     }
 
     for (const selector of selectors) {
       const results = parent.querySelectorAll<T>(selector);
       if (results.length > 0) return results;
     }
-    return [] as unknown as NodeListOf<T>;
+    return [];
   }
 }

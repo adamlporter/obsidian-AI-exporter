@@ -22,6 +22,19 @@ export const MAX_FILENAME_BASE_LENGTH = 50;
 export const FILENAME_ID_SUFFIX_LENGTH = 8;
 
 // ============================================================
+// Validation Limits
+// ============================================================
+
+/** Maximum length for filename (filesystem constraint) */
+export const MAX_FILENAME_LENGTH = 200;
+
+/** Maximum length for frontmatter title field (characters) */
+export const MAX_FRONTMATTER_TITLE_LENGTH = 500;
+
+/** Maximum number of tags allowed in frontmatter */
+export const MAX_TAGS_COUNT = 50;
+
+// ============================================================
 // Network Configuration
 // ============================================================
 
