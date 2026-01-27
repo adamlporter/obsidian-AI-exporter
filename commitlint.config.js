@@ -1,29 +1,25 @@
 /**
- * commitlint configuration with emoji prefix support
+ * commitlint configuration for Release Please compatibility
  *
- * Format: "<emoji> <type>: <subject>"
- * Example: "✨ feat: add new feature"
+ * Format: "<type>: <emoji> <subject>"
+ * Example: "feat: ✨ add new feature"
  *
- * Supported emoji mappings:
- * ✨ feat     - New feature
- * 🐛 fix      - Bug fix
- * 📝 docs     - Documentation
- * 🎨 style    - Code style/formatting
- * ♻️  refactor - Code refactoring
- * ⚡️ perf     - Performance improvement
- * ✅ test     - Tests
- * 🔧 chore    - Build/maintenance
- * 🔒 security - Security fix
+ * This format ensures Release Please can parse the conventional commit type
+ * while preserving emoji in the subject line for visual clarity.
+ *
+ * Supported type-emoji mappings (emoji in subject):
+ * feat     ✨ - New feature
+ * fix      🐛 - Bug fix
+ * docs     📝 - Documentation
+ * style    🎨 - Code style/formatting
+ * refactor ♻️  - Code refactoring
+ * perf     ⚡️ - Performance improvement
+ * test     ✅ - Tests
+ * chore    🔧 - Build/maintenance
+ * security 🔒 - Security fix
  */
 export default {
-  parserPreset: {
-    parserOpts: {
-      // Regex: emoji + space + type + optional(scope) + colon + space + subject
-      headerPattern:
-        /^(?:\p{Emoji_Presentation}|\p{Extended_Pictographic})\s+(\w+)(?:\(([^)]+)\))?:\s+(.+)$/u,
-      headerCorrespondence: ['type', 'scope', 'subject'],
-    },
-  },
+  extends: ['@commitlint/config-conventional'],
   rules: {
     'type-enum': [
       2, // Error level
@@ -45,9 +41,6 @@ export default {
         'release', // Release
       ],
     ],
-    'type-case': [2, 'always', 'lower-case'],
-    'type-empty': [2, 'never'],
-    'subject-empty': [2, 'never'],
     'header-max-length': [2, 'always', 100],
   },
 };
