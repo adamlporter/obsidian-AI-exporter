@@ -13,13 +13,15 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "prepare": "husky"
   },
   "dependencies": {
     "dompurify": "^3.0.0",
     "turndown": "^7.1.2"
   },
   "devDependencies": {
+    "@commitlint/cli": "^20.3.1",
     "@crxjs/vite-plugin": "^2.0.0-beta.23",
     "@types/chrome": "^0.0.268",
     "@types/dompurify": "^3.0.0",
@@ -29,6 +31,7 @@
     "@typescript-eslint/parser": "^6.19.0",
     "@vitest/coverage-v8": "^4.0.16",
     "eslint": "^8.56.0",
+    "husky": "^9.1.7",
     "jsdom": "^27.4.0",
     "prettier": "^3.2.0",
     "typescript": "^5.3.3",
