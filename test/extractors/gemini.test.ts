@@ -708,4 +708,96 @@ describe('GeminiExtractor', () => {
       expect(sources[0].domain).toBe('another-domain.org');
     });
   });
+
+  // ========== Coverage Gap: extract() canExtract false (DES-005 3.3) ==========
+  describe('extract() canExtract false', () => {
+    it('returns error when called from non-gemini domain', async () => {
+      // Covers: gemini.ts lines 444-449 (canExtract false branch)
+      resetLocation();
+      const result = await extractor.extract();
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Not on a Gemini page');
+    });
+  });
+
+  // ========== Coverage Gap: extractMessagesFromRoot fallback (DES-005 3.3) ==========
+  describe('extractMessagesFromRoot', () => {
+    it('falls back to root extraction when no conversation-container found', () => {
+      // Covers: gemini.ts lines 280-322 (extractMessagesFromRoot)
+      // Including DOM position sorting at lines 296-301
+      setGeminiLocation('test-123');
+      // Create DOM with user-query and model-response but WITHOUT .conversation-container
+      loadFixture(`
+        <div class="conversation-thread">
+          <user-query>
+            <div class="query-content">
+              <p class="query-text-line">Root fallback question</p>
+            </div>
+          </user-query>
+          <model-response>
+            <div class="response-content">
+              <div class="markdown markdown-main-panel"><p>Root fallback answer</p></div>
+            </div>
+          </model-response>
+        </div>
+      `);
+
+      const messages = extractor.extractMessages();
+
+      expect(messages).toHaveLength(2);
+      expect(messages[0].role).toBe('user');
+      expect(messages[0].content).toContain('Root fallback question');
+      expect(messages[1].role).toBe('assistant');
+      expect(messages[1].htmlContent).toContain('Root fallback answer');
+    });
+  });
+
+  // ========== Coverage Gap: extractUserQueryContent fallback selectors (DES-005 3.3) ==========
+  describe('extractUserQueryContent fallback paths', () => {
+    it('falls back when all .query-text-line elements are whitespace-only', () => {
+      // Covers: gemini.ts lines 340-342 (textParts.length === 0 after filter)
+      setGeminiLocation('test-123');
+      loadFixture(`
+        <div class="conversation-container">
+          <user-query>
+            <div class="query-content">
+              <p class="query-text-line">   </p>
+              <p class="query-text-line">  </p>
+            </div>
+          </user-query>
+          <model-response>
+            <div class="markdown markdown-main-panel"><p>Response</p></div>
+          </model-response>
+        </div>
+      `);
+
+      const messages = extractor.extractMessages();
+
+      // The function should fall through whitespace query lines and use
+      // queryTextLine fallback or element.textContent
+      // At minimum the assistant message should be extracted
+      expect(messages.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('uses element.textContent as final fallback when no query-text-line found', () => {
+      // Covers: gemini.ts line 352 (final fallback: element.textContent)
+      setGeminiLocation('test-123');
+      loadFixture(`
+        <div class="conversation-container">
+          <user-query>
+            <div class="query-content">Final fallback text</div>
+          </user-query>
+          <model-response>
+            <div class="markdown markdown-main-panel"><p>Response</p></div>
+          </model-response>
+        </div>
+      `);
+
+      const messages = extractor.extractMessages();
+
+      expect(messages).toHaveLength(2);
+      expect(messages[0].content).toContain('Final fallback text');
+    });
+  });
 });

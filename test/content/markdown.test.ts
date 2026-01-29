@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
   htmlToMarkdown,
   generateFileName,
@@ -279,6 +279,51 @@ describe('conversationToNote', () => {
     expect(note.body).toContain('Second question');
     expect(note.body).toContain('Second answer');
   });
+
+  // ========== Coverage Gap: getAssistantLabel default (DES-005 3.6) ==========
+  it('uses "Assistant" label for unknown source platform', () => {
+    // Covers: markdown.ts line 329 (default case in getAssistantLabel switch)
+    // NOTE: Uses type cast to bypass compile-time check. This is intentional
+    // to exercise the runtime default case.
+    const data: ConversationData = {
+      id: 'test-unknown',
+      title: 'Unknown Platform Test',
+      url: 'https://example.com/chat/123',
+      source: 'unknown_platform' as 'gemini',
+      messages: [
+        { id: 'u1', role: 'user', content: 'Hello', index: 0 },
+        { id: 'a1', role: 'assistant', content: '<p>Hi</p>', htmlContent: '<p>Hi</p>', index: 1 },
+      ],
+      extractedAt: new Date('2025-01-01T00:00:00.000Z'),
+      metadata: { messageCount: 2, userMessageCount: 1, assistantMessageCount: 1, hasCodeBlocks: false },
+    };
+
+    const note = conversationToNote(data, defaultOptions);
+
+    expect(note.body).toContain('[!NOTE] Assistant');
+  });
+
+  // ========== Coverage Gap: empty sources in Deep Research (DES-005 3.6) ==========
+  it('omits References section when links.sources is empty', () => {
+    // Covers: markdown.ts line 176 branch (sources.length === 0)
+    const data: ConversationData = {
+      id: 'deep-research-empty-refs',
+      title: 'Deep Research No Sources',
+      url: 'https://gemini.google.com/app/test',
+      source: 'gemini',
+      type: 'deep-research',
+      links: { sources: [] },
+      messages: [
+        { id: 'r0', role: 'assistant', content: '<p>Report content</p>', htmlContent: '<p>Report content</p>', index: 0 },
+      ],
+      extractedAt: new Date('2025-01-01T00:00:00.000Z'),
+      metadata: { messageCount: 1, userMessageCount: 0, assistantMessageCount: 1, hasCodeBlocks: false },
+    };
+
+    const note = conversationToNote(data, defaultOptions);
+
+    expect(note.body).not.toContain('## References');
+  });
 });
 
 // ============================================================
@@ -367,6 +412,23 @@ describe('convertInlineCitationsToFootnoteRefs', () => {
     const result = convertInlineCitationsToFootnoteRefs(html, createSourceMap());
     // Index 5 is preserved as-is, not renumbered to 2
     expect(result).toBe('A<span data-footnote-ref="1">REF</span>B<span data-footnote-ref="5">REF</span>');
+  });
+
+  // ========== Coverage Gap: source-footnote wrapper with missing source (DES-005 3.6) ==========
+  it('warns and removes source-footnote wrapper when source index not in map', () => {
+    // Covers: markdown.ts lines 73-74 (Pattern 1, source not found)
+    // Existing test at line 351 covers Pattern 2 (standalone sup).
+    // This test specifically covers Pattern 1 (source-footnote wrapped).
+    const html = 'Text<source-footnote class="ng-star-inserted"><sup class="superscript" data-turn-source-index="99"></sup></source-footnote>more';
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const result = convertInlineCitationsToFootnoteRefs(html, createSourceMap());
+
+    expect(result).toBe('Textmore');
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Citation reference 99 not found')
+    );
+    warnSpy.mockRestore();
   });
 });
 

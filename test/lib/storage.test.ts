@@ -151,6 +151,24 @@ describe('storage', () => {
         'Save failed'
       );
     });
+
+    it('merges outputOptions with current settings', async () => {
+      vi.mocked(chrome.storage.local.get).mockResolvedValue({});
+      vi.mocked(chrome.storage.sync.get).mockResolvedValue({
+        settings: {
+          outputOptions: { obsidian: true, file: false, clipboard: false },
+        },
+      });
+
+      await saveSettings({
+        outputOptions: { file: true } as never,
+      });
+
+      expect(chrome.storage.sync.set).toHaveBeenCalled();
+      const callArgs = vi.mocked(chrome.storage.sync.set).mock.calls[0][0];
+      expect(callArgs.settings.outputOptions.file).toBe(true);
+      expect(callArgs.settings.outputOptions.obsidian).toBe(true);
+    });
   });
 
   describe('migrateSettings', () => {

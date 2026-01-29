@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { ChatGPTExtractor } from '../../src/content/extractors/chatgpt';
 import {
   loadFixture,
@@ -515,6 +515,115 @@ describe('ChatGPTExtractor', () => {
       const result = await extractor.extract();
       expect(result.success).toBe(true);
       expect(result.warnings).toContain('No user messages found');
+    });
+  });
+
+  // ========== Coverage Gap: extract() canExtract false (DES-005 3.2) ==========
+  describe('extract() error paths', () => {
+    it('returns error when called from non-chatgpt domain', async () => {
+      // Covers: chatgpt.ts lines 238-243 (canExtract false branch)
+      // DO NOT set ChatGPT location — default is localhost
+      resetLocation();
+      const result = await extractor.extract();
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Not on a ChatGPT page');
+    });
+
+    it('returns error with Error.message in catch block', async () => {
+      // Covers: chatgpt.ts lines 291-297 (catch block, Error instance)
+      setChatGPTLocation('test-123');
+      const originalQSA = document.querySelectorAll.bind(document);
+      vi.spyOn(document, 'querySelectorAll').mockImplementation((selector) => {
+        if (selector.includes('data-turn-id')) {
+          throw new Error('DOM access failed');
+        }
+        return originalQSA(selector);
+      });
+
+      const result = await extractor.extract();
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('DOM access failed');
+      vi.restoreAllMocks();
+    });
+
+    it('returns "Unknown extraction error" for non-Error throw in catch block', async () => {
+      // Covers: chatgpt.ts line 295 (error instanceof Error === false)
+      setChatGPTLocation('test-123');
+      const originalQSA = document.querySelectorAll.bind(document);
+      vi.spyOn(document, 'querySelectorAll').mockImplementation((selector) => {
+        if (selector.includes('data-turn-id')) {
+          throw 'string error'; // non-Error object
+        }
+        return originalQSA(selector);
+      });
+
+      const result = await extractor.extract();
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Unknown extraction error');
+      vi.restoreAllMocks();
+    });
+  });
+
+  // ========== Coverage Gap: Fallback selectors (DES-005 3.2) ==========
+  describe('extractMessages fallback selectors', () => {
+    it('returns empty array and warns when no conversation turns found', () => {
+      // Covers: chatgpt.ts lines 126-129 (turns.length === 0)
+      setChatGPTLocation('test-123');
+      loadFixture('<div class="empty-page"></div>');
+
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const messages = extractor.extractMessages();
+
+      expect(messages).toHaveLength(0);
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('No conversation turns found')
+      );
+      warnSpy.mockRestore();
+    });
+
+    it('extracts user content via .whitespace-pre-wrap fallback when primary selector fails', () => {
+      // Covers: chatgpt.ts lines 178-181 (fallback user selector)
+      setChatGPTLocation('test-123');
+      loadFixture(`
+        <div class="flex flex-col text-sm pb-25">
+          <article data-turn-id="turn-1" data-testid="conversation-turn-1" data-turn="user">
+            <div>
+              <div class="whitespace-pre-wrap">Fallback user content</div>
+            </div>
+          </article>
+        </div>
+      `);
+
+      const messages = extractor.extractMessages();
+
+      expect(messages).toHaveLength(1);
+      expect(messages[0].role).toBe('user');
+      expect(messages[0].content).toBe('Fallback user content');
+    });
+
+    it('extracts assistant content via assistantResponse fallback when markdownContent absent', () => {
+      // Covers: chatgpt.ts lines 203-210 (fallback assistant selector)
+      setChatGPTLocation('test-123');
+      loadFixture(`
+        <div class="flex flex-col text-sm pb-25">
+          <article data-turn-id="turn-1" data-testid="conversation-turn-1" data-turn="assistant">
+            <div data-message-author-role="assistant" data-message-id="msg-1">
+              <div class="markdown prose dark:prose-invert">
+                <p>Fallback assistant content</p>
+              </div>
+            </div>
+          </article>
+        </div>
+      `);
+
+      const messages = extractor.extractMessages();
+
+      expect(messages).toHaveLength(1);
+      expect(messages[0].role).toBe('assistant');
+      expect(messages[0].content).toContain('Fallback assistant content');
     });
   });
 });
