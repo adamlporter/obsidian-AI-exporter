@@ -1,0 +1,140 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`ChatGPT E2E Extraction > Chat - Simple Conversation > should generate correct markdown output 1`] = `
+"---
+id: chatgpt_e2e-chatgpt-chat-001
+title: ChatGPTのhtml構造をテストするための質問です。「はい」とだけ答えて。
+source: chatgpt
+url: "https://chatgpt.com/c/e2e-chatgpt-chat-001"
+created: "2025-01-01T00:00:00.000Z"
+modified: "2025-01-01T00:00:00.000Z"
+tags:
+  - ai-conversation
+  - chatgpt
+message_count: 9
+---
+
+> [!QUESTION] User
+> ChatGPTのhtml構造をテストするための質問です。「はい」とだけ答えて。
+
+> [!NOTE] ChatGPT
+> はい
+
+> [!QUESTION] User
+> 次は「いいえ」だけ答えて
+
+> [!NOTE] ChatGPT
+> いいえ
+
+> [!QUESTION] User
+> この Research 依頼はテスト用です。最小のリサーチ結果を提供してください。
+
+> [!NOTE] ChatGPT
+> 承知しました。テスト用とのことですが、どのようなテーマまたはキーワードについて最小限のリサーチ結果をご希望ですか？任意の話題で構いませんので、少しだけご指定いただけますか？
+
+> [!QUESTION] User
+> ChatGPT の提供する機能についてまとめてください。
+
+> [!NOTE] ChatGPT
+> 了解しました。ChatGPT が提供する主な機能について簡潔にまとめたリサーチを行います。完了次第ご報告いたしますので、その間もご自由にお話しください。
+
+> [!NOTE] ChatGPT
+> # ChatGPTの機能概要
+> 
+> ChatGPTは会話形式のAIアシスタントで、**質問回答や概念説明**、**文章の作成・要約・書き換え**、**翻訳**、**創作アイデアの提案**など多様なタスクに対応します[help.openai.com](https://help.openai.com/en/articles/9260256-chatgpt-capabilities-overview#:~:text=,concepts)。自然言語を理解し**複雑な指示に従って対話を続ける**ことができ、前の発話を記憶して文脈を保持しながら応答します[help.openai.com](https://help.openai.com/en/articles/9260256-chatgpt-capabilities-overview#:~:text=It%20understands%20natural%20language%20and,2%20Learn%20more)。
+> 
+> ## 主な機能・特徴
+> 
+> -   **文章生成・編集**：メールやブログ記事、報告書、物語などの下書きや修正、要約が可能[help.openai.com](https://help.openai.com/en/articles/9260256-chatgpt-capabilities-overview#:~:text=,concepts)。
+>     
+> -   **質問応答・学習支援**：一般知識や専門知識の質問に答えたり、概念をわかりやすく説明することで学習やリサーチに役立てられます[help.openai.com](https://help.openai.com/en/articles/9260256-chatgpt-capabilities-overview#:~:text=,concepts)。
+>     
+> -   **翻訳**：多言語間の翻訳も得意で、文脈に合わせて自然な文章に変換できます[help.openai.com](https://help.openai.com/en/articles/9260256-chatgpt-capabilities-overview#:~:text=,reasoning)。
+>     
+> -   **創作サポート**：物語作成やアイデア出し、クリエイティブな提案など、創造的なタスクにも活用可能です[help.openai.com](https://help.openai.com/en/articles/9260256-chatgpt-capabilities-overview#:~:text=,content)。
+>     
+> -   **コード生成・デバッグ**：プログラミングのコードを生成したり、エラー修正のアドバイスを行えます。データ解析用にコードを実行できる環境も備え、表計算やCSVデータの分析・可視化が可能です[help.openai.com](https://help.openai.com/en/articles/9260256-chatgpt-capabilities-overview#:~:text=ChatGPT%20can%20run%20code%20in,Learn%20more%20about%20Data%20Analysis)。
+>     
+> 
+> ## 対応入力とツール
+> 
+> -   **テキスト入力**：基本的にテキストでの対話が可能です。
+>     
+> -   **画像入力・生成**：画像や図表、スクリーンショットをアップロードして内容を質問したり、説明を求めることができます[help.openai.com](https://help.openai.com/en/articles/9260256-chatgpt-capabilities-overview#:~:text=You%20can%20also%20ask%20ChatGPT,Learn%20more%20about%20image%20generation)。また、テキストの指示からイラストやモックアップなどの画像を生成したり、生成画像の編集も可能です[help.openai.com](https://help.openai.com/en/articles/9260256-chatgpt-capabilities-overview#:~:text=You%20can%20also%20ask%20ChatGPT,Learn%20more%20about%20image%20generation)。
+>     
+> -   **ファイルアップロード**：PDFやスライド、テキスト文書をアップロードし、その内容を要約したり質問に答えることができます[help.openai.com](https://help.openai.com/en/articles/9260256-chatgpt-capabilities-overview#:~:text=You%20can%20upload%20files%20like,Learn%20more%20about%20file%20uploads)。
+>     
+> -   **コード実行**：CSVやスプレッドシートなどのデータ解析用に、コード実行環境を使って解析やグラフ作成を行えます[help.openai.com](https://help.openai.com/en/articles/9260256-chatgpt-capabilities-overview#:~:text=ChatGPT%20can%20run%20code%20in,Learn%20more%20about%20Data%20Analysis)。
+>     
+> -   **音声モード**：スマートフォンアプリなどで音声入力・出力が可能な「音声モード」があり、音声で自然な会話ができます[help.openai.com](https://help.openai.com/en/articles/9260256-chatgpt-capabilities-overview#:~:text=Speak%20naturally%20with%20ChatGPT%20using,Learn%20more%20about%20Voice%20Mode)。
+>     
+> -   **その他の機能**：チャットの整理・検索機能、メモリ機能（ユーザー情報の記憶）や、タイマー・タスクスケジュール設定など、様々なツールや設定が用意されています[help.openai.com](https://help.openai.com/en/articles/9260256-chatgpt-capabilities-overview#:~:text=Tools%20and%20Special%20Modes)[help.openai.com](https://help.openai.com/en/articles/9260256-chatgpt-capabilities-overview#:~:text=ChatGPT%20can%20run%20code%20in,Learn%20more%20about%20Data%20Analysis)。
+>     
+> 
+> ## バージョンによる違い（GPT-3.5 vs GPT-4）
+> 
+> ChatGPTの基盤となるモデルには複数のバージョンがあり、**GPT-4**は**GPT-3.5**に比べてより高い信頼性と創造性を発揮し、複雑・微妙な指示にも対応できます[openai.com](https://openai.com/index/gpt-4-research/#:~:text=In%20a%20casual%20conversation%2C%20the,5)。特に長文理解や推論タスクで性能が向上しています。GPT-4は**マルチモーダル**で、テキストだけでなく画像入力にも対応しており、画像を含む複合的なタスクにも応答可能です[openai.com](https://openai.com/index/gpt-4-research/#:~:text=GPT%E2%80%914%20can%20accept%20a%20prompt,opens%20in%20a%20new%20window)。一方、GPT-3.5は主にテキスト入力のみ対応しています。最新のGPT-4oではさらに高速化・低コスト化され、音声や動画などの新たなメディア対応も進められています[openai.com](https://openai.com/index/hello-gpt-4o/#:~:text=GPT%E2%80%914o%E2%80%99s%20text%20and%20image%20capabilities,Plus%20in%20the%20coming%20weeks)[openai.com](https://openai.com/index/gpt-4-research/#:~:text=GPT%E2%80%914%20can%20accept%20a%20prompt,opens%20in%20a%20new%20window)。
+> 
+> ## 利用例・できること
+> 
+> -   **文章作成・編集**：ビジネスメールやレポート、創作ストーリーなどの文章作成や校正、アイデア出しができる[help.openai.com](https://help.openai.com/en/articles/9260256-chatgpt-capabilities-overview#:~:text=,concepts)。
+>     
+> -   **要約・情報抽出**：会議資料や論文、ニュース記事の要約や重要ポイントの抽出を行える[help.openai.com](https://help.openai.com/en/articles/9260256-chatgpt-capabilities-overview#:~:text=,concepts)[help.openai.com](https://help.openai.com/en/articles/9260256-chatgpt-capabilities-overview#:~:text=You%20can%20upload%20files%20like,Learn%20more%20about%20file%20uploads)。
+>     
+> -   **翻訳**：日本語⇔英語など、多言語への翻訳作業を支援できる[help.openai.com](https://help.openai.com/en/articles/9260256-chatgpt-capabilities-overview#:~:text=,reasoning)。
+>     
+> -   **プログラミング支援**：アルゴリズムの設計アドバイスやサンプルコード作成、デバッグの手助けを得られる[help.openai.com](https://help.openai.com/en/articles/9260256-chatgpt-capabilities-overview#:~:text=ChatGPT%20can%20run%20code%20in,Learn%20more%20about%20Data%20Analysis)。
+>     
+> -   **画像生成・編集**：テキストプロンプトからイラストや図解を生成し、指定通りに編集することができる[help.openai.com](https://help.openai.com/en/articles/9260256-chatgpt-capabilities-overview#:~:text=You%20can%20also%20ask%20ChatGPT,Learn%20more%20about%20image%20generation)。
+>     
+> -   **調査・リサーチ**：複数の情報源から内容をまとめて報告書を作成したり、特定テーマの最新情報を収集したりすることができる（ブラウザ検索機能の利用）[help.openai.com](https://help.openai.com/en/articles/9260256-chatgpt-capabilities-overview#:~:text=Tools%20and%20Special%20Modes)。
+>     
+> -   **会話・教育支援**：語学学習の会話練習や、専門的なトピックの説明、アドバイス提供など、対話形式で学習や相談が行えます[help.openai.com](https://help.openai.com/en/articles/9260256-chatgpt-capabilities-overview#:~:text=,concepts)。
+>     
+> 
+> これらの機能により、ChatGPTは**文章生成・翻訳・コード生成・画像生成**など幅広い用途に活用できます[help.openai.com](https://help.openai.com/en/articles/9260256-chatgpt-capabilities-overview#:~:text=,concepts)[help.openai.com](https://help.openai.com/en/articles/9260256-chatgpt-capabilities-overview#:~:text=You%20can%20also%20ask%20ChatGPT,Learn%20more%20about%20image%20generation)。
+> 
+> **参考資料:** OpenAI公式ヘルプセンターおよびGPT-4リサーチレポート[help.openai.com](https://help.openai.com/en/articles/9260256-chatgpt-capabilities-overview#:~:text=,concepts)[openai.com](https://openai.com/index/gpt-4-research/#:~:text=In%20a%20casual%20conversation%2C%20the,5)[help.openai.com](https://help.openai.com/en/articles/9260256-chatgpt-capabilities-overview#:~:text=You%20can%20also%20ask%20ChatGPT,Learn%20more%20about%20image%20generation)[openai.com](https://openai.com/index/gpt-4-research/#:~:text=GPT%E2%80%914%20can%20accept%20a%20prompt,opens%20in%20a%20new%20window)。"
+`;
+
+exports[`ChatGPT E2E Extraction > Chat with Code Blocks > should generate markdown with code blocks 1`] = `
+"---
+id: chatgpt_e2e-chatgpt-code-001
+title: Write a function to check if a number is prime in TypeScript.
+source: chatgpt
+url: "https://chatgpt.com/c/e2e-chatgpt-code-001"
+created: "2025-01-01T00:00:00.000Z"
+modified: "2025-01-01T00:00:00.000Z"
+tags:
+  - ai-conversation
+  - chatgpt
+message_count: 2
+---
+
+> [!QUESTION] User
+> Write a function to check if a number is prime in TypeScript.
+
+> [!NOTE] ChatGPT
+> Here's a TypeScript function to check if a number is prime:
+> 
+> \`\`\`typescript
+> function isPrime(n: number): boolean {
+>   if (n <= 1) return false;
+>   if (n <= 3) return true;
+>   if (n % 2 === 0 || n % 3 === 0) return false;
+> 
+>   for (let i = 5; i * i <= n; i += 6) {
+>     if (n % i === 0 || n % (i + 2) === 0) {
+>       return false;
+>     }
+>   }
+>   return true;
+> }
+> 
+> // Usage examples
+> console.log(isPrime(7));  // true
+> console.log(isPrime(10)); // false
+> \`\`\`
+> 
+> This implementation uses the 6k±1 optimization for better performance."
+`;

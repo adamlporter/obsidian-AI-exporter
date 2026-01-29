@@ -1,0 +1,49 @@
+<!--
+  Fixture: chatgpt/chat-code.html
+  Captured: 2026-01-28
+  URL Pattern: https://chatgpt.com/c/{conversation-id}
+
+  Description: Conversation with code blocks for E2E testing
+  Messages: 1 user, 1 assistant (with code)
+
+  Update Trigger: Selector changes or DOM structure changes
+-->
+
+<div class="flex flex-col text-sm pb-25">
+  <article data-turn-id="turn-0" data-testid="conversation-turn-1" data-turn="user">
+    <div data-message-author-role="user" data-message-id="msg-0">
+      <div class="whitespace-pre-wrap">
+        Write a function to check if a number is prime in TypeScript.
+      </div>
+    </div>
+  </article>
+  <article data-turn-id="turn-1" data-testid="conversation-turn-2" data-turn="assistant">
+    <div
+      data-message-author-role="assistant"
+      data-message-id="msg-1"
+      data-message-model-slug="gpt-4"
+    >
+      <div class="markdown prose dark:prose-invert w-full break-words light markdown-new-styling">
+        <p>Here's a TypeScript function to check if a number is prime:</p>
+        <pre><code class="language-typescript">function isPrime(n: number): boolean {
+  if (n &lt;= 1) return false;
+  if (n &lt;= 3) return true;
+  if (n % 2 === 0 || n % 3 === 0) return false;
+
+  for (let i = 5; i * i &lt;= n; i += 6) {
+    if (n % i === 0 || n % (i + 2) === 0) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// Usage examples
+console.log(isPrime(7));  // true
+console.log(isPrime(10)); // false
+</code></pre>
+        <p>This implementation uses the 6k±1 optimization for better performance.</p>
+      </div>
+    </div>
+  </article>
+</div>

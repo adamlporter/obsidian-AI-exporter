@@ -1,0 +1,976 @@
+<!--
+  Fixture: claude/artifacts.html
+  Captured: 2026-01-29
+  URL Pattern: https://claude.ai/chat/{conversation-id}
+
+  Description: Artifacts/Deep Research format for E2E testing
+  Messages: 1 assistant (Artifact with citations)
+
+  Update Trigger: Selector changes or DOM structure changes
+-->
+
+<div
+  class="max-md:absolute top-0 right-0 bottom-0 left-0 z-20 md:flex-grow-0 md:flex-shrink-0 md:basis-0 overflow-hidden h-full max-md:flex-1"
+  style="flex: 50 1 0%"
+>
+  <div class="flex flex-col h-full overflow-hidden" style="width: auto">
+    <div class="h-12 md:hidden bg-bg-000/30 backdrop-blur border-b-0.5 border-border-300"></div>
+    <div class="flex-1 overflow-hidden h-full bg-bg-100">
+      <div class="relative h-full">
+        <div class="bg-bg-000 flex h-full flex-col relative">
+          <div class="pr-2 pl-3 flex items-center justify-between gap-2 select-none py-2">
+            <div class="flex items-center flex-1 gap-2"></div>
+            <div class="flex gap-2 items-center text-sm">
+              <div class="flex gap-1 items-center"></div>
+              <div class="flex h-8 whitespace-nowrap">
+                <button
+                  class="font-base-bold !text-xs rounded-l-lg bg-bg-000 h-full flex items-center justify-center px-2 border-y-0.5 border-l-0.5 border-border-200 hover:bg-bg-200"
+                >
+                  <div class="relative"><div class="">Copy</div></div></button
+                ><button
+                  class="bg-bg-000 flex items-center justify-center px-1 hover:bg-bg-200 rounded-r-lg border-0.5 border-border-200"
+                  type="button"
+                  id="radix-_r_rv_"
+                  aria-haspopup="menu"
+                  aria-expanded="false"
+                  data-state="closed"
+                >
+                  <div
+                    style="
+                      width: 16px;
+                      height: 16px;
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                    "
+                  >
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                      xmlns="http://www.w3.org/2000/svg"
+                      aria-hidden="true"
+                      style="flex-shrink: 0"
+                    >
+                      <path
+                        d="M14.128 7.16482C14.3126 6.95983 14.6298 6.94336 14.835 7.12771C15.0402 7.31242 15.0567 7.62952 14.8721 7.83477L10.372 12.835L10.2939 12.9053C10.2093 12.9667 10.1063 13 9.99995 13C9.85833 12.9999 9.72264 12.9402 9.62788 12.835L5.12778 7.83477L5.0682 7.75273C4.95072 7.55225 4.98544 7.28926 5.16489 7.12771C5.34445 6.96617 5.60969 6.95939 5.79674 7.09744L5.87193 7.16482L9.99995 11.7519L14.128 7.16482Z"
+                      ></path>
+                    </svg>
+                  </div>
+                </button>
+              </div>
+              <button
+                class="inline-flex items-center justify-center relative shrink-0 can-focus select-none disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none disabled:drop-shadow-none font-base-bold relative overflow-hidden transition-transform will-change-transform ease-[cubic-bezier(0.165,0.85,0.45,1)] duration-150 hover:scale-y-[1.015] hover:scale-x-[1.005] backface-hidden after:absolute after:inset-0 after:bg-[radial-gradient(at_bottom,hsla(var(--bg-000)/20%),hsla(var(--bg-000)/0%))] after:opacity-0 after:transition after:duration-200 after:translate-y-2 hover:after:opacity-100 hover:after:translate-y-0 h-8 rounded-md px-3 min-w-[4rem] active:scale-[0.985] whitespace-nowrap !text-xs Button_primary__0oSjX"
+                type="button"
+                data-state="closed"
+              >
+                <span class="text-sm">Publish</span></button
+              ><button
+                class="inline-flex items-center justify-center relative shrink-0 can-focus select-none disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none disabled:drop-shadow-none border-transparent transition font-base duration-300 ease-[cubic-bezier(0.165,0.85,0.45,1)] h-8 w-8 rounded-md active:scale-95 Button_ghost__BUAoh"
+                type="button"
+              >
+                <div
+                  style="
+                    width: 16px;
+                    height: 16px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                  "
+                >
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true"
+                    style="flex-shrink: 0"
+                  >
+                    <path
+                      d="M15.1465 4.14642C15.3418 3.95121 15.6583 3.95118 15.8536 4.14642C16.0487 4.34168 16.0488 4.65822 15.8536 4.85346L10.7071 9.99997L15.8536 15.1465C16.0487 15.3417 16.0488 15.6583 15.8536 15.8535C15.6828 16.0244 15.4187 16.0461 15.2247 15.918L15.1465 15.8535L10 10.707L4.85352 15.8535C4.65827 16.0486 4.34168 16.0486 4.14648 15.8535C3.95129 15.6583 3.95142 15.3418 4.14648 15.1465L9.293 9.99997L4.14648 4.85346C3.95142 4.65818 3.95129 4.34162 4.14648 4.14642C4.34168 3.95128 4.65825 3.95138 4.85352 4.14642L10 9.29294L15.1465 4.14642Z"
+                    ></path>
+                  </svg>
+                </div>
+              </button>
+            </div>
+          </div>
+          <div
+            class="ease-out duration-200 relative flex w-full flex-1 overflow-x-auto overflow-y-scroll"
+          >
+            <div class="w-full h-full relative">
+              <div
+                tabindex="0"
+                class="w-full h-full relative [&amp;_*::selection]:bg-secondary-000/10"
+              >
+                <div
+                  tabindex="0"
+                  id="markdown-artifact"
+                  class="font-claude-response mx-auto w-full max-w-3xl leading-[1.65rem] px-6 pt-4 md:pt-6 md:px-11"
+                >
+                  <div>
+                    <div
+                      class="standard-markdown grid-cols-1 grid [&amp;_&gt;_*]:min-w-0 gap-3 !gap-3.5"
+                    >
+                      <h1 class="text-text-100 mt-3 -mb-1 text-[1.375rem] font-bold">
+                        Claude Code：AI がプログラミングを手伝ってくれるツール
+                      </h1>
+                      <p
+                        class="font-claude-response-body break-words whitespace-normal leading-[1.7]"
+                      >
+                        <strong
+                          >Claude Code は、Anthropic が開発した「AI
+                          プログラミングアシスタント」です。</strong
+                        >
+                        普段使う日本語や英語で指示を出すだけで、コードの作成・修正・説明などを AI
+                        が代わりに行ってくれます。有料プラン（月額
+                        <strong>$20</strong> から）に加入することで利用でき、
+                        <span class="inline-flex" data-state="closed"
+                          ><a
+                            href="https://support.anthropic.com/en/articles/8325610-how-much-does-claude-pro-cost"
+                            target="_blank"
+                            class="group/tag relative h-[18px] rounded-full inline-flex items-center overflow-hidden -translate-y-px cursor-pointer"
+                            ><span
+                              class="relative transition-colors h-full max-w-[180px] overflow-hidden px-1.5 inline-flex items-center font-small rounded-full border-0.5 border-border-300 bg-bg-200 group-hover/tag:bg-accent-secondary-900 group-hover/tag:border-accent-secondary-100/60"
+                              ><span
+                                class="text-nowrap text-text-300 break-all truncate font-normal group-hover/tag:text-text-200"
+                                >Anthropic +2</span
+                              ></span
+                            ><span
+                              class="transition-all opacity-[0%] h-[17px] absolute right-[0.5px] inline rounded-r-full flex items-center px-1.5 bg-gradient-to-r from-accent-secondary-900/0 via-accent-secondary-900/100 via-30% to-accent-secondary-900/100 group-hover/tag:opacity-[100%]"
+                              ><svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="14"
+                                height="14"
+                                fill="currentColor"
+                                viewBox="0 0 256 256"
+                                class="transition-all group-hover/tag:ease-out duration-[500ms] ease-in text-accent-secondary-100 group-hover/tag:scale-[100%] scale-[80%] group-hover/tag:opacity-[100%] opacity-[0%] -mr-[2px]"
+                              >
+                                <path
+                                  d="M200,64V168a8,8,0,0,1-16,0V83.31L69.66,197.66a8,8,0,0,1-11.32-11.32L172.69,72H88a8,8,0,0,1,0-16H192A8,8,0,0,1,200,64Z"
+                                ></path></svg></span></a></span
+                        >開発者の作業効率を大幅に向上させるツールとして注目されています。
+                      </p>
+                      <h2 class="text-text-100 mt-3 -mb-1 text-[1.125rem] font-bold">
+                        そもそも Claude Code とは何か
+                      </h2>
+                      <p
+                        class="font-claude-response-body break-words whitespace-normal leading-[1.7]"
+                      >
+                        Claude Code は、Anthropic 社が提供する AI
+                        チャットサービス「Claude」のプログラミング特化版です。
+                        <span class="inline-flex" data-state="closed"
+                          ><a
+                            href="https://support.anthropic.com/en/articles/11145838-using-claude-code-with-your-max-plan"
+                            target="_blank"
+                            class="group/tag relative h-[18px] rounded-full inline-flex items-center overflow-hidden -translate-y-px cursor-pointer"
+                            ><span
+                              class="relative transition-colors h-full max-w-[180px] overflow-hidden px-1.5 inline-flex items-center font-small rounded-full border-0.5 border-border-300 bg-bg-200 group-hover/tag:bg-accent-secondary-900 group-hover/tag:border-accent-secondary-100/60"
+                              ><span
+                                class="text-nowrap text-text-300 break-all truncate font-normal group-hover/tag:text-text-200"
+                                >Anthropic</span
+                              ></span
+                            ><span
+                              class="transition-all opacity-[0%] h-[17px] absolute right-[0.5px] inline rounded-r-full flex items-center px-1.5 bg-gradient-to-r from-accent-secondary-900/0 via-accent-secondary-900/100 via-30% to-accent-secondary-900/100 group-hover/tag:opacity-[100%]"
+                              ><svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="14"
+                                height="14"
+                                fill="currentColor"
+                                viewBox="0 0 256 256"
+                                class="transition-all group-hover/tag:ease-out duration-[500ms] ease-in text-accent-secondary-100 group-hover/tag:scale-[100%] scale-[80%] group-hover/tag:opacity-[100%] opacity-[0%] -mr-[2px]"
+                              >
+                                <path
+                                  d="M200,64V168a8,8,0,0,1-16,0V83.31L69.66,197.66a8,8,0,0,1-11.32-11.32L172.69,72H88a8,8,0,0,1,0-16H192A8,8,0,0,1,200,64Z"
+                                ></path></svg></span></a></span
+                        >通常の Claude がチャット形式で質問に答えるのに対し、Claude Code
+                        は<strong>実際にファイルを編集したり、コマンドを実行したりできる</strong>点が大きな違いです。
+                        <span class="inline-flex" data-state="closed"
+                          ><a
+                            href="https://docs.anthropic.com/en/docs/claude-code/overview"
+                            target="_blank"
+                            class="group/tag relative h-[18px] rounded-full inline-flex items-center overflow-hidden -translate-y-px cursor-pointer"
+                            ><span
+                              class="relative transition-colors h-full max-w-[180px] overflow-hidden px-1.5 inline-flex items-center font-small rounded-full border-0.5 border-border-300 bg-bg-200 group-hover/tag:bg-accent-secondary-900 group-hover/tag:border-accent-secondary-100/60"
+                              ><span
+                                class="text-nowrap text-text-300 break-all truncate font-normal group-hover/tag:text-text-200"
+                                >Anthropic</span
+                              ></span
+                            ><span
+                              class="transition-all opacity-[0%] h-[17px] absolute right-[0.5px] inline rounded-r-full flex items-center px-1.5 bg-gradient-to-r from-accent-secondary-900/0 via-accent-secondary-900/100 via-30% to-accent-secondary-900/100 group-hover/tag:opacity-[100%]"
+                              ><svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="14"
+                                height="14"
+                                fill="currentColor"
+                                viewBox="0 0 256 256"
+                                class="transition-all group-hover/tag:ease-out duration-[500ms] ease-in text-accent-secondary-100 group-hover/tag:scale-[100%] scale-[80%] group-hover/tag:opacity-[100%] opacity-[0%] -mr-[2px]"
+                              >
+                                <path
+                                  d="M200,64V168a8,8,0,0,1-16,0V83.31L69.66,197.66a8,8,0,0,1-11.32-11.32L172.69,72H88a8,8,0,0,1,0-16H192A8,8,0,0,1,200,64Z"
+                                ></path></svg></span></a
+                        ></span>
+                      </p>
+                      <p
+                        class="font-claude-response-body break-words whitespace-normal leading-[1.7]"
+                      >
+                        イメージとしては、「優秀なプログラマーが隣に座って、あなたの指示通りに作業してくれる」感覚に近いでしょう。「ログイン機能を作って」と日本語で伝えれば、必要なコードを書いてくれます。「このエラーを直して」とエラーメッセージを見せれば、原因を特定して修正してくれます。
+                        <span class="inline-flex" data-state="closed"
+                          ><a
+                            href="https://code.claude.com/docs/en/overview"
+                            target="_blank"
+                            class="group/tag relative h-[18px] rounded-full inline-flex items-center overflow-hidden -translate-y-px cursor-pointer"
+                            ><span
+                              class="relative transition-colors h-full max-w-[180px] overflow-hidden px-1.5 inline-flex items-center font-small rounded-full border-0.5 border-border-300 bg-bg-200 group-hover/tag:bg-accent-secondary-900 group-hover/tag:border-accent-secondary-100/60"
+                              ><span
+                                class="text-nowrap text-text-300 break-all truncate font-normal group-hover/tag:text-text-200"
+                                >Claude</span
+                              ></span
+                            ><span
+                              class="transition-all opacity-[0%] h-[17px] absolute right-[0.5px] inline rounded-r-full flex items-center px-1.5 bg-gradient-to-r from-accent-secondary-900/0 via-accent-secondary-900/100 via-30% to-accent-secondary-900/100 group-hover/tag:opacity-[100%]"
+                              ><svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="14"
+                                height="14"
+                                fill="currentColor"
+                                viewBox="0 0 256 256"
+                                class="transition-all group-hover/tag:ease-out duration-[500ms] ease-in text-accent-secondary-100 group-hover/tag:scale-[100%] scale-[80%] group-hover/tag:opacity-[100%] opacity-[0%] -mr-[2px]"
+                              >
+                                <path
+                                  d="M200,64V168a8,8,0,0,1-16,0V83.31L69.66,197.66a8,8,0,0,1-11.32-11.32L172.69,72H88a8,8,0,0,1,0-16H192A8,8,0,0,1,200,64Z"
+                                ></path></svg></span></a
+                        ></span>
+                      </p>
+                      <p
+                        class="font-claude-response-body break-words whitespace-normal leading-[1.7]"
+                      >
+                        ターミナル（コマンドライン）という、文字で命令を入力する画面から使用するツールです。
+                        <span class="inline-flex" data-state="closed"
+                          ><a
+                            href="https://support.anthropic.com/en/articles/11145838-using-claude-code-with-your-max-plan"
+                            target="_blank"
+                            class="group/tag relative h-[18px] rounded-full inline-flex items-center overflow-hidden -translate-y-px cursor-pointer"
+                            ><span
+                              class="relative transition-colors h-full max-w-[180px] overflow-hidden px-1.5 inline-flex items-center font-small rounded-full border-0.5 border-border-300 bg-bg-200 group-hover/tag:bg-accent-secondary-900 group-hover/tag:border-accent-secondary-100/60"
+                              ><span
+                                class="text-nowrap text-text-300 break-all truncate font-normal group-hover/tag:text-text-200"
+                                >Anthropic</span
+                              ></span
+                            ><span
+                              class="transition-all opacity-[0%] h-[17px] absolute right-[0.5px] inline rounded-r-full flex items-center px-1.5 bg-gradient-to-r from-accent-secondary-900/0 via-accent-secondary-900/100 via-30% to-accent-secondary-900/100 group-hover/tag:opacity-[100%]"
+                              ><svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="14"
+                                height="14"
+                                fill="currentColor"
+                                viewBox="0 0 256 256"
+                                class="transition-all group-hover/tag:ease-out duration-[500ms] ease-in text-accent-secondary-100 group-hover/tag:scale-[100%] scale-[80%] group-hover/tag:opacity-[100%] opacity-[0%] -mr-[2px]"
+                              >
+                                <path
+                                  d="M200,64V168a8,8,0,0,1-16,0V83.31L69.66,197.66a8,8,0,0,1-11.32-11.32L172.69,72H88a8,8,0,0,1,0-16H192A8,8,0,0,1,200,64Z"
+                                ></path></svg></span></a></span
+                        ><span class="inline-flex w-1"></span
+                        ><span class="inline-flex" data-state="closed"
+                          ><a
+                            href="https://github.com/anthropics/claude-code"
+                            target="_blank"
+                            class="group/tag relative h-[18px] rounded-full inline-flex items-center overflow-hidden -translate-y-px cursor-pointer"
+                            ><span
+                              class="relative transition-colors h-full max-w-[180px] overflow-hidden px-1.5 inline-flex items-center font-small rounded-full border-0.5 border-border-300 bg-bg-200 group-hover/tag:bg-accent-secondary-900 group-hover/tag:border-accent-secondary-100/60"
+                              ><span
+                                class="text-nowrap text-text-300 break-all truncate font-normal group-hover/tag:text-text-200"
+                                >GitHub</span
+                              ></span
+                            ><span
+                              class="transition-all opacity-[0%] h-[17px] absolute right-[0.5px] inline rounded-r-full flex items-center px-1.5 bg-gradient-to-r from-accent-secondary-900/0 via-accent-secondary-900/100 via-30% to-accent-secondary-900/100 group-hover/tag:opacity-[100%]"
+                              ><svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="14"
+                                height="14"
+                                fill="currentColor"
+                                viewBox="0 0 256 256"
+                                class="transition-all group-hover/tag:ease-out duration-[500ms] ease-in text-accent-secondary-100 group-hover/tag:scale-[100%] scale-[80%] group-hover/tag:opacity-[100%] opacity-[0%] -mr-[2px]"
+                              >
+                                <path
+                                  d="M200,64V168a8,8,0,0,1-16,0V83.31L69.66,197.66a8,8,0,0,1-11.32-11.32L172.69,72H88a8,8,0,0,1,0-16H192A8,8,0,0,1,200,64Z"
+                                ></path></svg></span></a></span
+                        >黒い背景に白い文字が表示されるあの画面で
+                        <code
+                          class="bg-text-200/5 border border-0.5 border-border-300 text-danger-000 whitespace-pre-wrap rounded-[0.4rem] px-1 py-px text-[0.9rem]"
+                          >claude</code
+                        >
+                        と入力するだけで起動できます。
+                      </p>
+                      <h2 class="text-text-100 mt-3 -mb-1 text-[1.125rem] font-bold">
+                        何ができるのか：主な機能と活用場面
+                      </h2>
+                      <p
+                        class="font-claude-response-body break-words whitespace-normal leading-[1.7]"
+                      >
+                        Claude Code でできることは多岐にわたります。以下が代表的な機能です。
+                      </p>
+                      <p
+                        class="font-claude-response-body break-words whitespace-normal leading-[1.7]"
+                      >
+                        <strong>新しい機能の作成</strong
+                        >は最も基本的な使い方です。「ユーザー登録フォームを作って」「検索機能を追加して」といった要望を伝えると、必要なコードを一から書いてくれます。複雑な機能でも、計画を立てて段階的に実装を進めてくれるため、完成度の高いコードが得られます。
+                        <span class="inline-flex" data-state="closed"
+                          ><a
+                            href="https://code.claude.com/docs/en/overview"
+                            target="_blank"
+                            class="group/tag relative h-[18px] rounded-full inline-flex items-center overflow-hidden -translate-y-px cursor-pointer"
+                            ><span
+                              class="relative transition-colors h-full max-w-[180px] overflow-hidden px-1.5 inline-flex items-center font-small rounded-full border-0.5 border-border-300 bg-bg-200 group-hover/tag:bg-accent-secondary-900 group-hover/tag:border-accent-secondary-100/60"
+                              ><span
+                                class="text-nowrap text-text-300 break-all truncate font-normal group-hover/tag:text-text-200"
+                                >Claude</span
+                              ></span
+                            ><span
+                              class="transition-all opacity-[0%] h-[17px] absolute right-[0.5px] inline rounded-r-full flex items-center px-1.5 bg-gradient-to-r from-accent-secondary-900/0 via-accent-secondary-900/100 via-30% to-accent-secondary-900/100 group-hover/tag:opacity-[100%]"
+                              ><svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="14"
+                                height="14"
+                                fill="currentColor"
+                                viewBox="0 0 256 256"
+                                class="transition-all group-hover/tag:ease-out duration-[500ms] ease-in text-accent-secondary-100 group-hover/tag:scale-[100%] scale-[80%] group-hover/tag:opacity-[100%] opacity-[0%] -mr-[2px]"
+                              >
+                                <path
+                                  d="M200,64V168a8,8,0,0,1-16,0V83.31L69.66,197.66a8,8,0,0,1-11.32-11.32L172.69,72H88a8,8,0,0,1,0-16H192A8,8,0,0,1,200,64Z"
+                                ></path></svg></span></a
+                        ></span>
+                      </p>
+                      <p
+                        class="font-claude-response-body break-words whitespace-normal leading-[1.7]"
+                      >
+                        **バグの修正（デバッグ）**も得意分野です。エラーメッセージをそのまま貼り付けるか、「動かない」と伝えるだけで、問題の原因を突き止めて直してくれます。
+                        <span class="inline-flex" data-state="closed"
+                          ><a
+                            href="https://code.claude.com/docs/en/overview"
+                            target="_blank"
+                            class="group/tag relative h-[18px] rounded-full inline-flex items-center overflow-hidden -translate-y-px cursor-pointer"
+                            ><span
+                              class="relative transition-colors h-full max-w-[180px] overflow-hidden px-1.5 inline-flex items-center font-small rounded-full border-0.5 border-border-300 bg-bg-200 group-hover/tag:bg-accent-secondary-900 group-hover/tag:border-accent-secondary-100/60"
+                              ><span
+                                class="text-nowrap text-text-300 break-all truncate font-normal group-hover/tag:text-text-200"
+                                >Claude</span
+                              ></span
+                            ><span
+                              class="transition-all opacity-[0%] h-[17px] absolute right-[0.5px] inline rounded-r-full flex items-center px-1.5 bg-gradient-to-r from-accent-secondary-900/0 via-accent-secondary-900/100 via-30% to-accent-secondary-900/100 group-hover/tag:opacity-[100%]"
+                              ><svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="14"
+                                height="14"
+                                fill="currentColor"
+                                viewBox="0 0 256 256"
+                                class="transition-all group-hover/tag:ease-out duration-[500ms] ease-in text-accent-secondary-100 group-hover/tag:scale-[100%] scale-[80%] group-hover/tag:opacity-[100%] opacity-[0%] -mr-[2px]"
+                              >
+                                <path
+                                  d="M200,64V168a8,8,0,0,1-16,0V83.31L69.66,197.66a8,8,0,0,1-11.32-11.32L172.69,72H88a8,8,0,0,1,0-16H192A8,8,0,0,1,200,64Z"
+                                ></path></svg></span></a></span
+                        >初心者がつまずきやすいエラー対応も、AI が丁寧に対処します。
+                      </p>
+                      <p
+                        class="font-claude-response-body break-words whitespace-normal leading-[1.7]"
+                      >
+                        <strong>既存コードの理解と説明</strong
+                        >も便利な機能です。他の人が書いたコードや、過去に自分が書いたコードの意味がわからないとき、「この部分は何をしているの？」と聞けば、わかりやすく解説してくれます。
+                      </p>
+                      <p
+                        class="font-claude-response-body break-words whitespace-normal leading-[1.7]"
+                      >
+                        <strong>Git 操作</strong
+                        >（ソースコードの変更履歴を管理する仕組み）もほぼ任せられます。「今日の変更をコミットして」「先週の変更履歴を見せて」といった指示で、複雑な
+                        Git コマンドを代行してくれます。
+                        <span class="inline-flex" data-state="closed"
+                          ><a
+                            href="https://www.anthropic.com/engineering/claude-code-best-practices"
+                            target="_blank"
+                            class="group/tag relative h-[18px] rounded-full inline-flex items-center overflow-hidden -translate-y-px cursor-pointer"
+                            ><span
+                              class="relative transition-colors h-full max-w-[180px] overflow-hidden px-1.5 inline-flex items-center font-small rounded-full border-0.5 border-border-300 bg-bg-200 group-hover/tag:bg-accent-secondary-900 group-hover/tag:border-accent-secondary-100/60"
+                              ><span
+                                class="text-nowrap text-text-300 break-all truncate font-normal group-hover/tag:text-text-200"
+                                >Anthropic</span
+                              ></span
+                            ><span
+                              class="transition-all opacity-[0%] h-[17px] absolute right-[0.5px] inline rounded-r-full flex items-center px-1.5 bg-gradient-to-r from-accent-secondary-900/0 via-accent-secondary-900/100 via-30% to-accent-secondary-900/100 group-hover/tag:opacity-[100%]"
+                              ><svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="14"
+                                height="14"
+                                fill="currentColor"
+                                viewBox="0 0 256 256"
+                                class="transition-all group-hover/tag:ease-out duration-[500ms] ease-in text-accent-secondary-100 group-hover/tag:scale-[100%] scale-[80%] group-hover/tag:opacity-[100%] opacity-[0%] -mr-[2px]"
+                              >
+                                <path
+                                  d="M200,64V168a8,8,0,0,1-16,0V83.31L69.66,197.66a8,8,0,0,1-11.32-11.32L172.69,72H88a8,8,0,0,1,0-16H192A8,8,0,0,1,200,64Z"
+                                ></path></svg></span></a
+                        ></span>
+                      </p>
+                      <p
+                        class="font-claude-response-body break-words whitespace-normal leading-[1.7]"
+                      >
+                        <strong>外部サービスとの連携</strong>も可能です。Google
+                        Drive、Slack、Figma、Jira
+                        などの業務ツールと接続し、より幅広い作業を自動化できます。
+                        <span class="inline-flex" data-state="closed"
+                          ><a
+                            href="https://docs.anthropic.com/en/docs/claude-code/overview"
+                            target="_blank"
+                            class="group/tag relative h-[18px] rounded-full inline-flex items-center overflow-hidden -translate-y-px cursor-pointer"
+                            ><span
+                              class="relative transition-colors h-full max-w-[180px] overflow-hidden px-1.5 inline-flex items-center font-small rounded-full border-0.5 border-border-300 bg-bg-200 group-hover/tag:bg-accent-secondary-900 group-hover/tag:border-accent-secondary-100/60"
+                              ><span
+                                class="text-nowrap text-text-300 break-all truncate font-normal group-hover/tag:text-text-200"
+                                >Anthropic</span
+                              ></span
+                            ><span
+                              class="transition-all opacity-[0%] h-[17px] absolute right-[0.5px] inline rounded-r-full flex items-center px-1.5 bg-gradient-to-r from-accent-secondary-900/0 via-accent-secondary-900/100 via-30% to-accent-secondary-900/100 group-hover/tag:opacity-[100%]"
+                              ><svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="14"
+                                height="14"
+                                fill="currentColor"
+                                viewBox="0 0 256 256"
+                                class="transition-all group-hover/tag:ease-out duration-[500ms] ease-in text-accent-secondary-100 group-hover/tag:scale-[100%] scale-[80%] group-hover/tag:opacity-[100%] opacity-[0%] -mr-[2px]"
+                              >
+                                <path
+                                  d="M200,64V168a8,8,0,0,1-16,0V83.31L69.66,197.66a8,8,0,0,1-11.32-11.32L172.69,72H88a8,8,0,0,1,0-16H192A8,8,0,0,1,200,64Z"
+                                ></path></svg></span></a
+                        ></span>
+                      </p>
+                      <h2 class="text-text-100 mt-3 -mb-1 text-[1.125rem] font-bold">
+                        どうやって使うのか：始め方の3ステップ
+                      </h2>
+                      <p
+                        class="font-claude-response-body break-words whitespace-normal leading-[1.7]"
+                      >
+                        Claude Code を使い始めるには、以下の手順を踏みます。
+                      </p>
+                      <p
+                        class="font-claude-response-body break-words whitespace-normal leading-[1.7]"
+                      >
+                        <strong>ステップ1：有料プランへの加入</strong>が最初に必要です。Claude
+                        の公式サイト（claude.ai）で Pro プラン以上に登録します。無料プランでは
+                        Claude Code は使用できません。
+                      </p>
+                      <p
+                        class="font-claude-response-body break-words whitespace-normal leading-[1.7]"
+                      >
+                        <strong>ステップ2：インストール</strong
+                        >を行います。お使いのパソコンによって方法が異なります。
+                      </p>
+                      <ul
+                        class="[li_&amp;]:mb-0 [li_&amp;]:mt-1 [li_&amp;]:gap-1 [&amp;:not(:last-child)_ul]:pb-1 [&amp;:not(:last-child)_ol]:pb-1 list-disc flex flex-col gap-1 pl-8 mb-3"
+                      >
+                        <li class="whitespace-normal break-words pl-2">
+                          <strong>Mac の場合</strong>：ターミナルを開き、<code
+                            class="bg-text-200/5 border border-0.5 border-border-300 text-danger-000 whitespace-pre-wrap rounded-[0.4rem] px-1 py-px text-[0.9rem]"
+                            >curl -fsSL https://claude.ai/install.sh | sh</code
+                          >
+                          を実行
+                        </li>
+                        <li class="whitespace-normal break-words pl-2">
+                          <strong>Windows の場合</strong>：PowerShell を開き、<code
+                            class="bg-text-200/5 border border-0.5 border-border-300 text-danger-000 whitespace-pre-wrap rounded-[0.4rem] px-1 py-px text-[0.9rem]"
+                            >irm https://claude.ai/install.ps1 | iex</code
+                          >
+                          を実行
+                        </li>
+                      </ul>
+                      <p
+                        class="font-claude-response-body break-words whitespace-normal leading-[1.7]"
+                      >
+                        なお、ブラウザ版（claude.ai/code）も用意されており、インストール不要で試すこともできます。
+                        <span class="inline-flex" data-state="closed"
+                          ><a
+                            href="https://code.claude.com/docs/en/overview"
+                            target="_blank"
+                            class="group/tag relative h-[18px] rounded-full inline-flex items-center overflow-hidden -translate-y-px cursor-pointer"
+                            ><span
+                              class="relative transition-colors h-full max-w-[180px] overflow-hidden px-1.5 inline-flex items-center font-small rounded-full border-0.5 border-border-300 bg-bg-200 group-hover/tag:bg-accent-secondary-900 group-hover/tag:border-accent-secondary-100/60"
+                              ><span
+                                class="text-nowrap text-text-300 break-all truncate font-normal group-hover/tag:text-text-200"
+                                >Claude</span
+                              ></span
+                            ><span
+                              class="transition-all opacity-[0%] h-[17px] absolute right-[0.5px] inline rounded-r-full flex items-center px-1.5 bg-gradient-to-r from-accent-secondary-900/0 via-accent-secondary-900/100 via-30% to-accent-secondary-900/100 group-hover/tag:opacity-[100%]"
+                              ><svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="14"
+                                height="14"
+                                fill="currentColor"
+                                viewBox="0 0 256 256"
+                                class="transition-all group-hover/tag:ease-out duration-[500ms] ease-in text-accent-secondary-100 group-hover/tag:scale-[100%] scale-[80%] group-hover/tag:opacity-[100%] opacity-[0%] -mr-[2px]"
+                              >
+                                <path
+                                  d="M200,64V168a8,8,0,0,1-16,0V83.31L69.66,197.66a8,8,0,0,1-11.32-11.32L172.69,72H88a8,8,0,0,1,0-16H192A8,8,0,0,1,200,64Z"
+                                ></path></svg></span></a
+                        ></span>
+                      </p>
+                      <p
+                        class="font-claude-response-body break-words whitespace-normal leading-[1.7]"
+                      >
+                        <strong>ステップ3：起動とログイン</strong
+                        >で準備完了です。ターミナルで作業したいフォルダに移動し、<code
+                          class="bg-text-200/5 border border-0.5 border-border-300 text-danger-000 whitespace-pre-wrap rounded-[0.4rem] px-1 py-px text-[0.9rem]"
+                          >claude</code
+                        >
+                        と入力して Enter を押します。初回は Claude
+                        のアカウントでログインを求められるので、サブスクリプション登録時と同じ認証情報を入力します。
+                        <span class="inline-flex" data-state="closed"
+                          ><a
+                            href="https://support.anthropic.com/en/articles/11145838-using-claude-code-with-your-max-plan"
+                            target="_blank"
+                            class="group/tag relative h-[18px] rounded-full inline-flex items-center overflow-hidden -translate-y-px cursor-pointer"
+                            ><span
+                              class="relative transition-colors h-full max-w-[180px] overflow-hidden px-1.5 inline-flex items-center font-small rounded-full border-0.5 border-border-300 bg-bg-200 group-hover/tag:bg-accent-secondary-900 group-hover/tag:border-accent-secondary-100/60"
+                              ><span
+                                class="text-nowrap text-text-300 break-all truncate font-normal group-hover/tag:text-text-200"
+                                >Anthropic</span
+                              ></span
+                            ><span
+                              class="transition-all opacity-[0%] h-[17px] absolute right-[0.5px] inline rounded-r-full flex items-center px-1.5 bg-gradient-to-r from-accent-secondary-900/0 via-accent-secondary-900/100 via-30% to-accent-secondary-900/100 group-hover/tag:opacity-[100%]"
+                              ><svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="14"
+                                height="14"
+                                fill="currentColor"
+                                viewBox="0 0 256 256"
+                                class="transition-all group-hover/tag:ease-out duration-[500ms] ease-in text-accent-secondary-100 group-hover/tag:scale-[100%] scale-[80%] group-hover/tag:opacity-[100%] opacity-[0%] -mr-[2px]"
+                              >
+                                <path
+                                  d="M200,64V168a8,8,0,0,1-16,0V83.31L69.66,197.66a8,8,0,0,1-11.32-11.32L172.69,72H88a8,8,0,0,1,0-16H192A8,8,0,0,1,200,64Z"
+                                ></path></svg></span></a></span
+                        ><span class="inline-flex w-1"></span
+                        ><span class="inline-flex" data-state="closed"
+                          ><a
+                            href="https://docs.anthropic.com/en/docs/claude-code/quickstart"
+                            target="_blank"
+                            class="group/tag relative h-[18px] rounded-full inline-flex items-center overflow-hidden -translate-y-px cursor-pointer"
+                            ><span
+                              class="relative transition-colors h-full max-w-[180px] overflow-hidden px-1.5 inline-flex items-center font-small rounded-full border-0.5 border-border-300 bg-bg-200 group-hover/tag:bg-accent-secondary-900 group-hover/tag:border-accent-secondary-100/60"
+                              ><span
+                                class="text-nowrap text-text-300 break-all truncate font-normal group-hover/tag:text-text-200"
+                                >Anthropic</span
+                              ></span
+                            ><span
+                              class="transition-all opacity-[0%] h-[17px] absolute right-[0.5px] inline rounded-r-full flex items-center px-1.5 bg-gradient-to-r from-accent-secondary-900/0 via-accent-secondary-900/100 via-30% to-accent-secondary-900/100 group-hover/tag:opacity-[100%]"
+                              ><svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="14"
+                                height="14"
+                                fill="currentColor"
+                                viewBox="0 0 256 256"
+                                class="transition-all group-hover/tag:ease-out duration-[500ms] ease-in text-accent-secondary-100 group-hover/tag:scale-[100%] scale-[80%] group-hover/tag:opacity-[100%] opacity-[0%] -mr-[2px]"
+                              >
+                                <path
+                                  d="M200,64V168a8,8,0,0,1-16,0V83.31L69.66,197.66a8,8,0,0,1-11.32-11.32L172.69,72H88a8,8,0,0,1,0-16H192A8,8,0,0,1,200,64Z"
+                                ></path></svg></span></a
+                        ></span>
+                      </p>
+                      <p
+                        class="font-claude-response-body break-words whitespace-normal leading-[1.7]"
+                      >
+                        起動後は、普通の日本語で話しかけるだけで使えます。「このプロジェクトの構造を説明して」「新しいボタンを追加して」など、やりたいことを伝えましょう。ファイルを変更する前には必ず確認を求めてくるため、勝手に書き換えられる心配はありません。
+                        <span class="inline-flex" data-state="closed"
+                          ><a
+                            href="https://docs.anthropic.com/en/docs/claude-code/quickstart"
+                            target="_blank"
+                            class="group/tag relative h-[18px] rounded-full inline-flex items-center overflow-hidden -translate-y-px cursor-pointer"
+                            ><span
+                              class="relative transition-colors h-full max-w-[180px] overflow-hidden px-1.5 inline-flex items-center font-small rounded-full border-0.5 border-border-300 bg-bg-200 group-hover/tag:bg-accent-secondary-900 group-hover/tag:border-accent-secondary-100/60"
+                              ><span
+                                class="text-nowrap text-text-300 break-all truncate font-normal group-hover/tag:text-text-200"
+                                >Anthropic</span
+                              ></span
+                            ><span
+                              class="transition-all opacity-[0%] h-[17px] absolute right-[0.5px] inline rounded-r-full flex items-center px-1.5 bg-gradient-to-r from-accent-secondary-900/0 via-accent-secondary-900/100 via-30% to-accent-secondary-900/100 group-hover/tag:opacity-[100%]"
+                              ><svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="14"
+                                height="14"
+                                fill="currentColor"
+                                viewBox="0 0 256 256"
+                                class="transition-all group-hover/tag:ease-out duration-[500ms] ease-in text-accent-secondary-100 group-hover/tag:scale-[100%] scale-[80%] group-hover/tag:opacity-[100%] opacity-[0%] -mr-[2px]"
+                              >
+                                <path
+                                  d="M200,64V168a8,8,0,0,1-16,0V83.31L69.66,197.66a8,8,0,0,1-11.32-11.32L172.69,72H88a8,8,0,0,1,0-16H192A8,8,0,0,1,200,64Z"
+                                ></path></svg></span></a
+                        ></span>
+                      </p>
+                      <h2 class="text-text-100 mt-3 -mb-1 text-[1.125rem] font-bold">
+                        どんな人向けか：おすすめの利用シーン
+                      </h2>
+                      <p
+                        class="font-claude-response-body break-words whitespace-normal leading-[1.7]"
+                      >
+                        Claude Code
+                        は幅広いユーザーに活用されていますが、特に以下のような方に向いています。
+                      </p>
+                      <p
+                        class="font-claude-response-body break-words whitespace-normal leading-[1.7]"
+                      >
+                        <strong>プログラミング初心者や学習者</strong
+                        >にとっては、心強い先生兼アシスタントになります。エラーの意味がわからないとき、コードの書き方に迷ったとき、すぐに質問して教えてもらえます。「バイブコーディング」と呼ばれる、やりたいことを言葉で伝えるだけでプログラムを作るスタイルで、プログラミング未経験者でも活用できます。
+                        <span class="inline-flex" data-state="closed"
+                          ><a
+                            href="https://www.axios.com/2026/01/07/anthropics-claude-code-vibe-coding"
+                            target="_blank"
+                            class="group/tag relative h-[18px] rounded-full inline-flex items-center overflow-hidden -translate-y-px cursor-pointer"
+                            ><span
+                              class="relative transition-colors h-full max-w-[180px] overflow-hidden px-1.5 inline-flex items-center font-small rounded-full border-0.5 border-border-300 bg-bg-200 group-hover/tag:bg-accent-secondary-900 group-hover/tag:border-accent-secondary-100/60"
+                              ><span
+                                class="text-nowrap text-text-300 break-all truncate font-normal group-hover/tag:text-text-200"
+                                >Axios</span
+                              ></span
+                            ><span
+                              class="transition-all opacity-[0%] h-[17px] absolute right-[0.5px] inline rounded-r-full flex items-center px-1.5 bg-gradient-to-r from-accent-secondary-900/0 via-accent-secondary-900/100 via-30% to-accent-secondary-900/100 group-hover/tag:opacity-[100%]"
+                              ><svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="14"
+                                height="14"
+                                fill="currentColor"
+                                viewBox="0 0 256 256"
+                                class="transition-all group-hover/tag:ease-out duration-[500ms] ease-in text-accent-secondary-100 group-hover/tag:scale-[100%] scale-[80%] group-hover/tag:opacity-[100%] opacity-[0%] -mr-[2px]"
+                              >
+                                <path
+                                  d="M200,64V168a8,8,0,0,1-16,0V83.31L69.66,197.66a8,8,0,0,1-11.32-11.32L172.69,72H88a8,8,0,0,1,0-16H192A8,8,0,0,1,200,64Z"
+                                ></path></svg></span></a
+                        ></span>
+                      </p>
+                      <p
+                        class="font-claude-response-body break-words whitespace-normal leading-[1.7]"
+                      >
+                        <strong>新しいプロジェクトに参加したエンジニア</strong
+                        >は、膨大な既存コードを理解する助けになります。「この機能はどのファイルにある？」「このシステムの全体像を教えて」といった質問で、スムーズに仕事を始められます。
+                        <span class="inline-flex" data-state="closed"
+                          ><a
+                            href="https://www-cdn.anthropic.com/58284b19e702b49db9302d5b6f135ad8871e7658.pdf"
+                            target="_blank"
+                            class="group/tag relative h-[18px] rounded-full inline-flex items-center overflow-hidden -translate-y-px cursor-pointer"
+                            ><span
+                              class="relative transition-colors h-full max-w-[180px] overflow-hidden px-1.5 inline-flex items-center font-small rounded-full border-0.5 border-border-300 bg-bg-200 group-hover/tag:bg-accent-secondary-900 group-hover/tag:border-accent-secondary-100/60"
+                              ><span
+                                class="text-nowrap text-text-300 break-all truncate font-normal group-hover/tag:text-text-200"
+                                >Anthropic</span
+                              ></span
+                            ><span
+                              class="transition-all opacity-[0%] h-[17px] absolute right-[0.5px] inline rounded-r-full flex items-center px-1.5 bg-gradient-to-r from-accent-secondary-900/0 via-accent-secondary-900/100 via-30% to-accent-secondary-900/100 group-hover/tag:opacity-[100%]"
+                              ><svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="14"
+                                height="14"
+                                fill="currentColor"
+                                viewBox="0 0 256 256"
+                                class="transition-all group-hover/tag:ease-out duration-[500ms] ease-in text-accent-secondary-100 group-hover/tag:scale-[100%] scale-[80%] group-hover/tag:opacity-[100%] opacity-[0%] -mr-[2px]"
+                              >
+                                <path
+                                  d="M200,64V168a8,8,0,0,1-16,0V83.31L69.66,197.66a8,8,0,0,1-11.32-11.32L172.69,72H88a8,8,0,0,1,0-16H192A8,8,0,0,1,200,64Z"
+                                ></path></svg></span></a
+                        ></span>
+                      </p>
+                      <p
+                        class="font-claude-response-body break-words whitespace-normal leading-[1.7]"
+                      >
+                        <strong>経験豊富な開発者</strong
+                        >も、面倒な作業を任せることで本質的な仕事に集中できます。テストコードの作成、ドキュメント整備、定型的なコード修正など、時間がかかるが創造性の低い作業を効率化できます。
+                      </p>
+                      <h2 class="text-text-100 mt-3 -mb-1 text-[1.125rem] font-bold">
+                        料金プランと利用条件
+                      </h2>
+                      <p
+                        class="font-claude-response-body break-words whitespace-normal leading-[1.7]"
+                      >
+                        Claude Code
+                        を使うには、有料サブスクリプションが必須です。主なプランは以下の通りです。
+                      </p>
+                      <div class="overflow-x-auto w-full px-2 mb-6">
+                        <table
+                          class="min-w-full border-collapse text-sm leading-[1.7] whitespace-normal"
+                        >
+                          <thead class="text-left">
+                            <tr>
+                              <th
+                                class="text-text-100 border-b-0.5 border-border-300/60 py-2 pr-4 align-top font-bold"
+                              >
+                                プラン名
+                              </th>
+                              <th
+                                class="text-text-100 border-b-0.5 border-border-300/60 py-2 pr-4 align-top font-bold"
+                              >
+                                月額料金
+                              </th>
+                              <th
+                                class="text-text-100 border-b-0.5 border-border-300/60 py-2 pr-4 align-top font-bold"
+                              >
+                                特徴
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              <td class="border-b-0.5 border-border-300/30 py-2 pr-4 align-top">
+                                <strong>Pro</strong>
+                              </td>
+                              <td class="border-b-0.5 border-border-300/30 py-2 pr-4 align-top">
+                                $20（約3,000円）
+                              </td>
+                              <td class="border-b-0.5 border-border-300/30 py-2 pr-4 align-top">
+                                個人利用の基本プラン。小規模なプロジェクト向け
+                              </td>
+                            </tr>
+                            <tr>
+                              <td class="border-b-0.5 border-border-300/30 py-2 pr-4 align-top">
+                                <strong>Max 5×</strong>
+                              </td>
+                              <td class="border-b-0.5 border-border-300/30 py-2 pr-4 align-top">
+                                $100（約15,000円）
+                              </td>
+                              <td class="border-b-0.5 border-border-300/30 py-2 pr-4 align-top">
+                                Pro の5倍の使用量。日常的な開発作業向け
+                              </td>
+                            </tr>
+                            <tr>
+                              <td class="border-b-0.5 border-border-300/30 py-2 pr-4 align-top">
+                                <strong>Max 20×</strong>
+                              </td>
+                              <td class="border-b-0.5 border-border-300/30 py-2 pr-4 align-top">
+                                $200（約30,000円）
+                              </td>
+                              <td class="border-b-0.5 border-border-300/30 py-2 pr-4 align-top">
+                                Pro の20倍の使用量。本格的な開発向け
+                              </td>
+                            </tr>
+                            <tr>
+                              <td class="border-b-0.5 border-border-300/30 py-2 pr-4 align-top">
+                                <strong>Team</strong>
+                              </td>
+                              <td class="border-b-0.5 border-border-300/30 py-2 pr-4 align-top">
+                                $25〜/ユーザー
+                              </td>
+                              <td class="border-b-0.5 border-border-300/30 py-2 pr-4 align-top">
+                                5人以上のチーム向け
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                      <p
+                        class="font-claude-response-body break-words whitespace-normal leading-[1.7]"
+                      >
+                        <strong>使用量に制限がある</strong>点に注意が必要です。Pro
+                        プランの場合、5時間あたり約
+                        <strong>10〜40回</strong> のやり取りが目安となります。
+                        <span class="inline-flex" data-state="closed"
+                          ><a
+                            href="https://support.anthropic.com/en/articles/11145838-using-claude-code-with-your-max-plan"
+                            target="_blank"
+                            class="group/tag relative h-[18px] rounded-full inline-flex items-center overflow-hidden -translate-y-px cursor-pointer"
+                            ><span
+                              class="relative transition-colors h-full max-w-[180px] overflow-hidden px-1.5 inline-flex items-center font-small rounded-full border-0.5 border-border-300 bg-bg-200 group-hover/tag:bg-accent-secondary-900 group-hover/tag:border-accent-secondary-100/60"
+                              ><span
+                                class="text-nowrap text-text-300 break-all truncate font-normal group-hover/tag:text-text-200"
+                                >Anthropic</span
+                              ></span
+                            ><span
+                              class="transition-all opacity-[0%] h-[17px] absolute right-[0.5px] inline rounded-r-full flex items-center px-1.5 bg-gradient-to-r from-accent-secondary-900/0 via-accent-secondary-900/100 via-30% to-accent-secondary-900/100 group-hover/tag:opacity-[100%]"
+                              ><svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="14"
+                                height="14"
+                                fill="currentColor"
+                                viewBox="0 0 256 256"
+                                class="transition-all group-hover/tag:ease-out duration-[500ms] ease-in text-accent-secondary-100 group-hover/tag:scale-[100%] scale-[80%] group-hover/tag:opacity-[100%] opacity-[0%] -mr-[2px]"
+                              >
+                                <path
+                                  d="M200,64V168a8,8,0,0,1-16,0V83.31L69.66,197.66a8,8,0,0,1-11.32-11.32L172.69,72H88a8,8,0,0,1,0-16H192A8,8,0,0,1,200,64Z"
+                                ></path></svg></span></a></span
+                        ><span class="inline-flex w-1"></span
+                        ><span class="inline-flex" data-state="closed"
+                          ><a
+                            href="https://www.braingrid.ai/blog/claude-code-pricing"
+                            target="_blank"
+                            class="group/tag relative h-[18px] rounded-full inline-flex items-center overflow-hidden -translate-y-px cursor-pointer"
+                            ><span
+                              class="relative transition-colors h-full max-w-[180px] overflow-hidden px-1.5 inline-flex items-center font-small rounded-full border-0.5 border-border-300 bg-bg-200 group-hover/tag:bg-accent-secondary-900 group-hover/tag:border-accent-secondary-100/60"
+                              ><span
+                                class="text-nowrap text-text-300 break-all truncate font-normal group-hover/tag:text-text-200"
+                                >Braingrid</span
+                              ></span
+                            ><span
+                              class="transition-all opacity-[0%] h-[17px] absolute right-[0.5px] inline rounded-r-full flex items-center px-1.5 bg-gradient-to-r from-accent-secondary-900/0 via-accent-secondary-900/100 via-30% to-accent-secondary-900/100 group-hover/tag:opacity-[100%]"
+                              ><svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="14"
+                                height="14"
+                                fill="currentColor"
+                                viewBox="0 0 256 256"
+                                class="transition-all group-hover/tag:ease-out duration-[500ms] ease-in text-accent-secondary-100 group-hover/tag:scale-[100%] scale-[80%] group-hover/tag:opacity-[100%] opacity-[0%] -mr-[2px]"
+                              >
+                                <path
+                                  d="M200,64V168a8,8,0,0,1-16,0V83.31L69.66,197.66a8,8,0,0,1-11.32-11.32L172.69,72H88a8,8,0,0,1,0-16H192A8,8,0,0,1,200,64Z"
+                                ></path></svg></span></a></span
+                        >制限に達すると、次の5時間まで待つか、上位プランへのアップグレードが必要です。大きなプロジェクトで頻繁に使う場合は、Max
+                        プランの検討をおすすめします。
+                      </p>
+                      <p
+                        class="font-claude-response-body break-words whitespace-normal leading-[1.7]"
+                      >
+                        <strong>Claude と Claude Code で使用量は共有</strong>されます。
+                        <span class="inline-flex" data-state="closed"
+                          ><a
+                            href="https://support.anthropic.com/en/articles/11145838-using-claude-code-with-your-max-plan"
+                            target="_blank"
+                            class="group/tag relative h-[18px] rounded-full inline-flex items-center overflow-hidden -translate-y-px cursor-pointer"
+                            ><span
+                              class="relative transition-colors h-full max-w-[180px] overflow-hidden px-1.5 inline-flex items-center font-small rounded-full border-0.5 border-border-300 bg-bg-200 group-hover/tag:bg-accent-secondary-900 group-hover/tag:border-accent-secondary-100/60"
+                              ><span
+                                class="text-nowrap text-text-300 break-all truncate font-normal group-hover/tag:text-text-200"
+                                >Anthropic</span
+                              ></span
+                            ><span
+                              class="transition-all opacity-[0%] h-[17px] absolute right-[0.5px] inline rounded-r-full flex items-center px-1.5 bg-gradient-to-r from-accent-secondary-900/0 via-accent-secondary-900/100 via-30% to-accent-secondary-900/100 group-hover/tag:opacity-[100%]"
+                              ><svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="14"
+                                height="14"
+                                fill="currentColor"
+                                viewBox="0 0 256 256"
+                                class="transition-all group-hover/tag:ease-out duration-[500ms] ease-in text-accent-secondary-100 group-hover/tag:scale-[100%] scale-[80%] group-hover/tag:opacity-[100%] opacity-[0%] -mr-[2px]"
+                              >
+                                <path
+                                  d="M200,64V168a8,8,0,0,1-16,0V83.31L69.66,197.66a8,8,0,0,1-11.32-11.32L172.69,72H88a8,8,0,0,1,0-16H192A8,8,0,0,1,200,64Z"
+                                ></path></svg></span></a></span
+                        >Web 版の Claude でたくさんチャットすると、Claude Code
+                        で使える回数も減る仕組みです。
+                        <span class="inline-flex" data-state="closed"
+                          ><a
+                            href="https://support.anthropic.com/en/articles/11145838-using-claude-code-with-your-max-plan"
+                            target="_blank"
+                            class="group/tag relative h-[18px] rounded-full inline-flex items-center overflow-hidden -translate-y-px cursor-pointer"
+                            ><span
+                              class="relative transition-colors h-full max-w-[180px] overflow-hidden px-1.5 inline-flex items-center font-small rounded-full border-0.5 border-border-300 bg-bg-200 group-hover/tag:bg-accent-secondary-900 group-hover/tag:border-accent-secondary-100/60"
+                              ><span
+                                class="text-nowrap text-text-300 break-all truncate font-normal group-hover/tag:text-text-200"
+                                >Anthropic</span
+                              ></span
+                            ><span
+                              class="transition-all opacity-[0%] h-[17px] absolute right-[0.5px] inline rounded-r-full flex items-center px-1.5 bg-gradient-to-r from-accent-secondary-900/0 via-accent-secondary-900/100 via-30% to-accent-secondary-900/100 group-hover/tag:opacity-[100%]"
+                              ><svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="14"
+                                height="14"
+                                fill="currentColor"
+                                viewBox="0 0 256 256"
+                                class="transition-all group-hover/tag:ease-out duration-[500ms] ease-in text-accent-secondary-100 group-hover/tag:scale-[100%] scale-[80%] group-hover/tag:opacity-[100%] opacity-[0%] -mr-[2px]"
+                              >
+                                <path
+                                  d="M200,64V168a8,8,0,0,1-16,0V83.31L69.66,197.66a8,8,0,0,1-11.32-11.32L172.69,72H88a8,8,0,0,1,0-16H192A8,8,0,0,1,200,64Z"
+                                ></path></svg></span></a
+                        ></span>
+                      </p>
+                      <hr class="border-border-200 border-t-0.5 my-3 mx-1.5" />
+                      <h2 class="text-text-100 mt-3 -mb-1 text-[1.125rem] font-bold">まとめ</h2>
+                      <p
+                        class="font-claude-response-body break-words whitespace-normal leading-[1.7]"
+                      >
+                        Claude Code は、「日本語で指示を出すだけでプログラミング作業を代行してくれる
+                        AI ツール」です。
+                        <span class="inline-flex" data-state="closed"
+                          ><a
+                            href="https://support.anthropic.com/en/articles/11845131-using-claude-code-with-your-team-or-enterprise-plan"
+                            target="_blank"
+                            class="group/tag relative h-[18px] rounded-full inline-flex items-center overflow-hidden -translate-y-px cursor-pointer"
+                            ><span
+                              class="relative transition-colors h-full max-w-[180px] overflow-hidden px-1.5 inline-flex items-center font-small rounded-full border-0.5 border-border-300 bg-bg-200 group-hover/tag:bg-accent-secondary-900 group-hover/tag:border-accent-secondary-100/60"
+                              ><span
+                                class="text-nowrap text-text-300 break-all truncate font-normal group-hover/tag:text-text-200"
+                                >Anthropic</span
+                              ></span
+                            ><span
+                              class="transition-all opacity-[0%] h-[17px] absolute right-[0.5px] inline rounded-r-full flex items-center px-1.5 bg-gradient-to-r from-accent-secondary-900/0 via-accent-secondary-900/100 via-30% to-accent-secondary-900/100 group-hover/tag:opacity-[100%]"
+                              ><svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="14"
+                                height="14"
+                                fill="currentColor"
+                                viewBox="0 0 256 256"
+                                class="transition-all group-hover/tag:ease-out duration-[500ms] ease-in text-accent-secondary-100 group-hover/tag:scale-[100%] scale-[80%] group-hover/tag:opacity-[100%] opacity-[0%] -mr-[2px]"
+                              >
+                                <path
+                                  d="M200,64V168a8,8,0,0,1-16,0V83.31L69.66,197.66a8,8,0,0,1-11.32-11.32L172.69,72H88a8,8,0,0,1,0-16H192A8,8,0,0,1,200,64Z"
+                                ></path></svg></span></a></span
+                        >コードの作成から修正、説明、Git
+                        操作まで幅広くサポートしてくれるため、初心者から経験者まで開発効率を大きく向上させられます。
+                      </p>
+                      <p
+                        class="font-claude-response-body break-words whitespace-normal leading-[1.7]"
+                      >
+                        利用には月額 $20 以上の有料プランが必要ですが、
+                        <span class="inline-flex" data-state="closed"
+                          ><a
+                            href="https://support.anthropic.com/en/articles/8325610-how-much-does-claude-pro-cost"
+                            target="_blank"
+                            class="group/tag relative h-[18px] rounded-full inline-flex items-center overflow-hidden -translate-y-px cursor-pointer"
+                            ><span
+                              class="relative transition-colors h-full max-w-[180px] overflow-hidden px-1.5 inline-flex items-center font-small rounded-full border-0.5 border-border-300 bg-bg-200 group-hover/tag:bg-accent-secondary-900 group-hover/tag:border-accent-secondary-100/60"
+                              ><span
+                                class="text-nowrap text-text-300 break-all truncate font-normal group-hover/tag:text-text-200"
+                                >Anthropic</span
+                              ></span
+                            ><span
+                              class="transition-all opacity-[0%] h-[17px] absolute right-[0.5px] inline rounded-r-full flex items-center px-1.5 bg-gradient-to-r from-accent-secondary-900/0 via-accent-secondary-900/100 via-30% to-accent-secondary-900/100 group-hover/tag:opacity-[100%]"
+                              ><svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="14"
+                                height="14"
+                                fill="currentColor"
+                                viewBox="0 0 256 256"
+                                class="transition-all group-hover/tag:ease-out duration-[500ms] ease-in text-accent-secondary-100 group-hover/tag:scale-[100%] scale-[80%] group-hover/tag:opacity-[100%] opacity-[0%] -mr-[2px]"
+                              >
+                                <path
+                                  d="M200,64V168a8,8,0,0,1-16,0V83.31L69.66,197.66a8,8,0,0,1-11.32-11.32L172.69,72H88a8,8,0,0,1,0-16H192A8,8,0,0,1,200,64Z"
+                                ></path></svg></span></a></span
+                        ><span class="inline-flex w-1"></span
+                        ><span class="inline-flex" data-state="closed"
+                          ><a
+                            href="https://blog.promptlayer.com/claude-code-pricing-how-to-save-money/"
+                            target="_blank"
+                            class="group/tag relative h-[18px] rounded-full inline-flex items-center overflow-hidden -translate-y-px cursor-pointer"
+                            ><span
+                              class="relative transition-colors h-full max-w-[180px] overflow-hidden px-1.5 inline-flex items-center font-small rounded-full border-0.5 border-border-300 bg-bg-200 group-hover/tag:bg-accent-secondary-900 group-hover/tag:border-accent-secondary-100/60"
+                              ><span
+                                class="text-nowrap text-text-300 break-all truncate font-normal group-hover/tag:text-text-200"
+                                >PromptLayer</span
+                              ></span
+                            ><span
+                              class="transition-all opacity-[0%] h-[17px] absolute right-[0.5px] inline rounded-r-full flex items-center px-1.5 bg-gradient-to-r from-accent-secondary-900/0 via-accent-secondary-900/100 via-30% to-accent-secondary-900/100 group-hover/tag:opacity-[100%]"
+                              ><svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="14"
+                                height="14"
+                                fill="currentColor"
+                                viewBox="0 0 256 256"
+                                class="transition-all group-hover/tag:ease-out duration-[500ms] ease-in text-accent-secondary-100 group-hover/tag:scale-[100%] scale-[80%] group-hover/tag:opacity-[100%] opacity-[0%] -mr-[2px]"
+                              >
+                                <path
+                                  d="M200,64V168a8,8,0,0,1-16,0V83.31L69.66,197.66a8,8,0,0,1-11.32-11.32L172.69,72H88a8,8,0,0,1,0-16H192A8,8,0,0,1,200,64Z"
+                                ></path></svg></span></a></span
+                        >プログラミング学習の加速や、面倒な作業の自動化を考えれば、検討に値する投資といえるでしょう。まずは公式サイト（claude.ai）で
+                        Pro プランに登録し、試してみることをおすすめします。
+                      </p>
+                    </div>
+                  </div>
+                  <div class="h-8"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
