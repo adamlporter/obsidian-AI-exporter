@@ -1046,4 +1046,168 @@ describe('background/index', () => {
       expect(clipboardResult?.error).toContain('Failed to create offscreen document');
     });
   });
+
+  // ========== Coverage Gap: scheduleOffscreenClose (DES-005 3.5) ==========
+  describe('scheduleOffscreenClose', () => {
+    const validSender = { url: `chrome-extension://${chrome.runtime.id}/popup.html` };
+    const validNote: ObsidianNote = {
+      fileName: 'test.md',
+      body: '# Test Content',
+      contentHash: 'abc123',
+      frontmatter: {
+        id: 'test-id',
+        title: 'Test Title',
+        source: 'gemini',
+        url: 'https://gemini.google.com/app/123',
+        created: '2024-01-01',
+        modified: '2024-01-01',
+        tags: ['test'],
+        message_count: 2,
+      },
+    };
+
+    it('calls closeDocument after clipboard operation completes', async () => {
+      // Covers: background/index.ts lines 332-345 (scheduleOffscreenClose)
+      // Use real timers with a short polling approach.
+      // The OFFSCREEN_TIMEOUT_MS is 5000ms. We use waitFor with a generous timeout.
+      vi.mocked(chrome.runtime.sendMessage).mockResolvedValue({ success: true });
+
+      const sendResponse = vi.fn();
+      capturedListener(
+        { action: 'saveToOutputs', data: validNote, outputs: ['clipboard'] },
+        validSender as chrome.runtime.MessageSender,
+        sendResponse
+      );
+
+      // Wait for the clipboard operation to complete
+      await vi.waitFor(() => expect(sendResponse).toHaveBeenCalled());
+
+      // Wait for the offscreen close timer (5000ms) to fire
+      await vi.waitFor(() => {
+        expect(chrome.offscreen.closeDocument).toHaveBeenCalled();
+      }, { timeout: 7000 });
+    });
+  });
+
+  // ========== Coverage Gap: handleSaveToObsidian catch block (DES-005 3.5) ==========
+  describe('handleSaveToObsidian error handling', () => {
+    const validSender = { url: `chrome-extension://${chrome.runtime.id}/popup.html` };
+    const validNote: ObsidianNote = {
+      fileName: 'test.md',
+      body: '# Test Content',
+      contentHash: 'abc123',
+      frontmatter: {
+        id: 'test-id',
+        title: 'Test Title',
+        source: 'gemini',
+        url: 'https://gemini.google.com/app/123',
+        created: '2024-01-01',
+        modified: '2024-01-01',
+        tags: ['test'],
+        message_count: 2,
+      },
+    };
+
+    it('catches generic Error in handleSaveToObsidian and returns failure', async () => {
+      // Covers: background/index.ts lines 380-386 (catch block)
+      mockClient.getFile.mockImplementation(() => {
+        throw new Error('Unexpected getFile error');
+      });
+
+      const sendResponse = vi.fn();
+      capturedListener(
+        { action: 'saveToOutputs', data: validNote, outputs: ['obsidian'] },
+        validSender as chrome.runtime.MessageSender,
+        sendResponse
+      );
+
+      await vi.waitFor(() => expect(sendResponse).toHaveBeenCalled());
+      const response = sendResponse.mock.calls[0][0];
+
+      expect(response.results[0].destination).toBe('obsidian');
+      expect(response.results[0].success).toBe(false);
+      expect(response.results[0].error).toBeDefined();
+    });
+  });
+
+  // ========== Coverage Gap: handleDownloadToFile catch block (DES-005 3.5) ==========
+  describe('handleDownloadToFile error handling', () => {
+    const validSender = { url: `chrome-extension://${chrome.runtime.id}/popup.html` };
+    const validNote: ObsidianNote = {
+      fileName: 'test-conversation.md',
+      body: '# Test Content',
+      contentHash: 'abc123',
+      frontmatter: {
+        id: 'test-id',
+        title: 'Test Title',
+        source: 'gemini',
+        url: 'https://gemini.google.com/app/123',
+        created: '2024-01-01',
+        modified: '2024-01-01',
+        tags: ['test'],
+        message_count: 2,
+      },
+    };
+
+    it('catches error in handleDownloadToFile and returns failure result', async () => {
+      // Covers: background/index.ts lines 447-453 (catch block)
+      vi.mocked(chrome.downloads.download).mockImplementation(() => {
+        throw new Error('Download API unavailable');
+      });
+
+      const sendResponse = vi.fn();
+      capturedListener(
+        { action: 'saveToOutputs', data: validNote, outputs: ['file'] },
+        validSender as chrome.runtime.MessageSender,
+        sendResponse
+      );
+
+      await vi.waitFor(() => expect(sendResponse).toHaveBeenCalled());
+      const response = sendResponse.mock.calls[0][0];
+
+      expect(response.results[0].destination).toBe('file');
+      expect(response.results[0].success).toBe(false);
+      expect(response.results[0].error).toContain('Download API unavailable');
+    });
+  });
+
+  // ========== Coverage Gap: handleMultiOutput rejected promise (DES-005 3.5) ==========
+  describe('handleMultiOutput Promise.allSettled rejected branch', () => {
+    const validSender = { url: `chrome-extension://${chrome.runtime.id}/popup.html` };
+    const validNote: ObsidianNote = {
+      fileName: 'test.md',
+      body: '# Test Content',
+      contentHash: 'abc123',
+      frontmatter: {
+        id: 'test-id',
+        title: 'Test Title',
+        source: 'gemini',
+        url: 'https://gemini.google.com/app/123',
+        created: '2024-01-01',
+        modified: '2024-01-01',
+        tags: ['test'],
+        message_count: 2,
+      },
+    };
+
+    it('maps rejected promise reason to error string via String()', async () => {
+      // Covers: background/index.ts lines 526-535 (rejected branch in allSettled)
+      mockClient.getFile.mockResolvedValue(null);
+      mockClient.putFile.mockRejectedValue('string rejection reason');
+
+      const sendResponse = vi.fn();
+      capturedListener(
+        { action: 'saveToOutputs', data: validNote, outputs: ['obsidian'] },
+        validSender as chrome.runtime.MessageSender,
+        sendResponse
+      );
+
+      await vi.waitFor(() => expect(sendResponse).toHaveBeenCalled());
+      const response = sendResponse.mock.calls[0][0];
+
+      expect(response.results[0].success).toBe(false);
+      expect(response.results[0].error).toBeDefined();
+      expect(response.allSuccessful).toBe(false);
+    });
+  });
 });

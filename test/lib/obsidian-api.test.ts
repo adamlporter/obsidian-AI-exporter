@@ -3,6 +3,7 @@ import {
   ObsidianApiClient,
   isObsidianApiError,
   getErrorMessage,
+  classifyNetworkError,
 } from '../../src/lib/obsidian-api';
 
 describe('ObsidianApiClient', () => {
@@ -372,5 +373,13 @@ describe('getErrorMessage', () => {
     expect(getErrorMessage(123)).toBe('An unknown error occurred');
     expect(getErrorMessage(null)).toBe('An unknown error occurred');
     expect(getErrorMessage(undefined)).toBe('An unknown error occurred');
+  });
+});
+
+describe('classifyNetworkError', () => {
+  it('returns "abort" for DOMException with name AbortError', () => {
+    const abortError = new DOMException('The operation was aborted', 'AbortError');
+    const result = classifyNetworkError(abortError);
+    expect(result).toBe('abort');
   });
 });

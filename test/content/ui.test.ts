@@ -343,4 +343,16 @@ describe('ui', () => {
       );
     });
   });
+
+  describe('getMessage error fallback', () => {
+    it('returns raw key when chrome.i18n.getMessage throws', () => {
+      vi.mocked(chrome.i18n.getMessage).mockImplementation(() => {
+        throw new Error('i18n not available');
+      });
+
+      const button = injectSyncButton(() => {});
+      expect(button).toBeDefined();
+      expect(button.id).toBe('g2o-sync-button');
+    });
+  });
 });

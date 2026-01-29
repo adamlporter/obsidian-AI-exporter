@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { ClaudeExtractor } from '../../src/content/extractors/claude';
 import {
   loadFixture,
@@ -668,6 +668,191 @@ describe('ClaudeExtractor', () => {
       const result = await extractor.extract();
       expect(result.success).toBe(true);
       expect(result.data?.source).toBe('claude');
+    });
+  });
+
+  // ========== Coverage Gap: extract() canExtract false (DES-005 3.4) ==========
+  describe('extract() error paths', () => {
+    it('returns error when called from non-claude domain', async () => {
+      // Covers: claude.ts lines 415-420 (canExtract false branch)
+      resetLocation();
+      const result = await extractor.extract();
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Not on a Claude page');
+    });
+
+    it('returns "Unknown extraction error" for non-Error throw in catch block', async () => {
+      // Covers: claude.ts lines 475-481 (catch, non-Error)
+      setClaudeLocation('12345678-1234-1234-1234-123456789012');
+      const originalQSA = document.querySelectorAll.bind(document);
+      vi.spyOn(document, 'querySelectorAll').mockImplementation((selector) => {
+        if (typeof selector === 'string' && selector.includes('whitespace-pre-wrap')) {
+          throw 'string thrown as error';
+        }
+        return originalQSA(selector);
+      });
+
+      const result = await extractor.extract();
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Unknown extraction error');
+      vi.restoreAllMocks();
+    });
+  });
+
+  // ========== Coverage Gap: Warning generation (DES-005 3.4) ==========
+  describe('extract() warning generation', () => {
+    it('warns when no user messages found (only assistant messages)', async () => {
+      // Covers: claude.ts lines 445-446 (userCount === 0 warning)
+      setClaudeLocation('12345678-1234-1234-1234-123456789012');
+      loadFixture(`
+        <div class="conversation-thread">
+          <div data-test-render-count="2" class="group" style="height: auto;">
+            <div class="font-claude-response" data-is-streaming="false">
+              <div class="standard-markdown">
+                <p>Only assistant message</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      `);
+
+      const result = await extractor.extract();
+
+      expect(result.success).toBe(true);
+      expect(result.warnings).toContain('No user messages found');
+    });
+
+    it('warns when no assistant messages found (only user messages)', async () => {
+      // Covers: claude.ts lines 448-450 (assistantCount === 0 warning)
+      setClaudeLocation('12345678-1234-1234-1234-123456789012');
+      loadFixture(`
+        <div class="conversation-thread">
+          <div data-test-render-count="2" class="group" style="height: auto;">
+            <div class="bg-bg-300 rounded-xl pl-2.5 py-2.5">
+              <div data-testid="user-message">
+                <p class="whitespace-pre-wrap break-words">Only user message</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      `);
+
+      const result = await extractor.extract();
+
+      expect(result.success).toBe(true);
+      expect(result.warnings).toContain('No assistant messages found');
+    });
+  });
+
+  // ========== Coverage Gap: Nested user message skip (DES-005 3.4) ==========
+  describe('extractMessages nested content filtering', () => {
+    it('skips user-like elements nested inside assistant response', () => {
+      // Covers: claude.ts lines 207-210 (assistantParent check)
+      setClaudeLocation('12345678-1234-1234-1234-123456789012');
+      loadFixture(`
+        <div class="conversation-thread">
+          <div data-test-render-count="2" class="group" style="height: auto;">
+            <div class="bg-bg-300 rounded-xl pl-2.5 py-2.5">
+              <div data-testid="user-message">
+                <p class="whitespace-pre-wrap break-words">Real user message</p>
+              </div>
+            </div>
+          </div>
+          <div data-test-render-count="2" class="group" style="height: auto;">
+            <div class="font-claude-response" data-is-streaming="false">
+              <div class="standard-markdown">
+                <p>Assistant text</p>
+                <p class="whitespace-pre-wrap break-words">Nested text inside assistant (should be skipped as user)</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      `);
+
+      const messages = extractor.extractMessages();
+
+      const userMessages = messages.filter(m => m.role === 'user');
+      // Only the real user message should be extracted, not the nested one
+      expect(userMessages).toHaveLength(1);
+      expect(userMessages[0].content).toBe('Real user message');
+    });
+  });
+
+  // ========== Coverage Gap: getTitle Deep Research path (DES-005 3.4) ==========
+  describe('getTitle Deep Research routing', () => {
+    it('returns Deep Research h1 title when artifact panel is visible', () => {
+      // Covers: claude.ts lines 164-166 (isDeepResearchVisible true in getTitle)
+      setClaudeLocation('12345678-1234-1234-1234-123456789012');
+      createClaudeDeepResearchPage(
+        '12345678-1234-1234-1234-123456789012',
+        'My Deep Research Report',
+        '<p>Report content</p>'
+      );
+
+      const title = extractor.getTitle();
+
+      expect(title).toBe('My Deep Research Report');
+    });
+  });
+
+  // ========== Coverage Gap: getDeepResearchTitle fallback (DES-005 3.4) ==========
+  describe('getDeepResearchTitle fallback', () => {
+    it('returns default title when h1 element is absent', () => {
+      // Covers: claude.ts lines 181-187 (getDeepResearchTitle fallback)
+      setClaudeLocation('12345678-1234-1234-1234-123456789012');
+      // Create artifact panel without h1 title
+      loadFixture(`
+        <div id="markdown-artifact" class="font-claude-response">
+          <div class="standard-markdown">
+            <p>Report with no h1</p>
+          </div>
+        </div>
+      `);
+
+      const title = extractor.getDeepResearchTitle();
+
+      expect(title).toBe('Untitled Deep Research Report');
+    });
+  });
+
+  // ========== Coverage Gap: extractSourceList URL parse catch (DES-005 3.4) ==========
+  describe('extractSourceList URL parse error handling', () => {
+    it('falls back to "unknown" domain when URL constructor throws', () => {
+      // Covers: claude.ts lines 324-328 (URL parse catch block)
+      // jsdom resolves relative URLs, so we mock URL to throw for a specific href
+      setClaudeLocation('12345678-1234-1234-1234-123456789012');
+      loadFixture(`
+        <div id="markdown-artifact" class="font-claude-response">
+          <div class="standard-markdown">
+            <span class="inline-flex">
+              <a href="http://example.com/valid" target="_blank" rel="noopener">
+                <span class="text-text-300">Valid Source</span>
+              </a>
+            </span>
+          </div>
+        </div>
+      `);
+
+      // Mock URL constructor to throw for the specific URL
+      const OriginalURL = globalThis.URL;
+      vi.stubGlobal('URL', class extends OriginalURL {
+        constructor(input: string | URL, base?: string | URL) {
+          if (typeof input === 'string' && input.includes('example.com/valid')) {
+            throw new TypeError('Invalid URL');
+          }
+          super(input, base);
+        }
+      });
+
+      const sources = extractor.extractSourceList();
+
+      expect(sources).toHaveLength(1);
+      expect(sources[0].domain).toBe('unknown');
+      expect(sources[0].title).toBe('Valid Source');
+
+      vi.unstubAllGlobals();
     });
   });
 });
