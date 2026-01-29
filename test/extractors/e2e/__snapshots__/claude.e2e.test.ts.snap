@@ -1,0 +1,134 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Claude E2E Extraction > Artifacts / Deep Research > should generate Artifacts markdown with citations 1`] = `
+"---
+id: claude_e2e-claude-artifacts-001
+title: Claude Code：AI がプログラミングを手伝ってくれるツール
+source: claude
+url: "https://claude.ai/chat/e2e-claude-artifacts-001"
+created: "2025-01-01T00:00:00.000Z"
+modified: "2025-01-01T00:00:00.000Z"
+tags:
+  - ai-research
+  - deep-research
+  - claude
+message_count: 1
+---
+
+# Claude Code：AI がプログラミングを手伝ってくれるツール
+
+**Claude Code は、Anthropic が開発した「AI プログラミングアシスタント」です。** 普段使う日本語や英語で指示を出すだけで、コードの作成・修正・説明などを AI が代わりに行ってくれます。有料プラン（月額 **$20** から）に加入することで利用でき、 [Anthropic +2](https://support.anthropic.com/en/articles/8325610-how-much-does-claude-pro-cost)開発者の作業効率を大幅に向上させるツールとして注目されています。
+
+## そもそも Claude Code とは何か
+
+Claude Code は、Anthropic 社が提供する AI チャットサービス「Claude」のプログラミング特化版です。 [Anthropic](https://support.anthropic.com/en/articles/11145838-using-claude-code-with-your-max-plan)通常の Claude がチャット形式で質問に答えるのに対し、Claude Code は**実際にファイルを編集したり、コマンドを実行したりできる**点が大きな違いです。 [Anthropic](https://docs.anthropic.com/en/docs/claude-code/overview)
+
+イメージとしては、「優秀なプログラマーが隣に座って、あなたの指示通りに作業してくれる」感覚に近いでしょう。「ログイン機能を作って」と日本語で伝えれば、必要なコードを書いてくれます。「このエラーを直して」とエラーメッセージを見せれば、原因を特定して修正してくれます。 [Claude](https://code.claude.com/docs/en/overview)
+
+ターミナル（コマンドライン）という、文字で命令を入力する画面から使用するツールです。 [Anthropic](https://support.anthropic.com/en/articles/11145838-using-claude-code-with-your-max-plan)[GitHub](https://github.com/anthropics/claude-code)黒い背景に白い文字が表示されるあの画面で \`claude\` と入力するだけで起動できます。
+
+## 何ができるのか：主な機能と活用場面
+
+Claude Code でできることは多岐にわたります。以下が代表的な機能です。
+
+**新しい機能の作成**は最も基本的な使い方です。「ユーザー登録フォームを作って」「検索機能を追加して」といった要望を伝えると、必要なコードを一から書いてくれます。複雑な機能でも、計画を立てて段階的に実装を進めてくれるため、完成度の高いコードが得られます。 [Claude](https://code.claude.com/docs/en/overview)
+
+\\*\\*バグの修正（デバッグ）\\*\\*も得意分野です。エラーメッセージをそのまま貼り付けるか、「動かない」と伝えるだけで、問題の原因を突き止めて直してくれます。 [Claude](https://code.claude.com/docs/en/overview)初心者がつまずきやすいエラー対応も、AI が丁寧に対処します。
+
+**既存コードの理解と説明**も便利な機能です。他の人が書いたコードや、過去に自分が書いたコードの意味がわからないとき、「この部分は何をしているの？」と聞けば、わかりやすく解説してくれます。
+
+**Git 操作**（ソースコードの変更履歴を管理する仕組み）もほぼ任せられます。「今日の変更をコミットして」「先週の変更履歴を見せて」といった指示で、複雑な Git コマンドを代行してくれます。 [Anthropic](https://www.anthropic.com/engineering/claude-code-best-practices)
+
+**外部サービスとの連携**も可能です。Google Drive、Slack、Figma、Jira などの業務ツールと接続し、より幅広い作業を自動化できます。 [Anthropic](https://docs.anthropic.com/en/docs/claude-code/overview)
+
+## どうやって使うのか：始め方の3ステップ
+
+Claude Code を使い始めるには、以下の手順を踏みます。
+
+**ステップ1：有料プランへの加入**が最初に必要です。Claude の公式サイト（claude.ai）で Pro プラン以上に登録します。無料プランでは Claude Code は使用できません。
+
+**ステップ2：インストール**を行います。お使いのパソコンによって方法が異なります。
+
+-   **Mac の場合**：ターミナルを開き、\`curl -fsSL https://claude.ai/install.sh | sh\` を実行
+-   **Windows の場合**：PowerShell を開き、\`irm https://claude.ai/install.ps1 | iex\` を実行
+
+なお、ブラウザ版（claude.ai/code）も用意されており、インストール不要で試すこともできます。 [Claude](https://code.claude.com/docs/en/overview)
+
+**ステップ3：起動とログイン**で準備完了です。ターミナルで作業したいフォルダに移動し、\`claude\` と入力して Enter を押します。初回は Claude のアカウントでログインを求められるので、サブスクリプション登録時と同じ認証情報を入力します。 [Anthropic](https://support.anthropic.com/en/articles/11145838-using-claude-code-with-your-max-plan)[Anthropic](https://docs.anthropic.com/en/docs/claude-code/quickstart)
+
+起動後は、普通の日本語で話しかけるだけで使えます。「このプロジェクトの構造を説明して」「新しいボタンを追加して」など、やりたいことを伝えましょう。ファイルを変更する前には必ず確認を求めてくるため、勝手に書き換えられる心配はありません。 [Anthropic](https://docs.anthropic.com/en/docs/claude-code/quickstart)
+
+## どんな人向けか：おすすめの利用シーン
+
+Claude Code は幅広いユーザーに活用されていますが、特に以下のような方に向いています。
+
+**プログラミング初心者や学習者**にとっては、心強い先生兼アシスタントになります。エラーの意味がわからないとき、コードの書き方に迷ったとき、すぐに質問して教えてもらえます。「バイブコーディング」と呼ばれる、やりたいことを言葉で伝えるだけでプログラムを作るスタイルで、プログラミング未経験者でも活用できます。 [Axios](https://www.axios.com/2026/01/07/anthropics-claude-code-vibe-coding)
+
+**新しいプロジェクトに参加したエンジニア**は、膨大な既存コードを理解する助けになります。「この機能はどのファイルにある？」「このシステムの全体像を教えて」といった質問で、スムーズに仕事を始められます。 [Anthropic](https://www-cdn.anthropic.com/58284b19e702b49db9302d5b6f135ad8871e7658.pdf)
+
+**経験豊富な開発者**も、面倒な作業を任せることで本質的な仕事に集中できます。テストコードの作成、ドキュメント整備、定型的なコード修正など、時間がかかるが創造性の低い作業を効率化できます。
+
+## 料金プランと利用条件
+
+Claude Code を使うには、有料サブスクリプションが必須です。主なプランは以下の通りです。
+
+| プラン名 | 月額料金 | 特徴 |
+| --- | --- | --- |
+| Pro | $20（約3,000円） | 個人利用の基本プラン。小規模なプロジェクト向け |
+| Max 5× | $100（約15,000円） | Pro の5倍の使用量。日常的な開発作業向け |
+| Max 20× | $200（約30,000円） | Pro の20倍の使用量。本格的な開発向け |
+| Team | $25〜/ユーザー | 5人以上のチーム向け |
+
+**使用量に制限がある**点に注意が必要です。Pro プランの場合、5時間あたり約 **10〜40回** のやり取りが目安となります。 [Anthropic](https://support.anthropic.com/en/articles/11145838-using-claude-code-with-your-max-plan)[Braingrid](https://www.braingrid.ai/blog/claude-code-pricing)制限に達すると、次の5時間まで待つか、上位プランへのアップグレードが必要です。大きなプロジェクトで頻繁に使う場合は、Max プランの検討をおすすめします。
+
+**Claude と Claude Code で使用量は共有**されます。 [Anthropic](https://support.anthropic.com/en/articles/11145838-using-claude-code-with-your-max-plan)Web 版の Claude でたくさんチャットすると、Claude Code で使える回数も減る仕組みです。 [Anthropic](https://support.anthropic.com/en/articles/11145838-using-claude-code-with-your-max-plan)
+
+* * *
+
+## まとめ
+
+Claude Code は、「日本語で指示を出すだけでプログラミング作業を代行してくれる AI ツール」です。 [Anthropic](https://support.anthropic.com/en/articles/11845131-using-claude-code-with-your-team-or-enterprise-plan)コードの作成から修正、説明、Git 操作まで幅広くサポートしてくれるため、初心者から経験者まで開発効率を大きく向上させられます。
+
+利用には月額 $20 以上の有料プランが必要ですが、 [Anthropic](https://support.anthropic.com/en/articles/8325610-how-much-does-claude-pro-cost)[PromptLayer](https://blog.promptlayer.com/claude-code-pricing-how-to-save-money/)プログラミング学習の加速や、面倒な作業の自動化を考えれば、検討に値する投資といえるでしょう。まずは公式サイト（claude.ai）で Pro プランに登録し、試してみることをおすすめします。
+# References
+
+[^1]: [Unknown Title](https://support.anthropic.com/en/articles/8325610-how-much-does-claude-pro-cost)
+[^2]: [Anthropic](https://support.anthropic.com/en/articles/11145838-using-claude-code-with-your-max-plan)
+[^3]: [Anthropic](https://docs.anthropic.com/en/docs/claude-code/overview)
+[^4]: [Claude](https://code.claude.com/docs/en/overview)
+[^5]: [GitHub](https://github.com/anthropics/claude-code)
+[^6]: [Anthropic](https://www.anthropic.com/engineering/claude-code-best-practices)
+[^7]: [Anthropic](https://docs.anthropic.com/en/docs/claude-code/quickstart)
+[^8]: [Axios](https://www.axios.com/2026/01/07/anthropics-claude-code-vibe-coding)
+[^9]: [Anthropic](https://www-cdn.anthropic.com/58284b19e702b49db9302d5b6f135ad8871e7658.pdf)
+[^10]: [Braingrid](https://www.braingrid.ai/blog/claude-code-pricing)
+[^11]: [Anthropic](https://support.anthropic.com/en/articles/11845131-using-claude-code-with-your-team-or-enterprise-plan)
+[^12]: [PromptLayer](https://blog.promptlayer.com/claude-code-pricing-how-to-save-money/)"
+`;
+
+exports[`Claude E2E Extraction > Chat - Simple Conversation > should generate correct markdown output 1`] = `
+"---
+id: claude_e2e-claude-chat-001
+title: Claude の html構造をテストするための質問です。「はい」とだけ答えて。
+source: claude
+url: "https://claude.ai/chat/e2e-claude-chat-001"
+created: "2025-01-01T00:00:00.000Z"
+modified: "2025-01-01T00:00:00.000Z"
+tags:
+  - ai-conversation
+  - claude
+message_count: 4
+---
+
+> [!QUESTION] User
+> Claude の html構造をテストするための質問です。「はい」とだけ答えて。
+
+> [!NOTE] Claude
+> はい
+
+> [!QUESTION] User
+> 次は「いいえ」だけ答えて。
+
+> [!NOTE] Claude
+> いいえ"
+`;

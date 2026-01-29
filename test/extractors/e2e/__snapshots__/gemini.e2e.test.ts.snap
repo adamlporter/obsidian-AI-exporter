@@ -1,0 +1,409 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Gemini E2E Extraction > Chat - Simple Conversation > should generate correct markdown output 1`] = `
+"---
+id: gemini_e2e-gemini-chat-001
+title: gemini chat の E2E テストのための質問をします。理解したら「はい」だけ回答してください。
+source: gemini
+url: "https://gemini.google.com/app/e2e-gemini-chat-001"
+created: "2025-01-01T00:00:00.000Z"
+modified: "2025-01-01T00:00:00.000Z"
+tags:
+  - ai-conversation
+  - gemini
+message_count: 4
+---
+
+> [!QUESTION] User
+> gemini chat の E2E
+>                                       テストのための質問をします。理解したら「はい」だけ回答してください。
+
+> [!NOTE] Gemini
+> はい
+
+> [!QUESTION] User
+> ありがとうございます。次は「いいえ」と回答してください。
+
+> [!NOTE] Gemini
+> いいえ"
+`;
+
+exports[`Gemini E2E Extraction > Deep Research Report > should generate Deep Research markdown with footnotes 1`] = `
+"---
+id: gemini_e2e-gemini-dr-001
+title: Deep Research HTML構造調査レポート
+source: gemini
+url: "https://gemini.google.com/app/e2e-gemini-dr-001"
+created: "2025-01-01T00:00:00.000Z"
+modified: "2025-01-01T00:00:00.000Z"
+tags:
+  - ai-research
+  - deep-research
+  - gemini
+message_count: 1
+---
+
+# Deep Research インターフェースの技術的設計：HTML 構造、DOM アーキテクチャ、およびエージェント指向の UI 設計に関する包括的分析
+
+人工知能のパラダイムは、単純なパターン認識とテキスト生成を行うチャットボットから、自律的な推論、計画、および実行を伴う「エージェント」へと劇的な進化を遂げている [^1]。この進化の最前線にあるのが「Deep Research」と呼ばれるシステムであり、これは数百のウェブソースを自律的に探索、分析、合成し、専門的な調査アナリストと同等のレポートを生成する能力を持つ [^3]。本レポートでは、OpenAI の o3-deep-research や Google の Gemini Deep Research をはじめとする主要なシステムのインターフェース構造、特にその HTML 構造、DOM アーキテクチャ、およびデータ連携のメカニズムについて、技術的な観点から詳細に分析する。
+
+## エージェント指向 UI の基本設計理念と HTML 構造の変遷
+
+従来の LLM インターフェースは、ユーザーの入力に対して即座にテキストを返す同期的な設計が主流であった。しかし、Deep Research は数分から数十分に及ぶ複雑な多段階の推論プロセスを伴うため、UI 設計には非同期処理とプロセスの可視化が不可欠となる [^4]。このため、HTML 構造は動的な状態変化を管理し、実行中の推論ステップや検索ログをリアルタイムに反映するための柔軟なコンポーネント群で構成されている [^6]。
+
+Deep Research の UI アーキテクチャを理解する上で、まず注目すべきは、インターフェースが単なるテキストの表示領域ではなく、エージェントの内部状態（計画、実行、観察、修正）をユーザーに伝えるための「ダッシュボード」として機能している点である [^5]。以下の表は、一般的な Deep Research インターフェースを構成する主要な UI セクションとその機能的役割、および想定される HTML 要素の対応を示したものである。
+
+| UI セクション | 主な機能と役割 | 想定される HTML 要素 / コンポーネント |
+| --- | --- | --- |
+| 計画フェーズ表示 (Planning) | 研究目標の分解、検索クエリの提示、ユーザーによる修正。 | details, summary, form 要素によるインタラクティブなリスト。 |
+| 思考プロセスログ (Thinking Log) | モデルの推論ステップ、中間判断、方向修正のリアルタイム表示。 | div 要素によるスクロール可能なコンテナ、動的なリストアイテム。 |
+| 検索・閲覧ステータス (Browsing) | 訪問した URL、取得したソース、抽出された情報のステータス表示。 | ul, li 要素、進捗インジケーターとしての progress や svg。 |
+| 最終レポート表示 (Report) | 構造化された Markdown 形式のテキスト、インライン引用、図表。 | article 要素、h1-h6、table、a 要素（引用用）。 |
+| インタラクティブ・ツール (Tools) | コード実行結果、画像生成、ファイルアップロード。 | iframe（サンドボックス用）、canvas、pre, code 要素。 |
+
+Google スプレッドシートにエクスポート
+
+[^3]
+
+これらのセクションは、エージェントの自律性を担保しつつ、ユーザーによる介入（ヒューマン・イン・ザ・ループ）を可能にするための「ステアラビリティ（操縦性）」を提供するために設計されている [^10]。
+
+## OpenAI Deep Research の API 構造と DOM レンダリング
+
+OpenAI の Deep Research モデル（o3-deep-research および o4-mini-deep-research）は、Responses API を介して構造化されたデータを出力する [^3]。この API 出力は、フロントエンドの HTML 構造を定義する直接的な設計図となる。API から返される \`output\` 配列には、エージェントが最終的な回答に至るまでに行った各ステップが個別のオブジェクトとして格納される [^3]。
+
+### Responses API の出力アイテムと UI コンポーネントの対応
+
+フロントエンドは、API から逐次送られてくる以下の出力アイテムの種類に応じて、DOM ツリーを動的に構築する。
+
+| 出力アイテムの種類 (Type) | 記述内容と役割 | HTML レンダリングの戦略 |
+| --- | --- | --- |
+| web_search_call | 検索エンジンの使用、ページの開封、ページ内検索アクション。 | 検索ログとしてのエントリ生成、ファビコンとタイトルを含むリンクの表示。 |
+| code_interpreter_call | Python コードの実行による計算、データ分析、グラフ描画。 | pre 要素内でのコード表示、実行結果のテキストまたは画像出力。 |
+| mcp_tool_call | 外部 MCP (Model Context Protocol) サーバーとの連携。 | ツール名、引数、および返り値を構造化したテーブルやカードで表示。 |
+| reasoning | モデルの内部的な推論ステップの要約。 | 「思考を表示 (Show thinking)」トグル内に格納される要約テキスト。 |
+| message | インライン引用を含む最終的な回答レポート。 | Markdown レンダラーによる HTML 変換、属性付きの引用マーカーの挿入。 |
+
+Google スプレッドシートにエクスポート
+
+[^3]
+
+特に \`message\` オブジェクトに含まれる \`annotations\` 配列は、レポート内のどの文字範囲がどの URL に基づいているかを詳細に定義しており、これによって HTML 内での「クリック可能な引用」が実現される [^9]。この実装では、テキスト内の \`start_index\` と \`end_index\` に基づいて動的に \`span\` や \`a\` 要素を挿入するロジックが必要となる。
+
+### ChatGPT Apps SDK と UI のサンドボックス化
+
+OpenAI のプラットフォーム上で実行されるカスタム UI コンポーネントは、セキュリティ上の理由から \`iframe\` 内で隔離される [^11]。これらのコンポーネントは、\`window.openai\` オブジェクトをブリッジとしてホスト環境（ChatGPT 本体）と通信を行う。
+
+このブリッジを介して提供される機能には、以下のようなものがある：
+
+-   **レイアウト管理:** \`requestDisplayMode\` メソッドを使用して、インライン表示、ピクチャー・イン・ピクチャー、またはフルスクリーンの切り替えを要求できる [^11]。
+    
+-   **状態の永続化:** \`setWidgetState\` を通じて、ウィジェットの状態（スクロール位置やユーザー入力など）を特定のメッセージに紐付けて保存できる [^11]。
+    
+-   **データの購読:** \`useOpenAiGlobal\` フックを利用することで、ツールの出力やメタデータの変化をリアクティブに検知し、UI を更新することが可能である [^11]。
+    
+
+この設計は、複雑な調査結果（地図、大規模なテーブル、動的なシミュレーションなど）を表示するために、標準的なテキストチャットの枠を超えた柔軟性を UI に与えている [^11]。
+
+## Gemini Deep Research の UI 構造と非同期タスク管理
+
+Google の Gemini Deep Research は、Gemini 3 Pro モデルを搭載し、数分間にわたる長時間の推論タスクを処理するために「非同期タスクマネージャー」を採用している [^4]。このシステムは、プランナーとタスク実行モデルの間で共有状態を維持し、ユーザーがブラウザを閉じてもバックグラウンドで処理を継続できるように設計されている [^4]。
+
+### プロセスの可視化と DOM 特性
+
+Gemini のインターフェースでは、エージェントが「考えている」ことをユーザーに明示するためのコンポーネントが重視されている。
+
+-   **思考の表示 (Show thinking):** ドロップダウンメニューとして実装されており、クリックすることでモデルが現在検討している検索語や推論の方向性を確認できる [^7]。
+    
+-   **閲覧サイトリスト (Sites browsed):** 調査中にエージェントがアクセスしたウェブサイトをリアルタイムでリストアップし、ユーザーが独自にソースを深掘りできるようにしている [^7]。
+    
+-   **研究計画の編集:** 調査開始前に表示される研究計画（Research Plan）は、単なるテキストではなく、個別の項目を修正可能なインタラクティブな UI として構築されている [^7]。
+    
+
+Gemini におけるこれらの動的な要素は、Interaction ID と Last Event ID を用いたポーリングメカニズムによって管理されており、これによってストリーミングが中断された場合でも、その時点からの UI 再構築が可能となっている [^6]。
+
+### Generative UI (GenUI) と動的ビュー
+
+Google が提唱する Generative UI は、ユーザーの問いに対して最適なインターフェースをその場で生成する概念である [^15]。Deep Research においても、単なるテキストレポートだけでなく、インタラクティブなシミュレーションや動的なビジュアル体験が生成されることがある。これは AI Mode と呼ばれる実験的な機能において顕著であり、回答の文脈に最適化されたカスタムインターフェースが DOM 上に構築される [^15]。
+
+## DOM 解析から見る Deep Research インターフェースの細部
+
+Deep Research のウェブインターフェースは、高度な自動化とアクセシビリティを実現するために、特定の HTML クラス名やデータ属性を活用している。これらは開発ツール（Inspect Element）を用いた解析によって、いくつかの共通パターンとして特定できる [^16]。
+
+### 主要なコンテナ要素と CSS クラス
+
+OpenAI や Gemini のインターフェースで使用されている主要な構造要素とその技術的意図を以下のテーブルにまとめる。
+
+| 属性 / クラス名 | 役割と技術的意図 | 補足事項 |
+| --- | --- | --- |
+| [data-testid="send-button"] | メッセージ送信ボタン。自動テストやスクリプト制御のトリガーとして使用。 | 入力がない場合は disabled 属性が付与される REF。 |
+| #prompt-textarea | ユーザーが調査指示を入力する主領域。自動リサイズ機能を持つ。 | textarea 要素であり、resize: none が設定されることが多い REF。 |
+| .custom-scrollbar | 調査ログなどの長いコンテンツを表示するためのスクロール設定。 | -webkit-scrollbar を用いて、UI 全体のトーンに合わせたカスタマイズが施される REF。 |
+| .tools-popup | ツール選択やオプション設定を表示するポップアップコンテナ。 | opacity や transform によるスムーズな遷移アニメーションが適用される REF。 |
+| [data-testid="stAppViewContainer"] | データダッシュボード全体を包むコンテナ。 | 特定のフレームワーク（Streamlit 等）との類似性が指摘されることもある REF。 |
+
+[^16]
+
+これらの要素は、セマンティック HTML5 タグ（\`<main>\`, \`<nav>\`, \`<header>\`）によって構造化されており、スクリーンリーダー等の支援技術に対しても、調査プロセスの各段階が論理的な順序で伝わるよう配慮されている [^19]。
+
+### 引用とソースの追跡メカニズム
+
+調査レポートの信頼性を担保するための「引用」は、DOM 上で非常に重要な役割を果たす。これらは一般的に以下のステップでレンダリングされる [^5]：
+
+1.  **API からのデータ受信:** レポートテキストと共に、文字オフセットと URL を含む \`annotations\` データが届く。
+    
+2.  **テキストの断片化:** フロントエンドのレンダラーがテキストを解析し、引用箇所でテキストノードを分割する。
+    
+3.  **要素の挿入:** 分割された位置に \`<a>\` タグや \`<button>\` タグを挿入し、クリックイベントを設定する。
+    
+4.  **プレビューの生成:** 引用要素にホバーまたはクリックした際、ソースのメタデータ（タイトル、抜粋、信頼性スコア）を表示するポップオーバーを展開する。
+    
+
+この仕組みにより、ユーザーはレポート内のあらゆる主張に対して、その根拠となる一次情報源へ一回のクリックでアクセスできる [^20]。
+
+## オープンソースによる Deep Research 実装の構造分析
+
+OpenAI の Deep Research を模したオープンソースプロジェクト（\`open-deep-research\` など）は、最新のウェブ技術スタックを用いてこれらの複雑な UI をどのように実現するかを示唆している [^22]。
+
+### 技術スタックとコンポーネント・ライブラリ
+
+多くのクローンプロジェクトでは、Next.js と React をベースにしたスタックが採用されている。
+
+| ライブラリ / フレームワーク | UI における役割 | 技術的特徴 |
+| --- | --- | --- |
+| Next.js App Router | 全体的なルーティングとサーバーサイドレンダリング (SSR)。 | 調査レポートの高速な初期表示と SEO 最適化。 |
+| shadcn/ui | 再利用可能な UI コンポーネント群。 | Tailwind CSS をベースにした、コピー＆ペースト可能な高品質なパーツ REF。 |
+| Radix UI | アクセシビリティに配慮したプリミティブ。 | モダル、ドロップダウン、ツールチップのアクセシビリティ担保 REF。 |
+| Tailwind CSS | スタイリング。 | ユーティリティクラスによる迅速なデザイン実装 REF。 |
+| Vercel AI SDK | LLM との通信およびストリーミング。 | 構造化されたオブジェクトやツール実行結果をリアルタイムで UI に反映 REF。 |
+
+[^22]
+
+これらのプロジェクトの \`components\` フォルダを調査すると、\`ChatForm\`（入力フォーム）、\`ChatMessage\`（メッセージ表示）、\`SourceList\`（引用元一覧）、\`ThinkingStep\`（推論ステップ表示）といった、役割ごとに細分化されたコンポーネント設計が見て取れる [^22]。
+
+### エージェントのオーケストレーションと可視化
+
+オープンソースの Deep Research Agent（LangGraph 等を使用）は、推論プロセスをグラフ構造として管理する [^23]。このグラフの各ノードは、調査の各フェーズ（計画、検索、合成、執筆）に対応しており、フロントエンドではこれを Mermaid JS などのライブラリを用いて視覚化することがある [^27]。これにより、ユーザーはエージェントが現在どの「ノード」に滞在しているかを直感的に理解できる。
+
+また、レポートの出力形式は Markdown が標準的であるが、これをウェブ表示用に HTML に変換する際、数式には LaTeX (\`MathJax\` や \`KaTeX\`)、コードには \`Prism.js\` や \`Highlight.js\` が併用されることが一般的である [^24]。
+
+## DOM レベルでのエージェント最適化：D2Snap アルゴリズム
+
+エージェントがウェブを閲覧する際、DOM 構造そのものが入力データとなる。しかし、現代のウェブサイトは DOM ノードが肥大化しており、そのまま LLM に入力するとトークン消費が激しく、推論コストが増大する。この課題を解決するために提案されたのが D2Snap のような DOM ダウンサンプリングアルゴリズムである [^28]。
+
+### D2Snap のメカニズムと利点
+
+D2Snap は、信号処理の概念を DOM 処理に応用し、DOM ノードを局所的に統合することで、UI の特徴を維持しつつデータサイズを削減する [^28]。
+
+-   **構造の維持:** シリアル化された DOM と HTML は構造的に同型（Isomorphic）であり、LLM が UI のナビゲーションを正確に行うことを可能にする [^28]。
+    
+-   **トークン効率:** スクリーンショット画像よりもデータサイズが小さく、LLM のコンテキストウィンドウを有効活用できる [^28]。
+    
+-   **動的レイアウトへの対応:** 画像ベースの認識とは異なり、DOM 要素を直接ターゲットにするため、レイアウトが多少変化しても CSS セレクタ等を用いた正確な操作が可能である [^28]。
+    
+
+このような DOM 最適化技術は、Deep Research エージェントがより「賢く」かつ「高速に」ウェブサイトを読み解くための基盤技術となっている。
+
+## 調査レポートの構造化と HTML レンダリングのベストプラクティス
+
+Deep Research エージェントが最終的に生成する HTML レポートは、単なるテキストの羅列ではなく、セマンティックでアクセシブルな構造が求められる。
+
+### セマンティック構造の要件
+
+AI 生成の HTML における品質評価（DEFT 等のフレームワークに基づく）では、以下の要素が重要視される [^29]：
+
+-   **適切なヘッディング階層:** \`<h1>\` から \`<h6>\` までの論理的な入れ子構造。
+    
+-   **セマンティックタグの活用:** \`<article>\`, \`<section>\`, \`<aside>\` 等による情報の区切り。
+    
+-   **アクセシビリティ:** \`alt\` 属性の付与、コントラスト比の確保、キーボードナビゲーションへの対応。
+    
+-   **データの視覚化:** 複雑な比較には Markdown テーブルを使用し、それを HTML の \`<table>\` 要素として正確に変換する。
+    
+
+### 引用スタイルとメタデータの統合
+
+レポート内の引用は、学術的な形式（APA, MLA, IEEE 等）に準拠するように指示されることが多い [^24]。これを HTML で表現する場合、単なるリンクではなく、以下の情報を含む構造化されたメタデータが背後で管理される。
+
+| 引用コンポーネント | HTML 要素 / 属性 | 技術的役割 |
+| --- | --- | --- |
+| インライン参照 | <sup><a href="...">[n]</a></sup> | 文中での参照位置の明示。 |
+| ソース・ポップオーバー | div.tooltip または section | ホバー時に表示される詳細情報のコンテナ。 |
+| 参考文献リスト | ol, li | レポート末尾に自動生成される出典一覧。 |
+| 信頼性バッジ | span.badge | ソースのドメイン権威性や HTTPS 対応状況の可視化 REF。 |
+
+[^20]
+
+エージェントは、これらの引用を生成する際に、重複するソースをまとめたり、複数のソースが同じ主張をサポートしている場合にはマルチシテーション（例：）として処理したりする高度な論理を実装している [^3]。
+
+## セキュリティ、認証、および DOM への影響
+
+エージェントがユーザーの代理としてウェブを操作し、プライベートなファイル（Google Drive, GitHub 等）にアクセスする際、UI および DOM 構造には厳格なセキュリティ境界が必要となる [^6]。
+
+### 権限管理と実行の透明性
+
+-   **コネクタの使用:** エージェントが Gmail や GitHub にアクセスする際、ユーザーは明示的に許可を与える必要がある。UI はこの許可状態を反映し、どのアカウントが接続されているかを表示する [^33]。
+    
+-   **プロンプト注入への耐性:** 閲覧中のウェブページに含まれる悪意のある指示（隠しテキストやメタデータ）によって、エージェントが予期せぬ DOM 操作（データの削除や送信）を行わないよう、出力に対するフィルタリングが適用される [^6]。
+    
+-   **セッション管理:** エージェントはブラウジング中にセッションクッキーを保持することがあるが、これは個別のタスクごとに分離されるべきであり、UI 上でセッションの終了をユーザーが制御できる必要がある [^33]。
+    
+
+### 監査可能性とログ
+
+エージェントが行ったすべてのアクションは、システムログとして記録される。しかし、Agent Mode ではユーザー自身のログイン資格情報を使用するため、ログ上で「ユーザーが操作したのか、エージェントが操作したのか」を区別することが困難になるという課題がある [^33]。これを解決するために、UI 側でエージェントによる操作（ボタンのクリック、フォームへの入力など）を視覚的に強調し、カーソルが動く様子をユーザーにリアルタイムで見せる「観測可能 (Observable)」な設計が採用されている [^33]。
+
+## システム評価と将来の展望：HTML 構造の進化
+
+Deep Research の性能は、GAIA や Deep Research Bench (DRB) といったベンチマークによって厳格に評価されている [^8]。これらの評価項目には、情報の正確性や網羅性だけでなく、生成されたレポートの「構造的品質」や「引用の整合性」も含まれる。
+
+### 失敗タクソノミー (DEFT) と UI の改善
+
+DEFT (Deep Research Failure Taxonomy) は、エージェントの失敗を 14 のモードに分類している [^29]。その中には、情報の統合（Evidence Integration）の失敗や、構造の脆弱さ（Methodological Rigor）が含まれる。これらの失敗を最小限に抑えるため、将来の UI は以下のように進化すると予測される：
+
+1.  **構造化出力の厳格化:** JSON スキーマに基づいた厳密な HTML 生成により、レンダリングエラーやセマンティックな不整合を排除する [^37]。
+    
+2.  **リアルタイムな事実確認:** レポートが生成されるのと並行して、引用元との整合性をチェックする UI インジケーターの導入。
+    
+3.  **対話型レポート:** 静的な HTML ではなく、ユーザーが特定のセクションに対して「さらに深掘り」や「データの更新」を要求できる、動的に再構築される DOM。
+    
+
+### 結論
+
+Deep Research の HTML 構造は、静的な情報の提示から、自律的なエージェントの動的な推論プロセスの可視化へとその役割を大きく広げている。OpenAI の Responses API や Gemini の非同期タスクマネージャー、さらにはオープンソースの Next.js ベースの実装に見られるように、最新のフロントエンド技術は、複雑なマルチステップの調査をユーザーが理解し、制御し、信頼するための不可欠な「窓口」となっている。DOM ダウンサンプリングや Generative UI といった技術の台頭は、将来的にエージェントと人間がよりシームレスにデジタル空間を共有し、協力して知識を構築するための基盤となるだろう。この進化において、HTML は単なるマークアップ言語ではなく、エージェントの「思考の軌跡」と「情報の根拠」を構造化し、透明性を担保するための重要な技術的スタックとして機能し続ける。
+# References
+
+[^1]: [NBER WORKING PAPER SERIES AI AGENTS FOR ECONOMIC RESEARCH Anton Korinek Working Paper 34202 http://www.nber.org/papers/w34202 NA](https://www.nber.org/system/files/working_papers/w34202/w34202.pdf)
+[^2]: [A Comprehensive Survey of Deep Research: Systems, Methodologies, and Applications - arXiv](https://arxiv.org/pdf/2506.12594?)
+[^3]: [Deep research | OpenAI API - OpenAI Platform](https://platform.openai.com/docs/guides/deep-research)
+[^4]: [Gemini Deep Research — your personal research assistant](https://gemini.google/overview/deep-research/)
+[^5]: [How OpenAI's Deep Research Works - PromptLayer Blog](https://blog.promptlayer.com/how-deep-research-works/)
+[^6]: [Gemini Deep Research Agent | Gemini API - Google AI for Developers](https://ai.google.dev/gemini-api/docs/deep-research)
+[^7]: [How to use Google's Deep Research, an AI researching tool](https://blog.google/products-and-platforms/products/gemini/tips-how-to-use-deep-research/)
+[^8]: [Deep Research: A Survey of Autonomous Research Agents - arXiv](https://arxiv.org/html/2508.12752v1)
+[^9]: [Introduction to deep research in the OpenAI API](https://cookbook.openai.com/examples/deep_research_api/introduction_to_deep_research_api)
+[^10]: [An Interactive Paradigm for Deep Research - OpenReview](https://openreview.net/forum?id=MCeM7uRH9U)
+[^11]: [Build your ChatGPT UI - OpenAI for developers](https://developers.openai.com/apps-sdk/build/chatgpt-ui/)
+[^12]: [Build An App for ChatGPT! Step By Step! | by Itsuki - Level Up Coding - Gitconnected](https://levelup.gitconnected.com/build-an-app-for-chatgpt-step-by-step-814d46961ea4)
+[^13]: [I studied with Google's Gemini Guided Learning. I don't feel much smarter. | Mashable](https://mashable.com/article/google-gemini-guided-learning-review)
+[^14]: [Stacey Barton, Author at Uprise Up](https://upriseup.co.uk/author/stacey/)
+[^15]: [Generative UI: A rich, custom, visual interactive user experience for any prompt](https://research.google/blog/generative-ui-a-rich-custom-visual-interactive-user-experience-for-any-prompt/)
+[^16]: [Passing questions to ChatGPT via URL - javascript - Stack Overflow](https://stackoverflow.com/questions/77931646/passing-questions-to-chatgpt-via-url)
+[^17]: [Create ChatGPT UI Clone with HTML, CSS & JavaScript - CodewithFaraz](https://www.codewithfaraz.com/content/514/create-chatgpt-ui-clone-with-html-css-javascript)
+[^18]: [ChatGPT | Tech News, Tutorials & Expert Insights - Packt](https://www.packtpub.com/en-gb/learning/how-to-tutorials/tag/chatgpt?orderBy=most-recent&page=5)
+[^19]: [Unlocking Web Design Analysis: The Ultimate Guide to Xiaoke Mao's Web UI Copy MCP Server - Skywork.ai](https://skywork.ai/skypage/en/web-design-analysis-guide/1978665866707456000)
+[^20]: [DeepTRACE: Auditing Deep Research AI Systems for Tracking Reliability Across Citations and Evidence - arXiv](https://arxiv.org/html/2509.04499v1)
+[^21]: [Deep Research - OpenAI Help Center](https://help.openai.com/en/articles/10500283-deep-research-faq)
+[^22]: [nickscamara/open-deep-research: An open source deep ... - GitHub](https://github.com/nickscamara/open-deep-research)
+[^23]: [langchain-ai/open_deep_research - GitHub](https://github.com/langchain-ai/open_deep_research)
+[^24]: [tarun7r/deep-research-agent: Multi-agent autonomous research system using LangGraph and LangChain. Generates citation-backed reports with credibility scoring and web search - GitHub](https://github.com/tarun7r/deep-research-agent)
+[^25]: [Building an open-source deep research agent from scratch using LlamaIndex, Composio, & ExaAI - DEV Community](https://dev.to/composiodev/building-an-open-source-deep-research-agent-from-scratch-using-llamaindex-composio-exaai-4j9b)
+[^26]: [LangGraph 201: Adding Human Oversight to Your Deep Research Agent](https://towardsdatascience.com/langgraph-201-adding-human-oversight-to-your-deep-research-agent/)
+[^27]: [Open Deep Research - Together AI](https://www.together.ai/blog/open-deep-research)
+[^28]: [Beyond Pixels: Exploring DOM Downsampling for LLM-Based Web Agents - arXiv](https://arxiv.org/html/2508.04412v1)
+[^29]: [How Far Are We from Genuinely Useful Deep Research Agents? - arXiv](https://arxiv.org/html/2512.01948v1)
+[^30]: [Evaluating Generative AI for HTML Development - MDPI](https://www.mdpi.com/2227-7080/13/10/445)
+[^31]: [How to Generate HTML, PDF, and other Advanced Outputs | MindStudio University](https://university.mindstudio.ai/2-workflow-mastery/how-to-generate-html-pdf-and-other-advanced-outputs)
+[^32]: [ChatGPT Citations | Formats & Examples - Scribbr](https://www.scribbr.com/ai-tools/chatgpt-citations/)
+[^33]: [ChatGPT Agent Mode: Use Cases, Limits, and Business Value](https://www.ninetwothree.co/blog/chatgpt-agent-mode)
+[^34]: [ShadowLeak: A Zero-Click, Service-Side Attack Exfiltrating Sensitive Data Using ChatGPT's Deep Research Agent - Radware](https://www.radware.com/blog/threat-intelligence/shadowleak/)
+[^35]: [Deep Research System Card | OpenAI](https://cdn.openai.com/deep-research-system-card.pdf)
+[^36]: [OpenAI's Deep Research: A Guide With Practical Examples - DataCamp](https://www.datacamp.com/blog/deep-research-openai)
+[^37]: [GPT-5.2 Prompting Guide - OpenAI for developers](https://developers.openai.com/cookbook/examples/gpt-5/gpt-5-2_prompting_guide/)
+[^38]: [Introducing GPT-5.2 - OpenAI](https://openai.com/index/introducing-gpt-5-2/)
+[^39]: [Deep Research with OpenAI: Parsing Full Web Text Using Python | by Jay Kim - Medium](https://medium.com/@bravekjh/deep-research-with-openai-parsing-full-web-text-using-python-3cfba9b0001b)
+[^40]: [My Notes on Open Deep Researcher - Shekhar Gulati](https://shekhargulati.com/2025/02/05/my-notes-on-open-deep-researcher/)
+[^41]: [The Deep Research Assistant is meticulously crafted on Mastra's modular, scalable architecture, designed for intelligent orchestration and seamless human-AI interaction. It's built to tackle complex research challenges autonomously. - GitHub](https://github.com/ssdeanx/deep-research)
+[^42]: [bytedance/deer-flow: DeerFlow is a community-driven Deep Research framework, combining language models with tools like web search, crawling, and Python execution, while contributing back to the open-source community. - GitHub](https://github.com/bytedance/deer-flow)
+[^43]: [The Best AI Coding Tools in 2025 According To ChatGPT's Deep Research](https://davidmelamed.com/2025/02/18/the-best-ai-coding-tools-according-to-chatgpts-deep-research/)
+[^44]: [Architecture Overview - DeepWiki-Open](https://asyncfunc.mintlify.app/reference/architecture)
+[^45]: [Features | Open WebUI](https://docs.openwebui.com/features/)
+[^46]: [OpenAI Deep Research - Prompt Engineering Guide](https://www.promptingguide.ai/guides/deep-research)
+[^47]: [“Deep Research” for Scientific Literature Review - Xiangyu Yin](https://xiangyu-yin.com/content/post_deep_research.html)
+[^48]: [Perplexity Deep Research - Hacker News](https://news.ycombinator.com/item?id=43061827)
+[^49]: [Text generation | OpenAI API](https://platform.openai.com/docs/guides/text)
+[^50]: [Responses | OpenAI API Reference](https://platform.openai.com/docs/api-reference/responses)
+[^51]: [ChatOpenAI - Docs by LangChain](https://docs.langchain.com/oss/javascript/integrations/chat/openai)
+[^52]: [Unveiling the power of GPT-4 - Teamcal Ai](https://teamcal.ai/blog/unveiling-the-power-of-gpt-4)
+[^53]: [Move search, 'deep research' and 'create image' to sidebar - OpenAI Developer Community](https://community.openai.com/t/move-search-deep-research-and-create-image-to-sidebar/1250770)
+[^54]: [How to measure brand visibility in AI search (before you disappear) - Search Engine Land](https://searchengineland.com/guide/how-to-measure-brand-visibility)
+[^55]: [How to Vibe Code a Logomaker in 10 Days: LLMs — Can They Build It? - Medium](https://medium.com/@johnnyfived/how-to-vibe-code-a-logomaker-in-10-days-llms-can-they-build-it-b744209e350b)
+[^56]: [Ai Austin Blog | Contents and Media: CC-BY-NC](https://aiaustin.wordpress.com/)
+[^57]: [Gemini 2.5 Pro Preview - Hacker News](https://news.ycombinator.com/item?id=43906018)
+[^58]: [Recommendations for an AI Tool to Turn Raw Data and Notes into Detailed Reports - Reddit](https://www.reddit.com/r/ClaudeAI/comments/1i5irdm/recommendations_for_an_ai_tool_to_turn_raw_data/)
+[^59]: [How to Rank in ChatGPT: Ultimate Guide: Updated November 2025 - ALM Corp](https://almcorp.com/blog/how-to-rank-in-chatgpt/)
+[^60]: [Fully Automated API Documentation Scraper : r/n8n - Reddit](https://www.reddit.com/r/n8n/comments/1lokcdl/fully_automated_api_documentation_scraper/)
+[^61]: [tools.simonwillison.net colophon](https://tools.simonwillison.net/colophon)
+[^62]: [Metadata Auto Classifier - AI-powered Obsidian plugin that automatically classifies tags and classifies metadata for your notes, enhancing organization and streamlining your knowledge management workflow. - Obsidian Stats](https://www.obsidianstats.com/plugins/metadata-auto-classifier)
+[^63]: [Building A Teeny AI Agent From Scratch - Ben Everman](https://www.beneverman.com/blog/minimalist-ai-agent)
+[^64]: [Deep research | OpenAI API](https://platform.openai.com/docs/guides/deep-research)
+[^65]: [Deep Research System Card | OpenAI](https://cdn.openai.com/deep-research-system-card.pdf)
+[^66]: [Introduction to deep research in the OpenAI API](https://cookbook.openai.com/examples/deep_research_api/introduction_to_deep_research_api)
+[^67]: [How OpenAI's Deep Research Works - PromptLayer Blog](https://blog.promptlayer.com/how-deep-research-works/)
+[^68]: [Introducing GPT-5.2 - OpenAI](https://openai.com/index/introducing-gpt-5-2/)
+[^69]: [Gemini Deep Research — your personal research assistant](https://gemini.google/overview/deep-research/)
+[^70]: [Gemini Deep Research Agent | Gemini API - Google AI for Developers](https://ai.google.dev/gemini-api/docs/deep-research)
+[^71]: [Generative UI: A rich, custom, visual interactive user experience for any prompt](https://research.google/blog/generative-ui-a-rich-custom-visual-interactive-user-experience-for-any-prompt/)
+[^72]: [6 tips to get the most out of Gemini Deep Research - Google Blog](https://blog.google/products-and-platforms/products/gemini/tips-how-to-use-deep-research/)
+[^73]: [Beyond Pixels: Exploring DOM Downsampling for LLM-Based Web Agents - arXiv](https://arxiv.org/html/2508.04412v1)
+[^74]: [Open Deep Research - Together AI](https://www.together.ai/blog/open-deep-research)
+[^75]: [OpenAI's Deep Research: A Guide With Practical Examples - DataCamp](https://www.datacamp.com/blog/deep-research-openai)
+[^76]: [Deep Research with OpenAI: Parsing Full Web Text Using Python | by Jay Kim - Medium](https://medium.com/@bravekjh/deep-research-with-openai-parsing-full-web-text-using-python-3cfba9b0001b)
+[^77]: [My Notes on Open Deep Researcher - Shekhar Gulati](https://shekhargulati.com/2025/02/05/my-notes-on-open-deep-researcher/)
+[^78]: [An open source deep research clone. AI Agent that reasons large amounts of web data extracted with Firecrawl - GitHub](https://github.com/nickscamara/open-deep-research)
+[^79]: [langchain-ai/open_deep_research - GitHub](https://github.com/langchain-ai/open_deep_research)
+[^80]: [The Deep Research Assistant is meticulously crafted on Mastra's modular, scalable architecture, designed for intelligent orchestration and seamless human-AI interaction. It's built to tackle complex research challenges autonomously. - GitHub](https://github.com/ssdeanx/deep-research)
+[^81]: [bytedance/deer-flow: DeerFlow is a community-driven Deep Research framework, combining language models with tools like web search, crawling, and Python execution, while contributing back to the open-source community. - GitHub](https://github.com/bytedance/deer-flow)
+[^82]: [tarun7r/deep-research-agent: Multi-agent autonomous research system using LangGraph and LangChain. Generates citation-backed reports with credibility scoring and web search - GitHub](https://github.com/tarun7r/deep-research-agent)
+[^83]: [DeepTRACE: Auditing Deep Research AI Systems for Tracking Reliability Across Citations and Evidence - arXiv](https://arxiv.org/html/2509.04499v1)
+[^84]: [NBER WORKING PAPER SERIES AI AGENTS FOR ECONOMIC RESEARCH Anton Korinek Working Paper 34202 http://www.nber.org/papers/w34202 NA](https://www.nber.org/system/files/working_papers/w34202/w34202.pdf)
+[^85]: [The Best AI Coding Tools in 2025 According To ChatGPT's Deep Research](https://davidmelamed.com/2025/02/18/the-best-ai-coding-tools-according-to-chatgpts-deep-research/)
+[^86]: [GPT-5.2 Prompting Guide - OpenAI for developers](https://developers.openai.com/cookbook/examples/gpt-5/gpt-5-2_prompting_guide/)
+[^87]: [A Comprehensive Survey of Deep Research: Systems, Methodologies, and Applications - arXiv](https://arxiv.org/pdf/2506.12594?)
+[^88]: [Architecture Overview - DeepWiki-Open](https://asyncfunc.mintlify.app/reference/architecture)
+[^89]: [Features | Open WebUI](https://docs.openwebui.com/features/)
+[^90]: [LangGraph 201: Adding Human Oversight to Your Deep Research Agent](https://towardsdatascience.com/langgraph-201-adding-human-oversight-to-your-deep-research-agent/)
+[^91]: [Deep Research - OpenAI Help Center](https://help.openai.com/en/articles/10500283-deep-research-faq)
+[^92]: [Introduction to deep research in the OpenAI API](https://cookbook.openai.com/examples/deep_research_api/introduction_to_deep_research_api)
+[^93]: [How OpenAI's Deep Research Works - PromptLayer Blog](https://blog.promptlayer.com/how-deep-research-works/)
+[^94]: [OpenAI Deep Research - Prompt Engineering Guide](https://www.promptingguide.ai/guides/deep-research)
+[^95]: [Deep Research: A Survey of Autonomous Research Agents - arXiv](https://arxiv.org/html/2508.12752v1)
+[^96]: [An Interactive Paradigm for Deep Research - OpenReview](https://openreview.net/forum?id=MCeM7uRH9U)
+[^97]: [How Far Are We from Genuinely Useful Deep Research Agents? - arXiv](https://arxiv.org/html/2512.01948v1)
+[^98]: [“Deep Research” for Scientific Literature Review - Xiangyu Yin](https://xiangyu-yin.com/content/post_deep_research.html)
+[^99]: [Deep Research System Card | OpenAI](https://cdn.openai.com/deep-research-system-card.pdf)
+[^100]: [OpenAI's Deep Research: A Guide With Practical Examples - DataCamp](https://www.datacamp.com/blog/deep-research-openai)
+[^101]: [Deep research | OpenAI API - OpenAI Platform](https://platform.openai.com/docs/guides/deep-research)
+[^102]: [nickscamara/open-deep-research: An open source deep ... - GitHub](https://github.com/nickscamara/open-deep-research)
+[^103]: [langchain-ai/open_deep_research - GitHub](https://github.com/langchain-ai/open_deep_research)
+[^104]: [How to use Google's Deep Research, an AI researching tool](https://blog.google/products-and-platforms/products/gemini/tips-how-to-use-deep-research/)
+[^105]: [ShadowLeak: A Zero-Click, Service-Side Attack Exfiltrating Sensitive Data Using ChatGPT's Deep Research Agent - Radware](https://www.radware.com/blog/threat-intelligence/shadowleak/)
+[^106]: [ChatGPT Agent Mode: Use Cases, Limits, and Business Value](https://www.ninetwothree.co/blog/chatgpt-agent-mode)
+[^107]: [Building an open-source deep research agent from scratch using LlamaIndex, Composio, & ExaAI - DEV Community](https://dev.to/composiodev/building-an-open-source-deep-research-agent-from-scratch-using-llamaindex-composio-exaai-4j9b)
+[^108]: [Perplexity Deep Research - Hacker News](https://news.ycombinator.com/item?id=43061827)
+[^109]: [Text generation | OpenAI API](https://platform.openai.com/docs/guides/text)
+[^110]: [Build your ChatGPT UI - OpenAI for developers](https://developers.openai.com/apps-sdk/build/chatgpt-ui/)
+[^111]: [Build An App for ChatGPT! Step By Step! | by Itsuki - Level Up Coding - Gitconnected](https://levelup.gitconnected.com/build-an-app-for-chatgpt-step-by-step-814d46961ea4)
+[^112]: [Responses | OpenAI API Reference](https://platform.openai.com/docs/api-reference/responses)
+[^113]: [ChatOpenAI - Docs by LangChain](https://docs.langchain.com/oss/javascript/integrations/chat/openai)
+[^114]: [ChatGPT | Tech News, Tutorials & Expert Insights - Packt](https://www.packtpub.com/en-gb/learning/how-to-tutorials/tag/chatgpt?orderBy=most-recent&page=5)
+[^115]: [Unveiling the power of GPT-4 - Teamcal Ai](https://teamcal.ai/blog/unveiling-the-power-of-gpt-4)
+[^116]: [Move search, 'deep research' and 'create image' to sidebar - OpenAI Developer Community](https://community.openai.com/t/move-search-deep-research-and-create-image-to-sidebar/1250770)
+[^117]: [How to measure brand visibility in AI search (before you disappear) - Search Engine Land](https://searchengineland.com/guide/how-to-measure-brand-visibility)
+[^118]: [Passing questions to ChatGPT via URL - javascript - Stack Overflow](https://stackoverflow.com/questions/77931646/passing-questions-to-chatgpt-via-url)
+[^119]: [How to Vibe Code a Logomaker in 10 Days: LLMs — Can They Build It? - Medium](https://medium.com/@johnnyfived/how-to-vibe-code-a-logomaker-in-10-days-llms-can-they-build-it-b744209e350b)
+[^120]: [I studied with Google's Gemini Guided Learning. I don't feel much smarter. | Mashable](https://mashable.com/article/google-gemini-guided-learning-review)
+[^121]: [Ai Austin Blog | Contents and Media: CC-BY-NC](https://aiaustin.wordpress.com/)
+[^122]: [Stacey Barton, Author at Uprise Up](https://upriseup.co.uk/author/stacey/)
+[^123]: [Gemini 2.5 Pro Preview - Hacker News](https://news.ycombinator.com/item?id=43906018)
+[^124]: [Evaluating Generative AI for HTML Development - MDPI](https://www.mdpi.com/2227-7080/13/10/445)
+[^125]: [How to Generate HTML, PDF, and other Advanced Outputs | MindStudio University](https://university.mindstudio.ai/2-workflow-mastery/how-to-generate-html-pdf-and-other-advanced-outputs)
+[^126]: [ChatGPT Citations | Formats & Examples - Scribbr](https://www.scribbr.com/ai-tools/chatgpt-citations/)
+[^127]: [Recommendations for an AI Tool to Turn Raw Data and Notes into Detailed Reports - Reddit](https://www.reddit.com/r/ClaudeAI/comments/1i5irdm/recommendations_for_an_ai_tool_to_turn_raw_data/)
+[^128]: [Create ChatGPT UI Clone with HTML, CSS & JavaScript - CodewithFaraz](https://www.codewithfaraz.com/content/514/create-chatgpt-ui-clone-with-html-css-javascript)
+[^129]: [How to Rank in ChatGPT: Ultimate Guide: Updated November 2025 - ALM Corp](https://almcorp.com/blog/how-to-rank-in-chatgpt/)
+[^130]: [Fully Automated API Documentation Scraper : r/n8n - Reddit](https://www.reddit.com/r/n8n/comments/1lokcdl/fully_automated_api_documentation_scraper/)
+[^131]: [tools.simonwillison.net colophon](https://tools.simonwillison.net/colophon)
+[^132]: [Unlocking Web Design Analysis: The Ultimate Guide to Xiaoke Mao's Web UI Copy MCP Server - Skywork.ai](https://skywork.ai/skypage/en/web-design-analysis-guide/1978665866707456000)
+[^133]: [Metadata Auto Classifier - AI-powered Obsidian plugin that automatically classifies tags and classifies metadata for your notes, enhancing organization and streamlining your knowledge management workflow. - Obsidian Stats](https://www.obsidianstats.com/plugins/metadata-auto-classifier)
+[^134]: [Building A Teeny AI Agent From Scratch - Ben Everman](https://www.beneverman.com/blog/minimalist-ai-agent)"
+`;
