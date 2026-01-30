@@ -78,25 +78,3 @@ export const AUTO_SAVE_CHECK_INTERVAL = 10000;
 /** Event throttle delay (milliseconds) */
 export const EVENT_THROTTLE_DELAY = 1000;
 
-// ============================================================
-// UI Layout
-// ============================================================
-
-/** Base z-index for overlay UI elements */
-export const UI_BASE_Z_INDEX = 10000;
-
-/** Z-index for toast notifications (above base) */
-export const TOAST_Z_INDEX = 10001;
-
-// ============================================================
-// Logging Prefixes
-// ============================================================
-
-/** Log prefix for content scripts and general extension code */
-export const LOG_PREFIX = '[G2O]';
-
-/** Log prefix for background service worker */
-export const LOG_PREFIX_BACKGROUND = '[G2O Background]';
-
-/** Log prefix for popup UI */
-export const LOG_PREFIX_POPUP = '[G2O Popup]';

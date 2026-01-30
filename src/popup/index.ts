@@ -7,18 +7,7 @@ import { getSettings, saveSettings } from '../lib/storage';
 import type { ExtensionSettings, TemplateOptions, OutputOptions } from '../lib/types';
 import { validateCalloutType, validateVaultPath, validateApiKey } from '../lib/validation';
 import { DEFAULT_OBSIDIAN_PORT, MIN_PORT, MAX_PORT } from '../lib/constants';
-
-/**
- * Get localized message with fallback
- */
-function getMessage(key: string, substitutions?: string | string[]): string {
-  try {
-    const message = chrome.i18n.getMessage(key, substitutions);
-    return message || key;
-  } catch {
-    return key;
-  }
-}
+import { getMessage } from '../lib/i18n';
 
 /**
  * Initialize i18n for all elements with data-i18n attributes

@@ -9,18 +9,7 @@ import {
   ERROR_TOAST_DURATION,
   WARNING_TOAST_DURATION,
 } from '../lib/constants';
-
-/**
- * Get localized message with fallback
- */
-function getMessage(key: string, substitutions?: string | string[]): string {
-  try {
-    const message = chrome.i18n.getMessage(key, substitutions);
-    return message || key;
-  } catch {
-    return key;
-  }
-}
+import { getMessage } from '../lib/i18n';
 
 // CSS styles for UI components
 const STYLES = `

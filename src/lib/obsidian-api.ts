@@ -49,20 +49,19 @@ function isNetworkError(error: unknown): boolean {
 }
 
 /**
- * タイムアウト付きAbortSignalを作成
- * AbortSignal.timeout()のポリフィル（Chrome 103未満対応）
+ * Create an AbortSignal with timeout
+ * Polyfill for AbortSignal.timeout() (Chrome < 103 support)
  *
- * メモリリーク対策:
- * - fetchが完了した場合、setTimeoutが残り続ける可能性がある
- * - 本実装ではfetchの完了/失敗に関わらずタイマーは5秒後に発火するが、
- *   controllerはGCで回収されるためメモリリークは発生しない
+ * Memory safety: If fetch completes before the timer, the setTimeout
+ * callback may remain pending, but the controller will be GC'd,
+ * so no memory leak occurs.
  */
 function createTimeoutSignal(ms: number): AbortSignal {
-  // Chrome 103+ではネイティブAPIを使用
+  // Use native API on Chrome 103+
   if ('timeout' in AbortSignal) {
     return AbortSignal.timeout(ms);
   }
-  // フォールバック（Chrome 103未満用）
+  // Fallback for Chrome < 103
   const controller = new AbortController();
   setTimeout(() => controller.abort(), ms);
   return controller.signal;

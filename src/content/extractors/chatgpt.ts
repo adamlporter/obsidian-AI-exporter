@@ -7,12 +7,10 @@
  * @see docs/design/DES-003-chatgpt-extractor.md
  */
 
-import { BaseExtractor } from './base';
+import { BaseExtractor, extractErrorMessage } from './base';
 import { sanitizeHtml } from '../../lib/sanitize';
 import type { ConversationMessage, ExtractionResult } from '../../lib/types';
-
-/** Maximum title length for truncation */
-const MAX_TITLE_LENGTH = 100;
+import { MAX_CONVERSATION_TITLE_LENGTH } from '../../lib/constants';
 
 /**
  * CSS Selectors for ChatGPT chat extraction
@@ -94,7 +92,7 @@ export class ChatGPTExtractor extends BaseExtractor {
    * Get conversation title
    *
    * Priority:
-   * 1. First user message content (truncated to MAX_TITLE_LENGTH)
+   * 1. First user message content (truncated to MAX_CONVERSATION_TITLE_LENGTH)
    * 2. Default title
    */
   getTitle(): string {
@@ -102,7 +100,7 @@ export class ChatGPTExtractor extends BaseExtractor {
     const firstUserContent = this.queryWithFallback<HTMLElement>(SELECTORS.userMessage);
     if (firstUserContent?.textContent) {
       const title = this.sanitizeText(firstUserContent.textContent);
-      return title.substring(0, MAX_TITLE_LENGTH);
+      return title.substring(0, MAX_CONVERSATION_TITLE_LENGTH);
     }
 
     return 'Untitled ChatGPT Conversation';
@@ -292,7 +290,7 @@ export class ChatGPTExtractor extends BaseExtractor {
       console.error('[G2O] ChatGPT extraction error:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown extraction error',
+        error: extractErrorMessage(error),
       };
     }
   }

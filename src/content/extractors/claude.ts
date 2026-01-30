@@ -7,7 +7,7 @@
  * @see docs/design/DES-002-claude-extractor.md
  */
 
-import { BaseExtractor } from './base';
+import { BaseExtractor, extractErrorMessage } from './base';
 import { sanitizeHtml } from '../../lib/sanitize';
 import type {
   ConversationMessage,
@@ -15,9 +15,7 @@ import type {
   DeepResearchLinks,
   ExtractionResult,
 } from '../../lib/types';
-
-/** Maximum title length for truncation */
-const MAX_TITLE_LENGTH = 100;
+import { MAX_CONVERSATION_TITLE_LENGTH } from '../../lib/constants';
 
 /**
  * CSS Selectors for normal chat extraction
@@ -106,6 +104,14 @@ const DEEP_RESEARCH_SELECTORS = {
 };
 
 /**
+ * Pre-computed selector strings for querySelectorAll
+ * Avoids repeated .join(', ') calls at runtime
+ */
+const JOINED_SELECTORS = {
+  inlineCitation: DEEP_RESEARCH_SELECTORS.inlineCitation.join(', '),
+};
+
+/**
  * Claude conversation and Deep Research extractor
  *
  * Implements IConversationExtractor interface
@@ -169,7 +175,7 @@ export class ClaudeExtractor extends BaseExtractor {
     const firstUserContent = this.queryWithFallback<HTMLElement>(SELECTORS.userMessage);
     if (firstUserContent?.textContent) {
       const title = this.sanitizeText(firstUserContent.textContent);
-      return title.substring(0, MAX_TITLE_LENGTH);
+      return title.substring(0, MAX_CONVERSATION_TITLE_LENGTH);
     }
 
     return 'Untitled Claude Conversation';
@@ -181,7 +187,7 @@ export class ClaudeExtractor extends BaseExtractor {
   getDeepResearchTitle(): string {
     const titleEl = this.queryWithFallback<HTMLElement>(DEEP_RESEARCH_SELECTORS.title);
     if (titleEl?.textContent) {
-      return this.sanitizeText(titleEl.textContent).substring(0, MAX_TITLE_LENGTH);
+      return this.sanitizeText(titleEl.textContent).substring(0, MAX_CONVERSATION_TITLE_LENGTH);
     }
     return 'Untitled Deep Research Report';
   }
@@ -299,7 +305,7 @@ export class ClaudeExtractor extends BaseExtractor {
 
     // Find all inline citation links
     const citationLinks = document.querySelectorAll<HTMLAnchorElement>(
-      DEEP_RESEARCH_SELECTORS.inlineCitation.join(', ')
+      JOINED_SELECTORS.inlineCitation
     );
 
     citationLinks.forEach(link => {
@@ -476,7 +482,7 @@ export class ClaudeExtractor extends BaseExtractor {
       console.error('[G2O] Claude extraction error:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown extraction error',
+        error: extractErrorMessage(error),
       };
     }
   }

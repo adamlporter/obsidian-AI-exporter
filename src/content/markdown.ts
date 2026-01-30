@@ -396,9 +396,13 @@ export function conversationToNote(data: ConversationData, options: TemplateOpti
 
   if (data.type === 'deep-research') {
     // Deep Research: convert with links support (footnotes + References)
-    body = convertDeepResearchContent(data.messages[0].content, data.links);
+    if (data.messages.length === 0) {
+      body = '';
+    } else {
+      body = convertDeepResearchContent(data.messages[0].content, data.links);
+    }
   } else {
-    // 通常会話のフォーマット（Callout 形式）
+    // Normal conversation format (callout style)
     const bodyParts: string[] = [];
 
     for (const message of data.messages) {

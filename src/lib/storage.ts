@@ -28,7 +28,7 @@ const DEFAULT_TEMPLATE_OPTIONS: TemplateOptions = {
 };
 
 const DEFAULT_OUTPUT_OPTIONS: OutputOptions = {
-  obsidian: true, // 後方互換性のためデフォルトtrue
+  obsidian: true, // Default true for backward compatibility
   file: false,
   clipboard: false,
 };
