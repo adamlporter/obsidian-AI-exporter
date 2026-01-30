@@ -77,4 +77,3 @@ export const AUTO_SAVE_CHECK_INTERVAL = 10000;
 
 /** Event throttle delay (milliseconds) */
 export const EVENT_THROTTLE_DELAY = 1000;
-
