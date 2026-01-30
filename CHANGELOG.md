@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.8](https://github.com/sho7650/obsidian-AI-exporter/compare/v0.6.7...v0.6.8) (2026-01-30)
+
+
+### Code Refactoring
+
+* code quality improvements and dead code removal ([66322a1](https://github.com/sho7650/obsidian-AI-exporter/commit/66322a110f5fdc969f2bd49f670df8abba277776))
+* improve code quality and remove dead code ([7d811b0](https://github.com/sho7650/obsidian-AI-exporter/commit/7d811b0077137ea6f68753e40ebca6530db0058e))
+
+
+### Documentation
+
+* add ADR-001 for code quality improvements ([95019d5](https://github.com/sho7650/obsidian-AI-exporter/commit/95019d54e0b9a5c97e0d210b1ec173e9c2541b03))
+
+
+### Styles
+
+* fix trailing blank line in constants.ts ([859a5b2](https://github.com/sho7650/obsidian-AI-exporter/commit/859a5b2f653719bba8679d484506be182fd98c03))
+
 ## [0.6.7](https://github.com/sho7650/obsidian-AI-exporter/compare/v0.6.6...v0.6.7) (2026-01-29)
 
 
