@@ -11,6 +11,16 @@ import type {
 import { generateHash } from '../../lib/hash';
 
 /**
+ * Extract a human-readable error message from an unknown error value
+ */
+export function extractErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return String(error);
+}
+
+/**
  * Abstract base class for conversation extractors
  * Provides common functionality for all AI platform extractors
  */
@@ -123,7 +133,7 @@ export abstract class BaseExtractor implements IConversationExtractor {
   protected queryAllWithFallback<T extends Element>(
     selectors: string[],
     parent: Element | Document = document
-  ): NodeListOf<T> | T[] {
+  ): T[] {
     // Guard clause: return empty array for empty or invalid selector arrays
     if (!selectors || selectors.length === 0) {
       return [];
@@ -131,7 +141,7 @@ export abstract class BaseExtractor implements IConversationExtractor {
 
     for (const selector of selectors) {
       const results = parent.querySelectorAll<T>(selector);
-      if (results.length > 0) return results;
+      if (results.length > 0) return Array.from(results);
     }
     return [];
   }

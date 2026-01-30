@@ -3,7 +3,7 @@
  * Based on DOM analysis from elements-sample.html
  */
 
-import { BaseExtractor } from './base';
+import { BaseExtractor, extractErrorMessage } from './base';
 import { sanitizeHtml } from '../../lib/sanitize';
 import { MAX_DEEP_RESEARCH_TITLE_LENGTH, MAX_CONVERSATION_TITLE_LENGTH } from '../../lib/constants';
 import type {
@@ -108,7 +108,7 @@ export class GeminiExtractor extends BaseExtractor {
   }
 
   /**
-   * Deep Research パネルが表示中かどうかを判定
+   * Check if Deep Research panel is currently visible
    */
   isDeepResearchVisible(): boolean {
     const panel = this.queryWithFallback<HTMLElement>(DEEP_RESEARCH_SELECTORS.panel);
@@ -116,7 +116,7 @@ export class GeminiExtractor extends BaseExtractor {
   }
 
   /**
-   * Deep Research レポートのタイトルを取得
+   * Get title of the Deep Research report
    */
   getDeepResearchTitle(): string {
     const titleEl = this.queryWithFallback<HTMLElement>(DEEP_RESEARCH_SELECTORS.title);
@@ -127,7 +127,7 @@ export class GeminiExtractor extends BaseExtractor {
   }
 
   /**
-   * Deep Research レポートの本文を抽出
+   * Extract Deep Research report body content
    */
   extractDeepResearchContent(): string {
     const contentEl = this.queryWithFallback<HTMLElement>(DEEP_RESEARCH_SELECTORS.content);
@@ -386,7 +386,7 @@ export class GeminiExtractor extends BaseExtractor {
   }
 
   /**
-   * Deep Research レポートを抽出
+   * Extract Deep Research report
    */
   extractDeepResearch(): ExtractionResult {
     const title = this.getDeepResearchTitle();
@@ -400,11 +400,11 @@ export class GeminiExtractor extends BaseExtractor {
       };
     }
 
-    // タイトルからIDを生成（上書き用）
+    // Generate ID from title for consistent overwrites
     const titleHash = this.generateHashValue(title);
     const conversationId = `deep-research-${titleHash}`;
 
-    // リンク情報を抽出
+    // Extract link information
     const links = this.extractDeepResearchLinks();
 
     return {
@@ -448,13 +448,13 @@ export class GeminiExtractor extends BaseExtractor {
         };
       }
 
-      // ルーティング: Deep Research パネルが表示中の場合はレポートを抽出
+      // Routing: if Deep Research panel is visible, extract the report
       if (this.isDeepResearchVisible()) {
         console.info('[G2O] Deep Research panel detected, extracting report');
         return this.extractDeepResearch();
       }
 
-      // 通常の会話抽出
+      // Normal conversation extraction
       console.info('[G2O] Extracting normal conversation');
       const messages = this.extractMessages();
       const warnings: string[] = [];
@@ -505,7 +505,7 @@ export class GeminiExtractor extends BaseExtractor {
       console.error('[G2O] Extraction error:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown extraction error',
+        error: extractErrorMessage(error),
       };
     }
   }

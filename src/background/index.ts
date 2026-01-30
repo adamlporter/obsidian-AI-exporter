@@ -4,6 +4,7 @@
  */
 
 import { ObsidianApiClient, getErrorMessage } from '../lib/obsidian-api';
+import { extractErrorMessage } from '../content/extractors/base';
 import { getSettings, migrateSettings } from '../lib/storage';
 import { generateNoteContent } from '../lib/note-generator';
 import {
@@ -318,15 +319,15 @@ async function handleTestConnection(
 // Multi-Output Handlers
 // ============================================================================
 
-/** Offscreen document のタイムアウト (ミリ秒) */
+/** Offscreen document close timeout (milliseconds) */
 const OFFSCREEN_TIMEOUT_MS = 5000;
 
-/** Offscreen document 自動クローズ用タイマー */
+/** Timer for auto-closing offscreen document */
 let offscreenCloseTimer: ReturnType<typeof setTimeout> | null = null;
 
 /**
- * Offscreen document の自動クローズをスケジュール
- * 連続操作時はタイマーリセットで効率的に再利用
+ * Schedule auto-close of offscreen document
+ * Resets timer on consecutive operations for efficient reuse
  */
 function scheduleOffscreenClose(): void {
   if (offscreenCloseTimer) {
@@ -336,8 +337,9 @@ function scheduleOffscreenClose(): void {
   offscreenCloseTimer = setTimeout(async () => {
     try {
       await chrome.offscreen.closeDocument();
-    } catch {
-      // Already closed or doesn't exist - ignore
+    } catch (error) {
+      // Already closed or doesn't exist - safe to ignore
+      console.debug('[G2O Background] Offscreen close skipped:', extractErrorMessage(error));
     }
     offscreenCloseTimer = null;
   }, OFFSCREEN_TIMEOUT_MS);
@@ -380,7 +382,7 @@ async function handleSaveToObsidian(
     return {
       destination: 'obsidian',
       success: false,
-      error: error instanceof Error ? error.message : String(error),
+      error: extractErrorMessage(error),
     };
   }
 }
@@ -447,7 +449,7 @@ async function handleDownloadToFile(
     return {
       destination: 'file',
       success: false,
-      error: error instanceof Error ? error.message : String(error),
+      error: extractErrorMessage(error),
     };
   }
 }
@@ -485,7 +487,7 @@ async function handleCopyToClipboard(
     return {
       destination: 'clipboard',
       success: false,
-      error: error instanceof Error ? error.message : String(error),
+      error: extractErrorMessage(error),
     };
   }
 }
@@ -519,7 +521,7 @@ async function handleMultiOutput(
 ): Promise<MultiOutputResponse> {
   const promises = outputs.map(dest => executeOutput(dest, note, settings));
 
-  // Promise.allSettled: 1つの失敗が他をブロックしない
+  // Promise.allSettled: one failure does not block others
   const settled = await Promise.allSettled(promises);
 
   const results: OutputResult[] = settled.map((result, index) => {

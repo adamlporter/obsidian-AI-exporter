@@ -1,33 +1,33 @@
 /**
- * YAML安全化ユーティリティ
- * YAML injection攻撃を防止
+ * YAML safety utilities
+ * Prevents YAML injection attacks
  */
 
 /**
- * YAML文字列値をエスケープ
- * YAML 1.2仕様に準拠し、特殊文字を含む場合はダブルクォートで囲む
+ * Escape a YAML string value
+ * Compliant with YAML 1.2 spec; wraps in double quotes if special characters are present
  *
- * 対応する特殊文字:
- * - YAML構文文字: : [ ] { } # & * ! | > ' " % @ `
- * - 制御文字: \n \r \t
- * - Unicode行終端: U+0085 (NEL), U+2028 (LS), U+2029 (PS)
- * - 予約語: null, true, false, ~
+ * Handled special characters:
+ * - YAML syntax characters: : [ ] { } # & * ! | > ' " % @ `
+ * - Control characters: \n \r \t
+ * - Unicode line terminators: U+0085 (NEL), U+2028 (LS), U+2029 (PS)
+ * - Reserved words: null, true, false, ~
  */
 export function escapeYamlValue(value: string): string {
-  // 特殊文字を含む場合はクォートが必要
+  // Check if quoting is needed
   const needsQuotes =
     /[:[\]{}#&*!|>'"%@`\n\r\t\u0085\u2028\u2029]/.test(value) ||
     value.startsWith(' ') ||
     value.endsWith(' ') ||
     value === '' ||
     /^(null|true|false|~|yes|no|on|off)$/i.test(value) ||
-    /^[0-9.+-]/.test(value); // 数値として解釈される可能性
+    /^[0-9.+-]/.test(value); // Could be interpreted as a number
 
   if (!needsQuotes) {
     return value;
   }
 
-  // ダブルクォートでエスケープ
+  // Escape with double quotes
   const escaped = value
     .replace(/\\/g, '\\\\')
     .replace(/"/g, '\\"')
@@ -42,7 +42,7 @@ export function escapeYamlValue(value: string): string {
 }
 
 /**
- * YAMLリスト項目をエスケープ
+ * Escape a YAML list item value
  */
 export function escapeYamlListItem(value: string): string {
   return escapeYamlValue(value);

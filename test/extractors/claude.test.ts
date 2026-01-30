@@ -682,7 +682,7 @@ describe('ClaudeExtractor', () => {
       expect(result.error).toBe('Not on a Claude page');
     });
 
-    it('returns "Unknown extraction error" for non-Error throw in catch block', async () => {
+    it('returns stringified error for non-Error throw in catch block', async () => {
       // Covers: claude.ts lines 475-481 (catch, non-Error)
       setClaudeLocation('12345678-1234-1234-1234-123456789012');
       const originalQSA = document.querySelectorAll.bind(document);
@@ -696,7 +696,7 @@ describe('ClaudeExtractor', () => {
       const result = await extractor.extract();
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Unknown extraction error');
+      expect(result.error).toBe('string thrown as error');
       vi.restoreAllMocks();
     });
   });

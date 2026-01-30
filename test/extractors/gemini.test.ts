@@ -306,7 +306,7 @@ describe('GeminiExtractor', () => {
       consoleSpy.mockRestore();
     });
 
-    it('handles unknown extraction errors', async () => {
+    it('handles non-Error thrown values by converting to string', async () => {
       setGeminiLocation('abc123def456');
       const html = createGeminiConversationDOM([
         { role: 'user', content: 'Hello' },
@@ -323,7 +323,7 @@ describe('GeminiExtractor', () => {
       const result = await extractor.extract();
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Unknown extraction error');
+      expect(result.error).toBe('string error');
 
       consoleSpy.mockRestore();
     });

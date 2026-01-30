@@ -1,55 +1,44 @@
 /**
- * HTMLサニタイズユーティリティ
- * DOMPurifyを使用してXSS攻撃を防止
+ * HTML sanitization utility
+ * Uses DOMPurify to prevent XSS attacks
  */
 
 import DOMPurify from 'dompurify';
 
 /**
- * HTMLをサニタイズしてXSS攻撃を防止
+ * Sanitize HTML to prevent XSS attacks
  *
- * 設計方針:
- * - USE_PROFILES: { html: true } でデフォルトの安全なHTML許可リストを使用
- * - ADD_ATTRで data-turn-source-index を追加許可（USE_PROFILESと併用可能）
- * - FORBID_ATTRでその他のdata-*属性を禁止
- * - FORBID_TAGSでstyleを追加禁止（CSSインジェクション防止）
+ * Design:
+ * - USE_PROFILES: { html: true } uses the default safe HTML allow-list
+ *   (auto-removes <script>, <style>, <iframe>, <object>, <embed>, all
+ *   event handler attributes (~70 kinds), and dangerous URI schemes)
+ * - Cannot combine USE_PROFILES with ALLOWED_TAGS (per DOMPurify docs)
+ * - Cannot combine USE_PROFILES with ALLOWED_ATTR (overrides it);
+ *   use ADD_ATTR to extend the allow-list instead
+ * - FORBID_TAGS adds <style> to the deny-list (CSS injection prevention)
  *
- * 注意: USE_PROFILESとALLOWED_TAGSは併用不可（公式ドキュメント）
- * 注意: USE_PROFILESとALLOWED_ATTRも併用すると上書きされる
- *       → ADD_ATTRを使用して既存の許可リストに追加する
+ * The uponSanitizeAttribute hook selectively allows data-turn-source-index
+ * (used by Deep Research inline citations as a 1-based index into the source list)
+ * while blocking all other data-* attributes.
  *
- * USE_PROFILES: { html: true } が自動除去するもの:
- * - <script>, <style>, <iframe>, <object>, <embed> 等の危険なタグ
- * - 全てのイベントハンドラ属性（onclick, onerror, onload等約70種）
- * - javascript:, vbscript:, data: 等の危険なURIスキーム
- *
- * data-turn-source-index について:
- * - Deep Research のインライン引用で使用される属性
- * - この属性はソースリストへのインデックス（1ベース）を保持
- * - convertInlineCitationsToLinks() で使用するため許可が必要
+ * Note: The hook is added/removed per call to avoid cross-contamination
+ * with other DOMPurify consumers in the same environment.
  */
 export function sanitizeHtml(html: string): string {
-  // uponSanitizeAttribute hook to selectively allow data-turn-source-index
-  // while blocking other data-* attributes
-  DOMPurify.addHook('uponSanitizeAttribute', (node, data) => {
-    // Allow data-turn-source-index attribute
+  DOMPurify.addHook('uponSanitizeAttribute', (_node, data) => {
     if (data.attrName === 'data-turn-source-index') {
       data.forceKeepAttr = true;
-    }
-    // Block other data-* attributes
-    else if (data.attrName.startsWith('data-')) {
+    } else if (data.attrName.startsWith('data-')) {
       data.keepAttr = false;
     }
   });
 
   try {
     return DOMPurify.sanitize(html, {
-      USE_PROFILES: { html: true }, // デフォルトの安全なHTML（SVG/MathML除外）
-      FORBID_TAGS: ['style'], // CSSインジェクション防止
+      USE_PROFILES: { html: true },
+      FORBID_TAGS: ['style'],
     });
   } finally {
-    // Remove the hook after use to avoid affecting other sanitization calls
-    // Using try/finally ensures hook cleanup even if sanitize() throws
     DOMPurify.removeHook('uponSanitizeAttribute');
   }
 }

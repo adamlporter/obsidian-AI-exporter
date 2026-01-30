@@ -1,5 +1,5 @@
 /**
- * Chrome Runtime Messaging ユーティリティ
+ * Chrome Runtime Messaging utility
  * Promise-based wrapper for chrome.runtime.sendMessage
  */
 
@@ -11,7 +11,7 @@ import type {
 } from './types';
 
 /**
- * メッセージレスポンスの型マッピング
+ * Message response type mapping
  */
 interface MessageResponseMap {
   getSettings: ExtensionSettings;
@@ -22,10 +22,7 @@ interface MessageResponseMap {
 }
 
 /**
- * 型安全なメッセージ送信
- *
- * 注意: 実行時の型検証は行わない（Chrome拡張のメッセージングは
- * 同一拡張内で完結するため、型の整合性は開発時に保証される）
+ * Type-safe message sending
  *
  * Design Decision: Runtime validation is intentionally omitted here because:
  * 1. Messages originate from and are handled within the same extension

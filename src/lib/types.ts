@@ -107,25 +107,25 @@ export interface NoteFrontmatter {
 }
 
 /**
- * 出力先の識別子
+ * Output destination identifier
  */
 export type OutputDestination = 'obsidian' | 'file' | 'clipboard';
 
 /**
- * 出力オプション設定
- * 各出力先の有効/無効を管理
+ * Output option settings
+ * Manages enabled/disabled state for each output destination
  */
 export interface OutputOptions {
-  /** Obsidian REST API経由での保存 */
+  /** Save via Obsidian REST API */
   obsidian: boolean;
-  /** ダウンロードフォルダへのファイル保存 */
+  /** Save as file to downloads folder */
   file: boolean;
-  /** システムクリップボードへのコピー */
+  /** Copy to system clipboard */
   clipboard: boolean;
 }
 
 /**
- * 個別出力の実行結果
+ * Result of a single output operation
  */
 export interface OutputResult {
   destination: OutputDestination;
@@ -134,21 +134,20 @@ export interface OutputResult {
 }
 
 /**
- * 複数出力の集約結果
+ * Aggregated result of multiple output operations
  */
 export interface MultiOutputResponse {
   results: OutputResult[];
-  /** すべての出力が成功したか */
+  /** Whether all outputs succeeded */
   allSuccessful: boolean;
-  /** 少なくとも1つの出力が成功したか */
+  /** Whether at least one output succeeded */
   anySuccessful: boolean;
 }
 
 /**
- * 出力設定のバリデーション結果
- * 注意: 既存の ValidationResult (src/lib/types.ts) とは別の用途
- * - 既存: 抽出結果の品質検証 (isValid, warnings, errors)
- * - 本型: 出力設定の妥当性検証 (isValid, errors のみ)
+ * Validation result for output configuration
+ * Note: Distinct from ValidationResult which validates extraction quality
+ * (isValid, warnings, errors). This validates output settings (isValid, errors only).
  */
 export interface OutputValidationResult {
   isValid: boolean;
@@ -156,16 +155,16 @@ export interface OutputValidationResult {
 }
 
 /**
- * セキュア設定（local storage用）
- * API Keyなどの機密データはsyncではなくlocalに保存
+ * Secure settings (stored in local storage)
+ * Sensitive data like API keys are stored locally, not synced
  */
 export interface SecureSettings {
   obsidianApiKey: string;
 }
 
 /**
- * 同期設定（sync storage用）
- * 非機密データはデバイス間同期可能
+ * Sync settings (stored in sync storage)
+ * Non-sensitive data that can be synced across devices
  */
 export interface SyncSettings {
   obsidianPort: number;

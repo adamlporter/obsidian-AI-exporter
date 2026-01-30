@@ -182,6 +182,67 @@ function getEnabledOutputs(settings: ExtensionSettings): OutputDestination[] {
 }
 
 /**
+ * Validate output configuration before sync
+ * @returns error message if invalid, null if valid
+ */
+async function validateOutputConfig(
+  settings: ExtensionSettings,
+  enabledOutputs: OutputDestination[]
+): Promise<string | null> {
+  if (enabledOutputs.length === 0) {
+    return 'Please select at least one output destination in settings';
+  }
+
+  if (enabledOutputs.includes('obsidian')) {
+    if (!settings.obsidianApiKey) {
+      return 'Please configure your Obsidian API key in the extension settings';
+    }
+
+    const connectionTest = await testConnection();
+    if (!connectionTest.success) {
+      return connectionTest.error || 'Cannot connect to Obsidian';
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Display save results to the user via toasts
+ */
+function displaySaveResults(
+  saveResult: MultiOutputResponse,
+  fileName: string,
+  extractionWarnings?: string[]
+): void {
+  if (saveResult.allSuccessful) {
+    showSuccessToast(fileName, true);
+  } else if (saveResult.anySuccessful) {
+    const successList = saveResult.results
+      .filter((r: OutputResult) => r.success)
+      .map((r: OutputResult) => r.destination)
+      .join(', ');
+    const failedList = saveResult.results
+      .filter((r: OutputResult) => !r.success)
+      .map((r: OutputResult) => `${r.destination}: ${r.error}`)
+      .join('; ');
+    showWarningToast(`Saved to: ${successList}. Failed: ${failedList}`);
+  } else {
+    const errorMsg = saveResult.results
+      .map((r: OutputResult) => r.error)
+      .filter(Boolean)
+      .join('; ');
+    showErrorToast(errorMsg || 'Failed to save');
+  }
+
+  if (extractionWarnings && extractionWarnings.length > 0 && saveResult.anySuccessful) {
+    setTimeout(() => {
+      showWarningToast(extractionWarnings.join('. '));
+    }, INFO_TOAST_DURATION);
+  }
+}
+
+/**
  * Handle sync button click
  */
 async function handleSync(): Promise<void> {
@@ -191,39 +252,19 @@ async function handleSync(): Promise<void> {
   try {
     // Get settings first (L-01: use type-safe messaging)
     const settings = await getSettings();
-
-    // Get enabled outputs
     const enabledOutputs = getEnabledOutputs(settings);
 
-    if (enabledOutputs.length === 0) {
-      showErrorToast('Please select at least one output destination in settings');
-      setButtonLoading(false);
+    // Validate output configuration
+    const configError = await validateOutputConfig(settings, enabledOutputs);
+    if (configError) {
+      showErrorToast(configError);
       return;
-    }
-
-    // Validate Obsidian settings if Obsidian output is enabled
-    if (enabledOutputs.includes('obsidian')) {
-      if (!settings.obsidianApiKey) {
-        showErrorToast('Please configure your Obsidian API key in the extension settings');
-        setButtonLoading(false);
-        return;
-      }
-
-      // Test Obsidian connection first
-      const connectionTest = await testConnection();
-      if (!connectionTest.success) {
-        showErrorToast(connectionTest.error || 'Cannot connect to Obsidian');
-        setButtonLoading(false);
-        return;
-      }
     }
 
     // Extract conversation using appropriate extractor
     const extractor = getExtractor();
-
     if (!extractor || !extractor.canExtract()) {
       showErrorToast('Not on a valid conversation page');
-      setButtonLoading(false);
       return;
     }
 
@@ -232,15 +273,11 @@ async function handleSync(): Promise<void> {
 
     // Validate extraction
     const validation = extractor.validate(result);
-
     if (!validation.isValid) {
-      const errorMsg = validation.errors.join(', ') || 'Extraction failed';
-      showErrorToast(errorMsg);
-      setButtonLoading(false);
+      showErrorToast(validation.errors.join(', ') || 'Extraction failed');
       return;
     }
 
-    // Show warnings if any
     if (validation.warnings.length > 0) {
       validation.warnings.forEach(warning => {
         console.warn('[G2O] Warning:', warning);
@@ -249,7 +286,6 @@ async function handleSync(): Promise<void> {
 
     if (!result.data) {
       showErrorToast('No conversation data extracted');
-      setButtonLoading(false);
       return;
     }
 
@@ -266,35 +302,7 @@ async function handleSync(): Promise<void> {
     showToast('Saving...', 'info', INFO_TOAST_DURATION);
     const saveResult = await saveToOutputs(note, enabledOutputs);
 
-    // Handle multi-output result
-    if (saveResult.allSuccessful) {
-      showSuccessToast(note.fileName, true);
-    } else if (saveResult.anySuccessful) {
-      // Partial success - show which ones succeeded/failed
-      const successList = saveResult.results
-        .filter((r: OutputResult) => r.success)
-        .map((r: OutputResult) => r.destination)
-        .join(', ');
-      const failedList = saveResult.results
-        .filter((r: OutputResult) => !r.success)
-        .map((r: OutputResult) => `${r.destination}: ${r.error}`)
-        .join('; ');
-      showWarningToast(`Saved to: ${successList}. Failed: ${failedList}`);
-    } else {
-      // All failed
-      const errorMsg = saveResult.results
-        .map((r: OutputResult) => r.error)
-        .filter(Boolean)
-        .join('; ');
-      showErrorToast(errorMsg || 'Failed to save');
-    }
-
-    // Show warnings from extraction if any
-    if (result.warnings && result.warnings.length > 0 && saveResult.anySuccessful) {
-      setTimeout(() => {
-        showWarningToast(result.warnings!.join('. '));
-      }, INFO_TOAST_DURATION);
-    }
+    displaySaveResults(saveResult, note.fileName, result.warnings);
   } catch (error) {
     console.error('[G2O] Sync error:', error);
     showErrorToast(error instanceof Error ? error.message : 'An unexpected error occurred');

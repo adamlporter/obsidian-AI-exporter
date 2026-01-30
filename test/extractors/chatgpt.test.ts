@@ -548,7 +548,7 @@ describe('ChatGPTExtractor', () => {
       vi.restoreAllMocks();
     });
 
-    it('returns "Unknown extraction error" for non-Error throw in catch block', async () => {
+    it('returns stringified error for non-Error throw in catch block', async () => {
       // Covers: chatgpt.ts line 295 (error instanceof Error === false)
       setChatGPTLocation('test-123');
       const originalQSA = document.querySelectorAll.bind(document);
@@ -562,7 +562,7 @@ describe('ChatGPTExtractor', () => {
       const result = await extractor.extract();
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Unknown extraction error');
+      expect(result.error).toBe('string error');
       vi.restoreAllMocks();
     });
   });
