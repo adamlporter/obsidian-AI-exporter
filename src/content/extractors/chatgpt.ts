@@ -79,12 +79,14 @@ export class ChatGPTExtractor extends BaseExtractor {
   /**
    * Extract conversation ID from URL
    *
-   * URL format: https://chatgpt.com/c/{uuid} or https://chatgpt.com/g/{uuid}
+   * URL formats:
+   *   https://chatgpt.com/c/{uuid}
+   *   https://chatgpt.com/g/{gpt-slug}/c/{uuid}
    * @returns UUID string or null if not found
    */
   getConversationId(): string | null {
-    // Match /c/{uuid} or /g/{uuid} pattern
-    const match = window.location.pathname.match(/\/[cg]\/([a-f0-9-]+)/i);
+    // Match /c/{uuid} pattern (works for both regular and custom GPT URLs)
+    const match = window.location.pathname.match(/\/c\/([a-f0-9-]+)/i);
     return match ? match[1] : null;
   }
 

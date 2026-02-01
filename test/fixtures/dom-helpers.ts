@@ -641,14 +641,23 @@ export function createChatGPTConversationDOM(messages: ChatGPTConversationMessag
  * Set window.location for ChatGPT URL testing
  *
  * @param conversationId UUID format or custom ID
- * @param prefix URL prefix: 'c' for chat, 'g' for GPT mode
+ * @param prefix URL prefix: 'c' for regular chat, 'g' for custom GPT mode
+ *
+ * URL formats:
+ *   prefix='c': https://chatgpt.com/c/{conversationId}
+ *   prefix='g': https://chatgpt.com/g/{gptSlug}/c/{conversationId}
  */
 export function setChatGPTLocation(conversationId: string, prefix: 'c' | 'g' = 'c'): void {
+  const gptSlug = 'g-abc123-test-gpt';
+  const pathname =
+    prefix === 'g'
+      ? `/g/${gptSlug}/c/${conversationId}`
+      : `/c/${conversationId}`;
   Object.defineProperty(window, 'location', {
     value: {
       hostname: 'chatgpt.com',
-      pathname: `/${prefix}/${conversationId}`,
-      href: `https://chatgpt.com/${prefix}/${conversationId}`,
+      pathname,
+      href: `https://chatgpt.com${pathname}`,
       origin: 'https://chatgpt.com',
       protocol: 'https:',
       host: 'chatgpt.com',
