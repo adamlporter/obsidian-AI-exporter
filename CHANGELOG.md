@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.9](https://github.com/sho7650/obsidian-AI-exporter/compare/v0.6.8...v0.6.9) (2026-02-01)
+
+
+### Bug Fixes
+
+* update conversation ID extraction for new Gemini and ChatGPT URL patterns ([b88968b](https://github.com/sho7650/obsidian-AI-exporter/commit/b88968b463afb48753e12cac871629d724d85224))
+* update conversation ID extraction for new URL patterns ([e616386](https://github.com/sho7650/obsidian-AI-exporter/commit/e61638671ce7f36980628df43ea52492f35bf898))
+
 ## [0.6.8](https://github.com/sho7650/obsidian-AI-exporter/compare/v0.6.7...v0.6.8) (2026-01-30)
 
 
