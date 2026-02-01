@@ -193,10 +193,11 @@ export class GeminiExtractor extends BaseExtractor {
   /**
    * Get conversation ID from URL
    * URL format: https://gemini.google.com/app/{conversationId}
+   *          or https://gemini.google.com/gem/{conversationId}
    */
   getConversationId(): string | null {
-    const match = window.location.pathname.match(/\/app\/([a-f0-9]+)/i);
-    return match ? match[1] : null;
+    const match = window.location.pathname.match(/\/(app|gem)\/([a-f0-9]+)/i);
+    return match ? match[2] : null;
   }
 
   /**

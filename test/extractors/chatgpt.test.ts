@@ -96,7 +96,7 @@ describe('ChatGPTExtractor', () => {
       expect(extractor.getConversationId()).toBe('6789abcd-ef01-2345-6789-abcdef012345');
     });
 
-    it('extracts UUID from /g/{uuid} URL (GPT mode)', () => {
+    it('extracts UUID from /g/{gptSlug}/c/{uuid} URL (custom GPT mode)', () => {
       setChatGPTLocation('abcd1234-5678-90ab-cdef-1234567890ab', 'g');
       expect(extractor.getConversationId()).toBe('abcd1234-5678-90ab-cdef-1234567890ab');
     });
@@ -475,14 +475,14 @@ describe('ChatGPTExtractor', () => {
       expect(result.data?.source).toBe('chatgpt');
     });
 
-    it('handles /g/ URL prefix for GPT mode', async () => {
+    it('handles /g/{gptSlug}/c/{uuid} URL for custom GPT mode', async () => {
       // Use a valid hex UUID format that matches the extractor's regex
       const gptModeId = 'abcd1234-5678-90ab-cdef-1234567890ab';
       createChatGPTPage(gptModeId, [
         { role: 'user', content: 'GPT mode test' },
         { role: 'assistant', content: '<p>Response from custom GPT</p>' },
       ], 'g');
-      // Verify the ID extraction works with /g/ prefix
+      // Verify the ID extraction works with /g/{slug}/c/{uuid} path
       expect(extractor.getConversationId()).toBe(gptModeId);
       const result = await extractor.extract();
       expect(result.success).toBe(true);
