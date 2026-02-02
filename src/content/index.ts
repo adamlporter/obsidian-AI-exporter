@@ -6,6 +6,7 @@
 import { GeminiExtractor } from './extractors/gemini';
 import { ClaudeExtractor } from './extractors/claude';
 import { ChatGPTExtractor } from './extractors/chatgpt';
+import { PerplexityExtractor } from './extractors/perplexity';
 import type { IConversationExtractor } from '../lib/types';
 import { conversationToNote } from './markdown';
 import {
@@ -63,7 +64,7 @@ function waitForConversationContainer(): Promise<void> {
     // Check if already exists
     // ChatGPT uses article[data-turn-id] instead of conversation-container
     const existing = document.querySelector(
-      '.conversation-container, [class*="conversation"], article[data-turn-id]'
+      '.conversation-container, [class*="conversation"], article[data-turn-id], div[class*="threadContentWidth"]'
     );
     if (existing) {
       resolve();
@@ -76,7 +77,7 @@ function waitForConversationContainer(): Promise<void> {
     const checkForContainer = (obs: MutationObserver) => {
       // ChatGPT uses article[data-turn-id] instead of conversation-container
       const container = document.querySelector(
-        '.conversation-container, [class*="conversation"], article[data-turn-id]'
+        '.conversation-container, [class*="conversation"], article[data-turn-id], div[class*="threadContentWidth"]'
       );
       if (container) {
         obs.disconnect();
@@ -131,6 +132,9 @@ function getExtractor(): IConversationExtractor | null {
   }
   if (hostname === 'chatgpt.com') {
     return new ChatGPTExtractor();
+  }
+  if (hostname === 'www.perplexity.ai') {
+    return new PerplexityExtractor();
   }
 
   return null;
