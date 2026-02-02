@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.11](https://github.com/sho7650/obsidian-AI-exporter/compare/v0.6.10...v0.6.11) (2026-02-02)
+
+
+### Bug Fixes
+
+* disable bump-patch-for-minor-pre-major for proper semver feat bumps ([c1ea1b5](https://github.com/sho7650/obsidian-AI-exporter/commit/c1ea1b54e732d1d948faef871fbc11278382ab6a))
+* release-please versioning and add Perplexity docs ([d3c11d0](https://github.com/sho7650/obsidian-AI-exporter/commit/d3c11d0762c091e6b62209e400468e8dbeb3b4db))
+
+
+### Documentation
+
+* add Perplexity extractor design, requirements, and workflow docs ([6f60dba](https://github.com/sho7650/obsidian-AI-exporter/commit/6f60dba20ec5d873b633f2b286dfeebf316b4b93))
+
 ## [0.6.10](https://github.com/sho7650/obsidian-AI-exporter/compare/v0.6.9...v0.6.10) (2026-02-02)
 
 
