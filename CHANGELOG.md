@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.10](https://github.com/sho7650/obsidian-AI-exporter/compare/v0.6.9...v0.6.10) (2026-02-02)
+
+
+### Features
+
+* add Perplexity AI conversation extractor ([c3bb22b](https://github.com/sho7650/obsidian-AI-exporter/commit/c3bb22b306e2749510fc0a201b3511c5d12b46ec))
+* add Perplexity AI conversation extractor ([6182092](https://github.com/sho7650/obsidian-AI-exporter/commit/6182092dce65661c8d53987408ec07203746e9f0))
+
 ## [0.6.9](https://github.com/sho7650/obsidian-AI-exporter/compare/v0.6.8...v0.6.9) (2026-02-01)
 
 
