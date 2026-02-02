@@ -36,6 +36,7 @@ const ALLOWED_ORIGINS = [
   'https://gemini.google.com',
   'https://claude.ai',
   'https://chatgpt.com',
+  'https://www.perplexity.ai',
 ] as const;
 
 /**

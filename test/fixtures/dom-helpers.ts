@@ -739,3 +739,136 @@ function escapeHtmlForChatGPT(text: string): string {
   div.textContent = text;
   return div.innerHTML;
 }
+
+
+// ========== Perplexity DOM Helpers ==========
+
+/**
+ * Message structure for creating Perplexity conversation DOM
+ */
+interface PerplexityConversationMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+/**
+ * Create Perplexity conversation DOM structure
+ *
+ * Replicates the structure used by Perplexity AI
+ * @see docs/design/DES-004-perplexity-extractor.md Section 4.2
+ */
+export function createPerplexityConversationDOM(messages: PerplexityConversationMessage[]): string {
+  const blocks: string[] = [];
+  let responseIndex = 0;
+
+  messages.forEach((msg) => {
+    if (msg.role === 'user') {
+      blocks.push(`
+        <div class="group/query">
+          <div class="bg-offset rounded-2xl">
+            <span class="select-text">${escapeHtmlForPerplexity(msg.content)}</span>
+          </div>
+        </div>
+      `);
+    } else {
+      blocks.push(`
+        <div id="markdown-content-${responseIndex}" class="markdown-content">
+          <div class="prose dark:prose-invert">
+            ${msg.content}
+          </div>
+        </div>
+      `);
+      responseIndex++;
+    }
+  });
+
+  return `
+    <div class="max-w-threadContentWidth">
+      ${blocks.join('\n')}
+    </div>
+  `;
+}
+
+/**
+ * Set window.location for Perplexity URL testing
+ *
+ * @param slug Full URL slug from /search/{slug}
+ */
+export function setPerplexityLocation(slug: string): void {
+  Object.defineProperty(window, 'location', {
+    value: {
+      hostname: 'www.perplexity.ai',
+      pathname: `/search/${slug}`,
+      href: `https://www.perplexity.ai/search/${slug}`,
+      origin: 'https://www.perplexity.ai',
+      protocol: 'https:',
+      host: 'www.perplexity.ai',
+      search: '',
+      hash: '',
+    },
+    writable: true,
+    configurable: true,
+  });
+}
+
+/**
+ * Set window.location for non-Perplexity URL (security testing)
+ *
+ * Used to test hostname validation against subdomain attacks
+ */
+export function setNonPerplexityLocation(hostname: string, pathname = '/'): void {
+  Object.defineProperty(window, 'location', {
+    value: {
+      hostname,
+      pathname,
+      href: `https://${hostname}${pathname}`,
+      origin: `https://${hostname}`,
+      protocol: 'https:',
+      host: hostname,
+      search: '',
+      hash: '',
+    },
+    writable: true,
+    configurable: true,
+  });
+}
+
+/**
+ * Create Perplexity inline citation element
+ *
+ * @param url Source URL
+ * @param displayText Link display text
+ */
+export function createPerplexityInlineCitation(url: string, displayText: string): string {
+  return `
+    <span class="citation inline" data-pplx-citation="" data-pplx-citation-url="${url}">
+      <a href="${url}">
+        <span>${escapeHtmlForPerplexity(displayText)}</span>
+      </a>
+    </span>
+  `;
+}
+
+/**
+ * Create a complete Perplexity conversation page
+ */
+export function createPerplexityPage(
+  slug: string,
+  messages: PerplexityConversationMessage[]
+): void {
+  setPerplexityLocation(slug);
+  loadFixture(`
+    <div class="app-container">
+      ${createPerplexityConversationDOM(messages)}
+    </div>
+  `);
+}
+
+/**
+ * Escape HTML entities for Perplexity DOM helpers
+ */
+function escapeHtmlForPerplexity(text: string): string {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
