@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Chrome Extension that extracts AI conversations from Google Gemini and Claude AI and saves them to Obsidian via the Local REST API. Built with CRXJS + Vite + TypeScript.
+Chrome Extension that extracts AI conversations from Google Gemini, Claude AI, ChatGPT, and Perplexity and saves them to Obsidian via the Local REST API. Built with CRXJS + Vite + TypeScript.
 
 ## ⚠️ Absolute Rules
 
@@ -73,7 +73,7 @@ Load the extension in Chrome: `chrome://extensions` → Load unpacked → select
 ## Architecture
 
 ```
-Content Script (gemini.google.com, claude.ai)
+Content Script (gemini.google.com, claude.ai, chatgpt.com, www.perplexity.ai)
     ↓ extracts conversation / Deep Research / Artifacts
 Background Service Worker
     ↓ sends to Obsidian
@@ -142,6 +142,7 @@ source: gemini
 - **Gemini** (`gemini.google.com`): Conversations and Deep Research reports
 - **Claude** (`claude.ai`): Conversations, Extended Thinking, and Artifacts with inline citations
 - **ChatGPT** (`chatgpt.com`): Conversations (including custom GPTs via `/g/` URLs)
+- **Perplexity** (`www.perplexity.ai`): Conversations
 
 ## Adding New Platforms
 
@@ -160,4 +161,4 @@ When adding a new platform extractor:
 
 ## Future Platforms
 
-Types support `perplexity` source. Add new extractors by extending `BaseExtractor` and implementing `IConversationExtractor`.
+Add new extractors by extending `BaseExtractor` and implementing `IConversationExtractor`.
