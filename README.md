@@ -1,6 +1,6 @@
 # Obsidian AI Exporter
 
-Chrome Extension that exports AI conversations from Google Gemini, Claude AI, and ChatGPT to Obsidian via the Local REST API.
+Chrome Extension that exports AI conversations from Google Gemini, Claude AI, ChatGPT, and Perplexity to Obsidian via the Local REST API.
 
 [日本語版はこちら](README.ja.md)
 
@@ -9,7 +9,7 @@ Chrome Extension that exports AI conversations from Google Gemini, Claude AI, an
 
 ## Features
 
-- **Multi-platform support**: Export from Google Gemini, Claude AI, and ChatGPT
+- **Multi-platform support**: Export from Google Gemini, Claude AI, ChatGPT, and Perplexity
 - **One-click export**: Floating "Sync" button on supported AI pages
 - **Multiple output options**: Save to Obsidian, download as file, or copy to clipboard
 - **Deep Research support**: Export Gemini Deep Research and Claude Extended Thinking reports
@@ -87,6 +87,12 @@ Chrome Extension that exports AI conversations from Google Gemini, Claude AI, an
 ### ChatGPT
 
 1. Open a conversation on [chatgpt.com](https://chatgpt.com)
+2. Click the purple "Sync" button in the bottom-right corner
+3. The conversation will be exported with the same output options as Gemini
+
+### Perplexity
+
+1. Open a conversation on [www.perplexity.ai](https://www.perplexity.ai)
 2. Click the purple "Sync" button in the bottom-right corner
 3. The conversation will be exported with the same output options as Gemini
 
@@ -185,7 +191,7 @@ npm run test:coverage
 ## Architecture
 
 ```
-Content Script (gemini.google.com, claude.ai, chatgpt.com)
+Content Script (gemini.google.com, claude.ai, chatgpt.com, www.perplexity.ai)
     ↓ extracts conversation / Deep Research / Artifacts
 Background Service Worker
     ↓ sends to Obsidian
@@ -200,6 +206,7 @@ Obsidian Local REST API (127.0.0.1:27123)
 | `src/content/extractors/gemini.ts` | Gemini conversation & Deep Research extractor |
 | `src/content/extractors/claude.ts` | Claude conversation & Artifact extractor |
 | `src/content/extractors/chatgpt.ts` | ChatGPT conversation extractor |
+| `src/content/extractors/perplexity.ts` | Perplexity conversation extractor |
 | `src/background/` | Service worker for API communication |
 | `src/popup/` | Settings UI |
 | `src/lib/` | Shared utilities and types |
