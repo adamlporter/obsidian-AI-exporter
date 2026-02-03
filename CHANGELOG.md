@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0](https://github.com/sho7650/obsidian-AI-exporter/compare/v0.6.11...v0.7.0) (2026-02-03)
+
+
+### Features
+
+* add platform lint script and update docs for Perplexity support ([c0861eb](https://github.com/sho7650/obsidian-AI-exporter/commit/c0861eb03594b1a0721e5d9e93b0388fceb6c395))
+* add platform lint script and update docs for Perplexity support ([df32c06](https://github.com/sho7650/obsidian-AI-exporter/commit/df32c061b7eccc3c9dd4ddecca4d59d63ef9d647))
+
 ## [0.6.11](https://github.com/sho7650/obsidian-AI-exporter/compare/v0.6.10...v0.6.11) (2026-02-02)
 
 
