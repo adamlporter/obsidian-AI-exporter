@@ -145,16 +145,6 @@ export interface MultiOutputResponse {
 }
 
 /**
- * Validation result for output configuration
- * Note: Distinct from ValidationResult which validates extraction quality
- * (isValid, warnings, errors). This validates output settings (isValid, errors only).
- */
-export interface OutputValidationResult {
-  isValid: boolean;
-  errors: string[];
-}
-
-/**
  * Secure settings (stored in local storage)
  * Sensitive data like API keys are stored locally, not synced
  */

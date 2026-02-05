@@ -408,6 +408,16 @@ export class GeminiExtractor extends BaseExtractor {
     // Extract link information
     const links = this.extractDeepResearchLinks();
 
+    const messages = [
+      {
+        id: 'report-0',
+        role: 'assistant' as const,
+        content,
+        htmlContent: content,
+        index: 0,
+      },
+    ];
+
     return {
       success: true,
       data: {
@@ -417,22 +427,9 @@ export class GeminiExtractor extends BaseExtractor {
         source: 'gemini',
         type: 'deep-research',
         links,
-        messages: [
-          {
-            id: 'report-0',
-            role: 'assistant',
-            content,
-            htmlContent: content,
-            index: 0,
-          },
-        ],
+        messages,
         extractedAt: new Date(),
-        metadata: {
-          messageCount: 1,
-          userMessageCount: 0,
-          assistantMessageCount: 1,
-          hasCodeBlocks: content.includes('<code') || content.includes('```'),
-        },
+        metadata: this.buildMetadata(messages),
       },
     };
   }
@@ -458,50 +455,10 @@ export class GeminiExtractor extends BaseExtractor {
       // Normal conversation extraction
       console.info('[G2O] Extracting normal conversation');
       const messages = this.extractMessages();
-      const warnings: string[] = [];
-
-      if (messages.length === 0) {
-        return {
-          success: false,
-          error: 'No messages found in conversation',
-          warnings: ['Primary selectors may have changed. Check Gemini UI for updates.'],
-        };
-      }
-
-      // Check for potential issues
-      const userCount = messages.filter(m => m.role === 'user').length;
-      const assistantCount = messages.filter(m => m.role === 'assistant').length;
-
-      if (userCount === 0) {
-        warnings.push('No user messages found');
-      }
-      if (assistantCount === 0) {
-        warnings.push('No assistant messages found');
-      }
-
       const conversationId = this.getConversationId() || `gemini-${Date.now()}`;
       const title = this.getTitle();
 
-      return {
-        success: true,
-        data: {
-          id: conversationId,
-          title,
-          url: window.location.href,
-          source: 'gemini',
-          messages,
-          extractedAt: new Date(),
-          metadata: {
-            messageCount: messages.length,
-            userMessageCount: userCount,
-            assistantMessageCount: assistantCount,
-            hasCodeBlocks: messages.some(
-              m => m.content.includes('<code') || m.content.includes('```')
-            ),
-          },
-        },
-        warnings: warnings.length > 0 ? warnings : undefined,
-      };
+      return this.buildConversationResult(messages, conversationId, title, 'gemini');
     } catch (error) {
       console.error('[G2O] Extraction error:', error);
       return {

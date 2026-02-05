@@ -7,6 +7,7 @@ import type {
   ExtractionResult,
   ValidationResult,
   ConversationMessage,
+  ConversationMetadata,
 } from '../../lib/types';
 import { generateHash } from '../../lib/hash';
 
@@ -83,6 +84,63 @@ export abstract class BaseExtractor implements IConversationExtractor {
       isValid: errors.length === 0,
       warnings,
       errors,
+    };
+  }
+
+  /**
+   * Build metadata from extracted messages
+   */
+  protected buildMetadata(messages: ConversationMessage[]): ConversationMetadata {
+    const userMessageCount = messages.filter(m => m.role === 'user').length;
+    const assistantMessageCount = messages.filter(m => m.role === 'assistant').length;
+    return {
+      messageCount: messages.length,
+      userMessageCount,
+      assistantMessageCount,
+      hasCodeBlocks: messages.some(m => m.content.includes('<code') || m.content.includes('```')),
+    };
+  }
+
+  /**
+   * Build a successful conversation ExtractionResult with common boilerplate
+   * Handles message counting, warning generation, and result construction
+   */
+  protected buildConversationResult(
+    messages: ConversationMessage[],
+    conversationId: string,
+    title: string,
+    source: 'gemini' | 'claude' | 'perplexity' | 'chatgpt'
+  ): ExtractionResult {
+    if (messages.length === 0) {
+      return {
+        success: false,
+        error: 'No messages found in conversation',
+        warnings: [`Primary selectors may have changed. Check ${this.platform} UI for updates.`],
+      };
+    }
+
+    const warnings: string[] = [];
+    const metadata = this.buildMetadata(messages);
+
+    if (metadata.userMessageCount === 0) {
+      warnings.push('No user messages found');
+    }
+    if (metadata.assistantMessageCount === 0) {
+      warnings.push('No assistant messages found');
+    }
+
+    return {
+      success: true,
+      data: {
+        id: conversationId,
+        title,
+        url: window.location.href,
+        source,
+        messages,
+        extractedAt: new Date(),
+        metadata,
+      },
+      warnings: warnings.length > 0 ? warnings : undefined,
     };
   }
 

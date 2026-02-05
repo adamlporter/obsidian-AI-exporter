@@ -244,50 +244,10 @@ export class ChatGPTExtractor extends BaseExtractor {
 
       console.info('[G2O] Extracting ChatGPT conversation');
       const messages = this.extractMessages();
-      const warnings: string[] = [];
-
-      if (messages.length === 0) {
-        return {
-          success: false,
-          error: 'No messages found in conversation',
-          warnings: ['Primary selectors may have changed. Check ChatGPT UI for updates.'],
-        };
-      }
-
-      // Check for potential issues
-      const userCount = messages.filter(m => m.role === 'user').length;
-      const assistantCount = messages.filter(m => m.role === 'assistant').length;
-
-      if (userCount === 0) {
-        warnings.push('No user messages found');
-      }
-      if (assistantCount === 0) {
-        warnings.push('No assistant messages found');
-      }
-
       const conversationId = this.getConversationId() || `chatgpt-${Date.now()}`;
       const title = this.getTitle();
 
-      return {
-        success: true,
-        data: {
-          id: conversationId,
-          title,
-          url: window.location.href,
-          source: 'chatgpt',
-          messages,
-          extractedAt: new Date(),
-          metadata: {
-            messageCount: messages.length,
-            userMessageCount: userCount,
-            assistantMessageCount: assistantCount,
-            hasCodeBlocks: messages.some(
-              m => m.content.includes('<code') || m.content.includes('```')
-            ),
-          },
-        },
-        warnings: warnings.length > 0 ? warnings : undefined,
-      };
+      return this.buildConversationResult(messages, conversationId, title, 'chatgpt');
     } catch (error) {
       console.error('[G2O] ChatGPT extraction error:', error);
       return {

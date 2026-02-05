@@ -35,10 +35,6 @@ export function sanitizeUrl(url: string): string {
   return url;
 }
 
-// Note: buildSourceMap moved to src/lib/source-map.ts for DRY compliance
-// Note: escapeHtml was removed in v3.0 - no longer needed with placeholder span approach
-// Previously used for inline link generation, now using Obsidian native footnotes
-
 /**
  * Convert inline citations to footnote reference placeholders
  *
@@ -92,9 +88,6 @@ export function convertInlineCitationsToFootnoteRefs(
 
   return result;
 }
-
-// Note: replacePlaceholdersWithFootnoteRefs was removed in v3.0
-// The Turndown custom rule now handles conversion of <span data-footnote-ref> to [^N] directly
 
 /**
  * Generate References section with Obsidian footnote definitions

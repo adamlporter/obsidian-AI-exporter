@@ -48,29 +48,37 @@ function initializeI18n(): void {
   }
 }
 
+/**
+ * Type-safe DOM element getter
+ * Reduces repetitive getElementById + type assertion boilerplate
+ */
+function getElement<T extends HTMLElement>(id: string): T {
+  return document.getElementById(id) as T;
+}
+
 // DOM Elements
 const elements = {
   // Output destinations
-  outputObsidian: document.getElementById('outputObsidian') as HTMLInputElement,
-  outputFile: document.getElementById('outputFile') as HTMLInputElement,
-  outputClipboard: document.getElementById('outputClipboard') as HTMLInputElement,
-  obsidianSettings: document.getElementById('obsidianSettings') as HTMLElement,
+  outputObsidian: getElement<HTMLInputElement>('outputObsidian'),
+  outputFile: getElement<HTMLInputElement>('outputFile'),
+  outputClipboard: getElement<HTMLInputElement>('outputClipboard'),
+  obsidianSettings: getElement<HTMLElement>('obsidianSettings'),
   // Obsidian settings
-  apiKey: document.getElementById('apiKey') as HTMLInputElement,
-  port: document.getElementById('port') as HTMLInputElement,
-  vaultPath: document.getElementById('vaultPath') as HTMLInputElement,
-  messageFormat: document.getElementById('messageFormat') as HTMLSelectElement,
-  userCallout: document.getElementById('userCallout') as HTMLInputElement,
-  assistantCallout: document.getElementById('assistantCallout') as HTMLInputElement,
-  includeId: document.getElementById('includeId') as HTMLInputElement,
-  includeTitle: document.getElementById('includeTitle') as HTMLInputElement,
-  includeTags: document.getElementById('includeTags') as HTMLInputElement,
-  includeSource: document.getElementById('includeSource') as HTMLInputElement,
-  includeDates: document.getElementById('includeDates') as HTMLInputElement,
-  includeMessageCount: document.getElementById('includeMessageCount') as HTMLInputElement,
-  testBtn: document.getElementById('testBtn') as HTMLButtonElement,
-  saveBtn: document.getElementById('saveBtn') as HTMLButtonElement,
-  status: document.getElementById('status') as HTMLDivElement,
+  apiKey: getElement<HTMLInputElement>('apiKey'),
+  port: getElement<HTMLInputElement>('port'),
+  vaultPath: getElement<HTMLInputElement>('vaultPath'),
+  messageFormat: getElement<HTMLSelectElement>('messageFormat'),
+  userCallout: getElement<HTMLInputElement>('userCallout'),
+  assistantCallout: getElement<HTMLInputElement>('assistantCallout'),
+  includeId: getElement<HTMLInputElement>('includeId'),
+  includeTitle: getElement<HTMLInputElement>('includeTitle'),
+  includeTags: getElement<HTMLInputElement>('includeTags'),
+  includeSource: getElement<HTMLInputElement>('includeSource'),
+  includeDates: getElement<HTMLInputElement>('includeDates'),
+  includeMessageCount: getElement<HTMLInputElement>('includeMessageCount'),
+  testBtn: getElement<HTMLButtonElement>('testBtn'),
+  saveBtn: getElement<HTMLButtonElement>('saveBtn'),
+  status: getElement<HTMLDivElement>('status'),
 };
 
 /**
@@ -207,12 +215,21 @@ function validateOutputOptions(outputOptions: OutputOptions): boolean {
   return outputOptions.obsidian || outputOptions.file || outputOptions.clipboard;
 }
 
+const VALID_MESSAGE_FORMATS = ['callout', 'plain', 'blockquote'] as const;
+
 /**
  * Collect settings from form
  */
 function collectSettings(): ExtensionSettings {
+  const formatValue = elements.messageFormat.value;
+  const messageFormat = VALID_MESSAGE_FORMATS.includes(
+    formatValue as (typeof VALID_MESSAGE_FORMATS)[number]
+  )
+    ? (formatValue as (typeof VALID_MESSAGE_FORMATS)[number])
+    : 'callout';
+
   const templateOptions: TemplateOptions = {
-    messageFormat: elements.messageFormat.value as 'callout' | 'plain' | 'blockquote',
+    messageFormat,
     userCalloutType: elements.userCallout.value || 'QUESTION',
     assistantCalloutType: elements.assistantCallout.value || 'NOTE',
     includeId: elements.includeId.checked,
@@ -235,6 +252,30 @@ function collectSettings(): ExtensionSettings {
 }
 
 /**
+ * Validate Obsidian-specific settings (API key, port, vault path)
+ * @returns error message if invalid, null if valid
+ */
+function validateObsidianSettings(settings: ExtensionSettings): string | null {
+  try {
+    settings.obsidianApiKey = validateApiKey(settings.obsidianApiKey);
+  } catch (error) {
+    return error instanceof Error ? error.message : 'Invalid API key';
+  }
+
+  if (settings.obsidianPort < MIN_PORT || settings.obsidianPort > MAX_PORT) {
+    return getMessage('error_invalidPort');
+  }
+
+  try {
+    settings.vaultPath = validateVaultPath(settings.vaultPath);
+  } catch (error) {
+    return error instanceof Error ? error.message : 'Invalid vault path';
+  }
+
+  return null;
+}
+
+/**
  * Handle save button click
  * Input validation using security utilities (NEW-03)
  */
@@ -248,34 +289,14 @@ async function handleSave(): Promise<void> {
     // Validate output options - at least one must be selected
     if (!validateOutputOptions(settings.outputOptions)) {
       showStatus(getMessage('error_noOutputSelected'), 'error');
-      elements.saveBtn.disabled = false;
       return;
     }
 
     // Validate Obsidian-specific settings only if Obsidian output is enabled
     if (settings.outputOptions.obsidian) {
-      // Validate API key (NEW-03)
-      try {
-        settings.obsidianApiKey = validateApiKey(settings.obsidianApiKey);
-      } catch (error) {
-        showStatus(error instanceof Error ? error.message : 'Invalid API key', 'error');
-        elements.saveBtn.disabled = false;
-        return;
-      }
-
-      // Validate port
-      if (settings.obsidianPort < MIN_PORT || settings.obsidianPort > MAX_PORT) {
-        showStatus(getMessage('error_invalidPort'), 'error');
-        elements.saveBtn.disabled = false;
-        return;
-      }
-
-      // Validate vault path (NEW-03)
-      try {
-        settings.vaultPath = validateVaultPath(settings.vaultPath);
-      } catch (error) {
-        showStatus(error instanceof Error ? error.message : 'Invalid vault path', 'error');
-        elements.saveBtn.disabled = false;
+      const obsidianError = validateObsidianSettings(settings);
+      if (obsidianError) {
+        showStatus(obsidianError, 'error');
         return;
       }
     }
