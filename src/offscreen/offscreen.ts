@@ -10,6 +10,8 @@
  * See: https://github.com/GoogleChrome/developer.chrome.com/issues/4660
  */
 
+import { extractErrorMessage } from '../content/extractors/base';
+
 interface ClipboardWriteMessage {
   action: 'clipboardWrite';
   target: 'offscreen';
@@ -68,7 +70,7 @@ chrome.runtime.onMessage.addListener(
       } catch (error) {
         sendResponse({
           success: false,
-          error: error instanceof Error ? error.message : String(error),
+          error: extractErrorMessage(error),
         });
       }
       return true; // Indicates async response

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { containsPathTraversal, validatePath, buildSafePath } from '../../src/lib/path-utils';
+import { containsPathTraversal, validatePath } from '../../src/lib/path-utils';
 
 describe('containsPathTraversal', () => {
   it('detects ../ patterns', () => {
@@ -62,20 +62,3 @@ describe('validatePath', () => {
   });
 });
 
-describe('buildSafePath', () => {
-  it('builds correct path', () => {
-    expect(buildSafePath('AI/Gemini', 'conversation.md')).toBe('AI/Gemini/conversation.md');
-  });
-
-  it('handles empty vault path', () => {
-    expect(buildSafePath('', 'conversation.md')).toBe('conversation.md');
-  });
-
-  it('throws on unsafe vault path', () => {
-    expect(() => buildSafePath('../secret', 'conversation.md')).toThrow('path traversal');
-  });
-
-  it('throws on unsafe file name', () => {
-    expect(() => buildSafePath('AI/Gemini', '../../../etc/passwd')).toThrow('path traversal');
-  });
-});

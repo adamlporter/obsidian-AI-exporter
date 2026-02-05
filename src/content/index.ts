@@ -7,6 +7,7 @@ import { GeminiExtractor } from './extractors/gemini';
 import { ClaudeExtractor } from './extractors/claude';
 import { ChatGPTExtractor } from './extractors/chatgpt';
 import { PerplexityExtractor } from './extractors/perplexity';
+import { extractErrorMessage } from './extractors/base';
 import type { IConversationExtractor } from '../lib/types';
 import { conversationToNote } from './markdown';
 import {
@@ -309,7 +310,7 @@ async function handleSync(): Promise<void> {
     displaySaveResults(saveResult, note.fileName, result.warnings);
   } catch (error) {
     console.error('[G2O] Sync error:', error);
-    showErrorToast(error instanceof Error ? error.message : 'An unexpected error occurred');
+    showErrorToast(extractErrorMessage(error));
   } finally {
     setButtonLoading(false);
   }

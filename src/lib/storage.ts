@@ -165,47 +165,11 @@ export async function migrateSettings(): Promise<void> {
       void _removed; // Intentionally unused - extracted to exclude from rest
       await chrome.storage.sync.set({ settings: rest });
 
-      // eslint-disable-next-line no-console
       console.info('[G2O] Settings migrated to secure storage');
     }
   } catch (error) {
     // On migration failure, keep sync intact and retry on next startup
     console.error('[G2O] Migration failed, will retry on next startup:', error);
     // Don't throw - existing functionality should continue working
-  }
-}
-
-/**
- * Get last sync info for a conversation
- */
-export interface SyncInfo {
-  timestamp: number;
-  messageCount: number;
-  contentHash: string;
-}
-
-export async function getLastSync(conversationId: string): Promise<SyncInfo | null> {
-  try {
-    const result = await chrome.storage.local.get('lastSync');
-    const lastSync = result.lastSync || {};
-    return lastSync[conversationId] || null;
-  } catch (error) {
-    console.error('[G2O] Failed to get last sync:', error);
-    return null;
-  }
-}
-
-/**
- * Save last sync info for a conversation
- */
-export async function saveLastSync(conversationId: string, info: SyncInfo): Promise<void> {
-  try {
-    const result = await chrome.storage.local.get('lastSync');
-    const lastSync = result.lastSync || {};
-    lastSync[conversationId] = info;
-    await chrome.storage.local.set({ lastSync });
-  } catch (error) {
-    console.error('[G2O] Failed to save last sync:', error);
-    throw error;
   }
 }

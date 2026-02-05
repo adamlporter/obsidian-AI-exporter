@@ -33,12 +33,3 @@ export function validatePath(path: string, fieldName: string): string {
   // Trim whitespace and normalize leading/trailing slashes
   return path.trim().replace(/^\/+|\/+$/g, '');
 }
-
-/**
- * Build a safe file path
- */
-export function buildSafePath(vaultPath: string, fileName: string): string {
-  const safePath = validatePath(vaultPath, 'vaultPath');
-  const safeFileName = validatePath(fileName, 'fileName');
-  return safePath ? `${safePath}/${safeFileName}` : safeFileName;
-}
