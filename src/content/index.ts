@@ -53,20 +53,51 @@ function throttle<T extends (...args: unknown[]) => void>(
 /** Debounce delay for MutationObserver callback (milliseconds) */
 const MUTATION_DEBOUNCE_DELAY = 100;
 
+/** Platform-specific main content container selectors for optimized observation */
+const PLATFORM_ROOT_SELECTORS: Record<string, string[]> = {
+  'gemini.google.com': ['main', '#app-container', 'body'],
+  'claude.ai': ['main', '#__next', 'body'],
+  'chatgpt.com': ['main', '#__next', 'body'],
+  'www.perplexity.ai': ['main', '#__next', 'body'],
+};
+
+/** Conversation container selectors to detect when content is ready */
+const CONVERSATION_CONTAINER_SELECTOR =
+  '.conversation-container, [class*="conversation"], article[data-turn-id], div[class*="threadContentWidth"]';
+
+/**
+ * Get the optimal observation root for the current platform
+ * Falls back to document.body if no platform-specific root is found
+ */
+function getObservationRoot(): Element {
+  const hostname = window.location.hostname;
+  const selectors = PLATFORM_ROOT_SELECTORS[hostname];
+
+  if (selectors) {
+    for (const selector of selectors) {
+      const element = document.querySelector(selector);
+      if (element && selector !== 'body') {
+        console.debug(`[G2O] Using optimized observation root: ${selector}`);
+        return element;
+      }
+    }
+  }
+
+  return document.body;
+}
+
 /**
  * Wait for conversation container to appear (L-03)
  * Uses MutationObserver with debouncing instead of fixed timeout
  *
- * Performance: Debouncing prevents excessive DOM queries during
- * rapid mutation bursts (e.g., page load, dynamic content updates)
+ * Performance optimizations:
+ * - Observes platform-specific root instead of document.body (P-1)
+ * - Debouncing prevents excessive DOM queries during rapid mutation bursts
  */
 function waitForConversationContainer(): Promise<void> {
   return new Promise(resolve => {
     // Check if already exists
-    // ChatGPT uses article[data-turn-id] instead of conversation-container
-    const existing = document.querySelector(
-      '.conversation-container, [class*="conversation"], article[data-turn-id], div[class*="threadContentWidth"]'
-    );
+    const existing = document.querySelector(CONVERSATION_CONTAINER_SELECTOR);
     if (existing) {
       resolve();
       return;
@@ -76,10 +107,7 @@ function waitForConversationContainer(): Promise<void> {
 
     // Debounced check function
     const checkForContainer = (obs: MutationObserver) => {
-      // ChatGPT uses article[data-turn-id] instead of conversation-container
-      const container = document.querySelector(
-        '.conversation-container, [class*="conversation"], article[data-turn-id], div[class*="threadContentWidth"]'
-      );
+      const container = document.querySelector(CONVERSATION_CONTAINER_SELECTOR);
       if (container) {
         obs.disconnect();
         if (debounceTimer) {
@@ -99,7 +127,9 @@ function waitForConversationContainer(): Promise<void> {
       debounceTimer = setTimeout(() => checkForContainer(obs), MUTATION_DEBOUNCE_DELAY);
     });
 
-    observer.observe(document.body, {
+    // P-1: Observe platform-specific root instead of document.body for better performance
+    const observationRoot = getObservationRoot();
+    observer.observe(observationRoot, {
       childList: true,
       subtree: true,
     });

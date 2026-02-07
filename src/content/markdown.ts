@@ -23,7 +23,7 @@ import { MAX_FILENAME_BASE_LENGTH, FILENAME_ID_SUFFIX_LENGTH } from '../lib/cons
  * Sanitize URL to remove dangerous schemes
  */
 export function sanitizeUrl(url: string): string {
-  const dangerousSchemes = ['javascript:', 'data:', 'vbscript:'];
+  const dangerousSchemes = ['javascript:', 'data:', 'vbscript:', 'blob:'];
   const lowerUrl = url.toLowerCase().trim();
 
   for (const scheme of dangerousSchemes) {
