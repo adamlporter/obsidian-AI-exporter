@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.2](https://github.com/sho7650/obsidian-AI-exporter/compare/v0.7.1...v0.7.2) (2026-02-07)
+
+
+### Code Refactoring
+
+* fix selector priority in queryWithFallback and harden URL sanitization ([2b3176a](https://github.com/sho7650/obsidian-AI-exporter/commit/2b3176a1c33fe7d9567b023bbbf1658879b20853))
+* fix selector priority in queryWithFallback and harden URL sanitization ([f63e69e](https://github.com/sho7650/obsidian-AI-exporter/commit/f63e69ef6c68be2d5d6d58a198bf8d121686f612))
+
 ## [0.7.1](https://github.com/sho7650/obsidian-AI-exporter/compare/v0.7.0...v0.7.1) (2026-02-05)
 
 
