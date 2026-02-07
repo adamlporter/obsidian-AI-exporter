@@ -159,9 +159,14 @@ export abstract class BaseExtractor implements IConversationExtractor {
   }
 
   /**
-   * Try multiple selectors and return first successful result
+   * Try multiple selectors in priority order and return first successful result
    *
-   * @param selectors - Array of CSS selectors to try in order
+   * Selectors are tried sequentially (not combined) to preserve priority ordering.
+   * Extractors list selectors from HIGH → LOW stability, and this method must
+   * respect that order. A comma-joined querySelector would return the first
+   * match in DOM order instead, breaking the priority contract.
+   *
+   * @param selectors - Array of CSS selectors to try in priority order
    * @param parent - Parent element to search within (defaults to document)
    * @returns First matching element or null if none found or selectors empty
    */
@@ -182,11 +187,14 @@ export abstract class BaseExtractor implements IConversationExtractor {
   }
 
   /**
-   * Try multiple selectors and return all results
+   * Try multiple selectors in priority order and return all results from the first match
    *
-   * @param selectors - Array of CSS selectors to try in order
+   * Returns results from the FIRST selector that matches (not a union of all).
+   * Like queryWithFallback, preserves HIGH → LOW priority ordering.
+   *
+   * @param selectors - Array of CSS selectors to try in priority order
    * @param parent - Parent element to search within (defaults to document)
-   * @returns All matching elements or empty array if none found or selectors empty
+   * @returns All matching elements from first successful selector, or empty array
    */
   protected queryAllWithFallback<T extends Element>(
     selectors: string[],
