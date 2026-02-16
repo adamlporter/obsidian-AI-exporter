@@ -49,10 +49,13 @@ const SELECTORS = {
   ],
 
   // Assistant response selectors
+  // Each assistant turn is wrapped in [data-is-streaming].
+  // It contains both thinking steps and the actual response.
+  // .font-claude-response is the inner container (child of data-is-streaming).
   assistantResponse: [
-    '.font-claude-response', // Semantic (HIGH)
-    '[class*="font-claude-response"]', // Partial match (HIGH)
-    '[data-is-streaming]', // Functional attribute (MEDIUM)
+    '[data-is-streaming]',           // Outermost response container (HIGH)
+    '.font-claude-response',         // Inner container fallback (MEDIUM)
+    '[class*="font-claude-response"]', // Partial match (LOW)
   ],
 
   // Markdown content selectors
@@ -111,6 +114,8 @@ const DEEP_RESEARCH_SELECTORS = {
 const JOINED_SELECTORS = {
   inlineCitation: DEEP_RESEARCH_SELECTORS.inlineCitation.join(', '),
 };
+
+
 
 /**
  * Claude conversation and Deep Research extractor
@@ -217,9 +222,14 @@ export class ClaudeExtractor extends BaseExtractor {
       }
     });
 
-    // Find assistant responses
+    // Find assistant responses.
+    // Each [data-is-streaming] div is one full AI turn containing both thinking
+    // steps and the actual response. The hasResponse check skips any edge-case
+    // elements with no markdown content.
     const assistantResponses = this.queryAllWithFallback<HTMLElement>(SELECTORS.assistantResponse);
     assistantResponses.forEach(el => {
+      const hasResponse = !!el.querySelector('.standard-markdown, .progressive-markdown');
+      if (!hasResponse) return;
       allElements.push({ element: el, type: 'assistant' });
     });
 
@@ -271,13 +281,34 @@ export class ClaudeExtractor extends BaseExtractor {
    * @see NFR-001-2 in design document
    */
   private extractAssistantContent(element: Element): string {
-    // Try to find markdown content inside the response
-    const markdownEl = this.queryWithFallback<HTMLElement>(SELECTORS.markdownContent, element);
-    if (markdownEl) {
-      return sanitizeHtml(markdownEl.innerHTML);
+    // Claude's DOM structure for responses that include extended thinking:
+    //   [data-is-streaming]
+    //     └─ .font-claude-response
+    //          └─ .grid.grid-rows-[auto_auto]
+    //               ├─ .row-start-1  (thinking toggle header)
+    //               └─ .row-start-2  (thinking expanded content)
+    //                    └─ .standard-markdown   ← class appears ONCE (thinking)
+    //               (and outside the grid)
+    //               └─ .standard-markdown        ← class appears TWICE (actual response)
+    //
+    // The actual response .standard-markdown has "standard-markdown" listed twice in
+    // its class attribute (e.g. "standard-markdown grid-cols-1 … standard-markdown").
+    // We target it with the CSS attribute selector [class$=" standard-markdown"].
+
+    // Primary: actual response div (standard-markdown doubled at end of class)
+    const responseEl = element.querySelector<HTMLElement>('[class$=" standard-markdown"]');
+    if (responseEl) {
+      return sanitizeHtml(responseEl.innerHTML);
     }
 
-    // Fallback: use the element's innerHTML
+    // Fallback for simple responses with no thinking (only one standard-markdown):
+    // grab the last one found
+    const allMarkdown = element.querySelectorAll<HTMLElement>('.standard-markdown, .progressive-markdown');
+    if (allMarkdown.length > 0) {
+      return sanitizeHtml(allMarkdown[allMarkdown.length - 1].innerHTML);
+    }
+
+    // Final fallback: element's innerHTML
     return sanitizeHtml(element.innerHTML);
   }
 

@@ -224,8 +224,14 @@ async function handleSave(settings: ExtensionSettings, note: ObsidianNote): Prom
   const client = new ObsidianApiClient(settings.obsidianPort, settings.obsidianApiKey);
 
   try {
-    // Construct full path
-    const fullPath = settings.vaultPath ? `${settings.vaultPath}/${note.fileName}` : note.fileName;
+    // Construct full path, using the note's source platform as a subfolder
+    // so conversations are automatically separated (e.g. AI/gemini/, AI/claude/)
+    const source = note.frontmatter?.source ?? '';
+    const subfolderSuffix = source ? `/${source}` : '';
+    const basePath = settings.vaultPath
+      ? `${settings.vaultPath}${subfolderSuffix}`
+      : source || '';
+    const fullPath = basePath ? `${basePath}/${note.fileName}` : note.fileName;
 
     // Check if file exists for append mode detection
     const existingContent = await client.getFile(fullPath);

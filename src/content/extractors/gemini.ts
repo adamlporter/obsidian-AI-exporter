@@ -202,26 +202,72 @@ export class GeminiExtractor extends BaseExtractor {
   }
 
   /**
-   * Get conversation title from first user query or sidebar
+   * Get the human-readable title Gemini shows for this conversation.
+   *
+   * Strategy (in priority order):
+   *   1. document.title — Gemini sets this to "[Title] | Gemini" for named
+   *      conversations; we strip the suffix.
+   *   2. Active sidebar item — the mat-list-item that is currently selected,
+   *      for cases where document.title hasn't updated yet.
+   *   3. First user query text — same as the original fallback.
+   *   4. Conversation ID from the URL.
    */
-  getTitle(): string {
-    // Try to get from first user query (first line of first query)
+  getGeminiTitle(): string {
+    // ── 1. document.title ──────────────────────────────────────────────────
+    const suffix = ' | Gemini';
+    const raw = document.title?.trim() ?? '';
+    if (raw && raw !== 'Gemini' && !raw.toLowerCase().startsWith('gemini ')) {
+      const fromDocTitle = raw.endsWith(suffix)
+        ? raw.slice(0, -suffix.length).trim()
+        : raw;
+      if (fromDocTitle) {
+        console.info(`[G2O] Title from document.title: "${fromDocTitle}"`);
+        return fromDocTitle.substring(0, MAX_CONVERSATION_TITLE_LENGTH);
+      }
+    }
+
+    // ── 2. Active sidebar item ─────────────────────────────────────────────
+    const sidebarSelectors = [
+      'mat-nav-list [aria-selected="true"]',
+      'mat-nav-list .mat-mdc-list-item.mdc-list-item--selected',
+      '[class*="conversation-item"][class*="selected"]',
+      '[class*="conversation-item"][aria-current="page"]',
+    ];
+    for (const sel of sidebarSelectors) {
+      const listItem = document.querySelector<HTMLElement>(sel);
+      if (!listItem) continue;
+      const innerEl = listItem.querySelector<HTMLElement>(
+        '.title, [class*="title"], .item-text, span'
+      );
+      const text = (innerEl ?? listItem).textContent
+        ?.trim()
+        .replace(/\s+/g, ' ') ?? '';
+      if (text && text.length > 0 && text.length < 200) {
+        console.info(`[G2O] Title from sidebar: "${text}"`);
+        return text.substring(0, MAX_CONVERSATION_TITLE_LENGTH);
+      }
+    }
+
+    // ── 3. First user query ────────────────────────────────────────────────
     const firstQueryText = this.queryWithFallback<HTMLElement>(SELECTORS.queryTextLine);
     if (firstQueryText?.textContent) {
       const title = this.sanitizeText(firstQueryText.textContent);
+      console.info(`[G2O] Title from first query: "${title}"`);
       return title.substring(0, MAX_CONVERSATION_TITLE_LENGTH);
     }
 
-    // Fallback to sidebar title if available
-    const sidebarTitle = this.queryWithFallback<HTMLElement>(SELECTORS.conversationTitle);
-    if (sidebarTitle?.textContent) {
-      return this.sanitizeText(sidebarTitle.textContent).substring(
-        0,
-        MAX_CONVERSATION_TITLE_LENGTH
-      );
-    }
+    // ── 4. URL fallback ────────────────────────────────────────────────────
+    const id = this.getConversationId();
+    console.warn('[G2O] Could not determine human-readable title; using ID:', id);
+    return id ? `Gemini ${id}` : 'Untitled Gemini Conversation';
+  }
 
-    return 'Untitled Gemini Conversation';
+  /**
+   * @deprecated Use getGeminiTitle() instead.
+   * Kept for interface compatibility with BaseExtractor.
+   */
+  getTitle(): string {
+    return this.getGeminiTitle();
   }
 
   /**
@@ -436,6 +482,100 @@ export class GeminiExtractor extends BaseExtractor {
   }
 
   /**
+   * Find the conversation scroll container by scanning the live DOM for an
+   * element that is actually scrollable at runtime.
+   *
+   * Hard-coded tag/class names are fragile — Gemini reshuffles them across
+   * builds, and some containers live inside Shadow DOM roots where
+   * document.querySelector can't reach them.  Instead we walk every
+   * descendant of <main> (deepest first) and return the first one whose
+   * computed overflowY is auto|scroll AND whose scrollHeight genuinely
+   * exceeds its clientHeight.
+   */
+  private getScrollContainer(): HTMLElement | null {
+    const root = document.querySelector<HTMLElement>('main') ?? document.body;
+
+    // querySelectorAll returns elements in document order; reversing gives us
+    // the deepest / most-specific candidates first.
+    const candidates = Array.from(root.querySelectorAll<HTMLElement>('*')).reverse();
+
+    for (const el of candidates) {
+      const { overflowY } = window.getComputedStyle(el);
+      if (
+        (overflowY === 'auto' || overflowY === 'scroll') &&
+        el.scrollHeight > el.clientHeight + 4   // +4 px tolerance for rounding
+      ) {
+        console.info(
+          `[G2O] Found scroll container: <${el.tagName.toLowerCase()}> ` +
+          `class="${el.className.toString().slice(0, 80)}" ` +
+          `scrollHeight=${el.scrollHeight} clientHeight=${el.clientHeight}`
+        );
+        return el;
+      }
+    }
+
+    console.warn('[G2O] No scrollable child found; falling back to <main>/body');
+    return root;
+  }
+
+  /**
+   * Scroll to the top of the conversation, loading all earlier messages.
+   *
+   * Gemini uses BACKWARDS INFINITE SCROLL: earlier messages are not just
+   * virtually unmounted — they are fetched from the server as you scroll up.
+   * A single scroll-to-top is not enough because Gemini loads messages in
+   * batches; we must repeatedly scroll up and wait for each batch to appear
+   * until the turn count stops growing (i.e. we have reached the beginning).
+   */
+  private async scrollToTopAndWait(): Promise<void> {
+    const container = this.getScrollContainer();
+    const scrollEl = container ?? document.documentElement;
+
+    const countTurns = () =>
+      document.querySelectorAll(
+        SELECTORS.conversationTurn.join(', ')
+      ).length;
+
+    const BATCH_WAIT_MS = 1200;  // time for one batch of messages to render
+    const MAX_ROUNDS   = 20;     // safety cap
+
+    let previousCount = -1;
+    let rounds = 0;
+
+    while (rounds < MAX_ROUNDS) {
+      // Scroll to the very top
+      scrollEl.scrollTop = 0;
+      window.scrollTo({ top: 0, behavior: 'instant' });
+      // Also zero any scrolled ancestors between scrollEl and <body>, in case
+      // Gemini wraps the container inside a scrolled layout parent.
+      let parent = scrollEl.parentElement;
+      while (parent && parent !== document.body) {
+        if (parent.scrollTop > 0) parent.scrollTop = 0;
+        parent = parent.parentElement;
+      }
+
+      // Wait for Gemini to fetch and render the next batch
+      await new Promise<void>(resolve => setTimeout(resolve, BATCH_WAIT_MS));
+
+      const currentCount = countTurns();
+      console.info(`[G2O] Round ${rounds + 1}: ${currentCount} turns (was ${previousCount})`);
+
+      if (currentCount === previousCount) {
+        // No new turns appeared — we have reached the beginning
+        console.info('[G2O] No new turns loaded, reached start of conversation');
+        break;
+      }
+
+      previousCount = currentCount;
+      rounds++;
+    }
+
+    if (rounds >= MAX_ROUNDS) {
+      console.warn(`[G2O] Reached round limit (${MAX_ROUNDS}); conversation may be partially loaded`);
+    }
+  }
+
+  /**
    * Main extraction method
    */
   async extract(): Promise<ExtractionResult> {
@@ -453,11 +593,17 @@ export class GeminiExtractor extends BaseExtractor {
         return this.extractDeepResearch();
       }
 
-      // Normal conversation extraction
+      // Normal conversation extraction.
+      // Scroll to top first so that Gemini re-renders any virtually-unloaded
+      // early turns that would otherwise be absent from the DOM.
+      console.info('[G2O] Scrolling to top to ensure all turns are rendered');
+      await this.scrollToTopAndWait();
+
       console.info('[G2O] Extracting normal conversation');
       const messages = this.extractMessages();
       const conversationId = this.getConversationId() || `gemini-${Date.now()}`;
-      const title = this.getTitle();
+      const title = this.getGeminiTitle();
+      console.info(`[G2O] Using title: "${title}"`);
 
       return this.buildConversationResult(messages, conversationId, title, 'gemini');
     } catch (error) {

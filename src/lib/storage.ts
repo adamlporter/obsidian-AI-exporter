@@ -39,7 +39,7 @@ const DEFAULT_SECURE_SETTINGS: SecureSettings = {
 
 const DEFAULT_SYNC_SETTINGS: SyncSettings = {
   obsidianPort: DEFAULT_OBSIDIAN_PORT,
-  vaultPath: 'AI/Gemini',
+  vaultPath: 'AI',
   templateOptions: DEFAULT_TEMPLATE_OPTIONS,
   outputOptions: DEFAULT_OUTPUT_OPTIONS,
 };
