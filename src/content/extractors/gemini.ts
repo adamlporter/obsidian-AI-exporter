@@ -205,46 +205,40 @@ export class GeminiExtractor extends BaseExtractor {
    * Get the human-readable title Gemini shows for this conversation.
    *
    * Strategy (in priority order):
-   *   1. document.title — Gemini sets this to "[Title] | Gemini" for named
-   *      conversations; we strip the suffix.
-   *   2. Active sidebar item — the mat-list-item that is currently selected,
-   *      for cases where document.title hasn't updated yet.
-   *   3. First user query text — same as the original fallback.
+   *   1. Match the sidebar link whose href contains the current conversation
+   *      ID — the most reliable method since it finds exactly the right entry.
+   *   2. document.title stripping the " | Gemini" suffix.
+   *   3. First user query text.
    *   4. Conversation ID from the URL.
    */
   getGeminiTitle(): string {
-    // ── 1. document.title ──────────────────────────────────────────────────
+    // ── 1. Sidebar link matching current conversation ID ───────────────────
+    // Each sidebar item is an <a> whose href contains the conversation ID.
+    // The title text lives in a child element with the autotextdirection
+    // attribute (or .conversation-title class as fallback).
+    const id = this.getConversationId();
+    if (id) {
+      const activeLink = document.querySelector<HTMLElement>(`a[href*="${id}"]`);
+      const titleEl = activeLink?.querySelector<HTMLElement>(
+        '[autotextdirection], .conversation-title'
+      );
+      const text = titleEl?.textContent?.trim().replace(/\s+/g, ' ');
+      if (text) {
+        console.info(`[G2O] Title from sidebar link: "${text}"`);
+        return text.substring(0, MAX_CONVERSATION_TITLE_LENGTH);
+      }
+    }
+
+    // ── 2. document.title (strip " | Gemini" suffix) ───────────────────────
     const suffix = ' | Gemini';
     const raw = document.title?.trim() ?? '';
-    if (raw && raw !== 'Gemini' && !raw.toLowerCase().startsWith('gemini ')) {
+    if (raw && raw !== 'Gemini' && raw !== 'Google Gemini') {
       const fromDocTitle = raw.endsWith(suffix)
         ? raw.slice(0, -suffix.length).trim()
         : raw;
       if (fromDocTitle) {
         console.info(`[G2O] Title from document.title: "${fromDocTitle}"`);
         return fromDocTitle.substring(0, MAX_CONVERSATION_TITLE_LENGTH);
-      }
-    }
-
-    // ── 2. Active sidebar item ─────────────────────────────────────────────
-    const sidebarSelectors = [
-      'mat-nav-list [aria-selected="true"]',
-      'mat-nav-list .mat-mdc-list-item.mdc-list-item--selected',
-      '[class*="conversation-item"][class*="selected"]',
-      '[class*="conversation-item"][aria-current="page"]',
-    ];
-    for (const sel of sidebarSelectors) {
-      const listItem = document.querySelector<HTMLElement>(sel);
-      if (!listItem) continue;
-      const innerEl = listItem.querySelector<HTMLElement>(
-        '.title, [class*="title"], .item-text, span'
-      );
-      const text = (innerEl ?? listItem).textContent
-        ?.trim()
-        .replace(/\s+/g, ' ') ?? '';
-      if (text && text.length > 0 && text.length < 200) {
-        console.info(`[G2O] Title from sidebar: "${text}"`);
-        return text.substring(0, MAX_CONVERSATION_TITLE_LENGTH);
       }
     }
 
@@ -257,7 +251,6 @@ export class GeminiExtractor extends BaseExtractor {
     }
 
     // ── 4. URL fallback ────────────────────────────────────────────────────
-    const id = this.getConversationId();
     console.warn('[G2O] Could not determine human-readable title; using ID:', id);
     return id ? `Gemini ${id}` : 'Untitled Gemini Conversation';
   }
