@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.4](https://github.com/sho7650/obsidian-AI-exporter/compare/v0.7.3...v0.7.4) (2026-02-20)
+
+
+### Bug Fixes
+
+* skip Extended Thinking content in Claude assistant extraction ([#50](https://github.com/sho7650/obsidian-AI-exporter/issues/50)) ([c2825d2](https://github.com/sho7650/obsidian-AI-exporter/commit/c2825d249ee267345bcc3b2c3dc12fb69b38ec58))
+
 ## [0.7.3](https://github.com/sho7650/obsidian-AI-exporter/compare/v0.7.2...v0.7.3) (2026-02-11)
 
 
