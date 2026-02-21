@@ -88,20 +88,30 @@ Obsidian Local REST API (127.0.0.1:27123)
 | ---------------------------------- | ---------------------------------------------------------- |
 | `src/content/extractors/gemini.ts` | DOM extraction for Gemini conversations & Deep Research    |
 | `src/content/extractors/claude.ts` | DOM extraction for Claude conversations & Artifacts        |
-| `src/content/extractors/base.ts`   | Abstract extractor with selector fallback helpers          |
+| `src/content/extractors/base.ts`   | Abstract extractor with selector fallback & title helpers  |
 | `src/content/markdown.ts`          | HTML→Markdown via Turndown with custom rules               |
 | `src/lib/obsidian-api.ts`          | REST API client for Obsidian                               |
+| `src/lib/path-utils.ts`            | Path security & `{platform}` template resolution           |
 | `src/lib/types.ts`                 | Shared TypeScript interfaces                               |
-| `src/background/index.ts`          | Service worker handling API calls                          |
-| `src/popup/`                       | Settings UI                                                |
+| `src/background/index.ts`          | Service worker handling API calls & template resolution    |
+| `src/popup/`                       | Settings UI (toggle switches, collapsible advanced panel)  |
 
 ### Extractor Pattern
 
 Extractors implement `IConversationExtractor` from `src/lib/types.ts`. The `BaseExtractor` provides:
 
-- `queryWithFallback()` - tries multiple CSS selectors in order
+- `queryWithFallback()` - tries multiple CSS selectors in priority order
 - `queryAllWithFallback()` - same for querySelectorAll
 - `sanitizeText()` - normalizes whitespace
+- `getPageTitle()` - extracts title from `document.title` stripping platform suffixes
+- `buildConversationResult()` - constructs `ExtractionResult` with common boilerplate
+- `buildMetadata()` - builds `ConversationMetadata` from messages
+
+### Vault Path Templates
+
+Vault path supports `{platform}` template variable (default: `AI/{platform}`).
+`resolvePathTemplate()` in `src/lib/path-utils.ts` resolves variables at save time.
+The background service worker substitutes `{platform}` with the actual source (gemini, claude, chatgpt, perplexity).
 
 ### DOM Selectors
 

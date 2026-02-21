@@ -17,6 +17,8 @@ Chrome Extension that exports AI conversations from Google Gemini, Claude AI, Ch
 - **Append mode**: Only new messages are added to existing notes
 - **Obsidian callouts**: Formatted output with `[!QUESTION]` and `[!NOTE]` callouts
 - **YAML frontmatter**: Metadata including title, source, URL, dates, and tags
+- **Auto-scroll**: Automatically loads all messages in long Gemini conversations
+- **Platform-based organization**: Use `{platform}` template in vault path for auto-sorting
 - **Configurable**: Customizable vault path, template options, and frontmatter fields
 - **Localized**: English and Japanese UI support
 
@@ -65,7 +67,7 @@ Chrome Extension that exports AI conversations from Google Gemini, Claude AI, Ch
 3. Click the extension icon in Chrome and enter:
    - **API Key**: Your Local REST API key
    - **Port**: Default is `27123`
-   - **Vault Path**: Folder path in your vault (e.g., `AI/Gemini`)
+   - **Vault Path**: Folder path in your vault (e.g., `AI/{platform}` to auto-organize by source)
 
 ## Usage
 
