@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0](https://github.com/sho7650/obsidian-AI-exporter/compare/v0.8.1...v0.9.0) (2026-02-21)
+
+
+### Features
+
+* support {platform} template variable in vault path ([88ab2eb](https://github.com/sho7650/obsidian-AI-exporter/commit/88ab2eb89de496486308e34546c15a8ac8edba99))
+* support {platform} template variable in vault path ([#46](https://github.com/sho7650/obsidian-AI-exporter/issues/46)) ([bbec9b7](https://github.com/sho7650/obsidian-AI-exporter/commit/bbec9b7b091aa21ee0c453a87b293c4c0aac092e))
+
 ## [0.8.1](https://github.com/sho7650/obsidian-AI-exporter/compare/v0.8.0...v0.8.1) (2026-02-21)
 
 
