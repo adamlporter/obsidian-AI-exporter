@@ -57,10 +57,7 @@ const SELECTORS = {
   // scrollable element (overflow-y: scroll). It fires onScrolledTopPastThreshold
   // when scrollTop crosses below a threshold (edge-triggered).
   // #chat-history is a non-scrolling wrapper — excluded to avoid false matches.
-  scrollContainer: [
-    '[data-test-id="chat-history-container"]',
-    'infinite-scroller',
-  ],
+  scrollContainer: ['[data-test-id="chat-history-container"]', 'infinite-scroller'],
 };
 
 /**
@@ -263,9 +260,7 @@ export class GeminiExtractor extends BaseExtractor {
    * Count .conversation-container elements currently in the DOM
    */
   private countConversationElements(): number {
-    return document.querySelectorAll(
-      SELECTORS.conversationTurn.join(',')
-    ).length;
+    return document.querySelectorAll(SELECTORS.conversationTurn.join(',')).length;
   }
 
   /**
@@ -299,14 +294,14 @@ export class GeminiExtractor extends BaseExtractor {
     if (container.scrollTop === 0) {
       console.info(
         `[G2O] scrollTop=0, scrollHeight=${container.scrollHeight}, ` +
-        `clientHeight=${container.clientHeight}, elements=${initialCount}`
+          `clientHeight=${container.clientHeight}, elements=${initialCount}`
       );
       return { fullyLoaded: true, elementCount: initialCount, scrollIterations: 0, skipped: true };
     }
 
     console.info(
       `[G2O] Partial load detected — scrollTop=${container.scrollTop}, ` +
-      `elements=${initialCount}, auto-scrolling`
+        `elements=${initialCount}, auto-scrolling`
     );
 
     let previousCount = 0;
@@ -331,7 +326,7 @@ export class GeminiExtractor extends BaseExtractor {
 
       console.debug(
         `[G2O] Scroll iteration ${iterations}: elements=${currentCount}, ` +
-        `scrollTop=${container.scrollTop}, scrollHeight=${container.scrollHeight}`
+          `scrollTop=${container.scrollTop}, scrollHeight=${container.scrollHeight}`
       );
 
       if (currentCount === previousCount) {
