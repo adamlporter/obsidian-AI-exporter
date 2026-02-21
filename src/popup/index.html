@@ -17,136 +17,177 @@
       </header>
 
       <main class="settings">
+        <!-- OUTPUT DESTINATIONS -->
         <section class="section">
           <h2 data-i18n="settings_outputDestinations">Output Destinations</h2>
-          <p class="help" data-i18n="settings_outputHelp">Select where to save conversations</p>
-          <div class="output-destinations-grid">
-            <label class="checkbox-label">
-              <input type="checkbox" id="outputObsidian" checked />
-              <span data-i18n="settings_outputObsidian">Obsidian (API)</span>
+          <div class="toggle-list">
+            <label class="toggle-row">
+              <span class="toggle-icon">📦</span>
+              <span class="toggle-label" data-i18n="settings_outputObsidian">Obsidian (API)</span>
+              <span class="toggle-switch">
+                <input
+                  type="checkbox"
+                  id="outputObsidian"
+                  role="switch"
+                  aria-checked="true"
+                  checked
+                />
+                <span class="slider" aria-hidden="true"></span>
+              </span>
             </label>
-            <label class="checkbox-label">
-              <input type="checkbox" id="outputFile" />
-              <span data-i18n="settings_outputFile">Download File</span>
+            <label class="toggle-row">
+              <span class="toggle-icon">📄</span>
+              <span class="toggle-label" data-i18n="settings_outputFile">Download File</span>
+              <span class="toggle-switch">
+                <input type="checkbox" id="outputFile" role="switch" aria-checked="false" />
+                <span class="slider" aria-hidden="true"></span>
+              </span>
             </label>
-            <label class="checkbox-label">
-              <input type="checkbox" id="outputClipboard" />
-              <span data-i18n="settings_outputClipboard">Copy to Clipboard</span>
-            </label>
-          </div>
-        </section>
-
-        <section class="section" id="obsidianSettings">
-          <h2 data-i18n="settings_title">Settings</h2>
-
-          <div class="form-group">
-            <label for="apiKey" data-i18n="settings_apiKey">API Key</label>
-            <div class="api-key-wrapper">
-              <input
-                type="password"
-                id="apiKey"
-                data-i18n-placeholder="settings_apiKeyPlaceholder"
-                placeholder="Enter your Local REST API key"
-                autocomplete="off"
-              />
-              <!-- Toggle button is added by JavaScript -->
-            </div>
-            <p class="help" data-i18n="settings_apiKeyHelp">
-              From Obsidian → Settings → Local REST API
-            </p>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label for="port" data-i18n="settings_port">Port</label>
-              <input type="number" id="port" value="27123" min="1024" max="65535" />
-            </div>
-
-            <div class="form-group flex-grow">
-              <label for="vaultPath" data-i18n="settings_vaultPath">Vault Path</label>
-              <input
-                type="text"
-                id="vaultPath"
-                data-i18n-placeholder="settings_vaultPathPlaceholder"
-                placeholder="AI/{platform}"
-              />
-              <p class="help" data-i18n="settings_vaultPathHelp">
-                Use {platform} to auto-organize by source (gemini, claude, chatgpt, perplexity)
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <section class="section">
-          <h2 data-i18n="settings_messageFormat">Message Format</h2>
-
-          <div class="form-group">
-            <label for="messageFormat" data-i18n="settings_messageFormat">Message Format</label>
-            <select id="messageFormat">
-              <option value="callout" data-i18n="settings_format_callout">
-                Callout (Recommended)
-              </option>
-              <option value="blockquote" data-i18n="settings_format_blockquote">Blockquote</option>
-              <option value="plain" data-i18n="settings_format_plain">Plain Markdown</option>
-            </select>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label for="userCallout" data-i18n="settings_userCallout">User Callout</label>
-              <input type="text" id="userCallout" value="QUESTION" />
-            </div>
-            <div class="form-group">
-              <label for="assistantCallout" data-i18n="settings_assistantCallout"
-                >Assistant Callout</label
+            <label class="toggle-row">
+              <span class="toggle-icon">📋</span>
+              <span class="toggle-label" data-i18n="settings_outputClipboard"
+                >Copy to Clipboard</span
               >
-              <input type="text" id="assistantCallout" value="NOTE" />
-            </div>
+              <span class="toggle-switch">
+                <input type="checkbox" id="outputClipboard" role="switch" aria-checked="false" />
+                <span class="slider" aria-hidden="true"></span>
+              </span>
+            </label>
           </div>
         </section>
 
+        <!-- EXTRACTION -->
         <section class="section">
           <h2 data-i18n="settings_extraction">Extraction</h2>
-          <div class="checkbox-grid">
-            <label class="checkbox-label">
-              <input type="checkbox" id="enableAutoScroll" />
-              <span data-i18n="settings_enableAutoScroll">Auto-scroll (load all messages)</span>
+          <div class="toggle-list">
+            <label class="toggle-row">
+              <span class="toggle-icon">🔄</span>
+              <span class="toggle-label">
+                <span data-i18n="settings_enableAutoScroll">Auto-scroll</span>
+                <span class="toggle-sublabel" data-i18n="settings_autoScrollHelp">
+                  Load all messages in long conversations
+                </span>
+              </span>
+              <span class="toggle-switch">
+                <input type="checkbox" id="enableAutoScroll" role="switch" aria-checked="false" />
+                <span class="slider" aria-hidden="true"></span>
+              </span>
             </label>
           </div>
-          <p class="help" data-i18n="settings_autoScrollHelp">
-            Automatically scroll to load all messages in long conversations (e.g. Gemini)
-          </p>
         </section>
 
-        <section class="section">
-          <h2 data-i18n="settings_frontmatter">Frontmatter Fields</h2>
-          <div class="checkbox-grid">
-            <label class="checkbox-label">
-              <input type="checkbox" id="includeId" checked />
-              <span data-i18n="settings_includeId">ID</span>
-            </label>
-            <label class="checkbox-label">
-              <input type="checkbox" id="includeTitle" checked />
-              <span data-i18n="settings_includeTitle">Title</span>
-            </label>
-            <label class="checkbox-label">
-              <input type="checkbox" id="includeTags" checked />
-              <span data-i18n="settings_includeTags">Tags</span>
-            </label>
-            <label class="checkbox-label">
-              <input type="checkbox" id="includeSource" checked />
-              <span data-i18n="settings_includeSource">Source & URL</span>
-            </label>
-            <label class="checkbox-label">
-              <input type="checkbox" id="includeDates" checked />
-              <span data-i18n="settings_includeDates">Dates</span>
-            </label>
-            <label class="checkbox-label">
-              <input type="checkbox" id="includeMessageCount" checked />
-              <span data-i18n="settings_includeMessageCount">Message Count</span>
-            </label>
+        <!-- ADVANCED SETTINGS (collapsible) -->
+        <details class="advanced-settings">
+          <summary>
+            <span class="advanced-arrow">▶</span>
+            <span data-i18n="settings_advancedSettings">Advanced Settings</span>
+          </summary>
+          <div class="advanced-content">
+            <!-- Obsidian API Settings -->
+            <section class="section" id="obsidianSettings">
+              <h2 data-i18n="settings_title">Settings</h2>
+
+              <div class="form-group">
+                <label for="apiKey" data-i18n="settings_apiKey">API Key</label>
+                <div class="api-key-wrapper">
+                  <input
+                    type="password"
+                    id="apiKey"
+                    data-i18n-placeholder="settings_apiKeyPlaceholder"
+                    placeholder="Enter your Local REST API key"
+                    autocomplete="off"
+                  />
+                  <!-- Toggle button is added by JavaScript -->
+                </div>
+                <p class="help" data-i18n="settings_apiKeyHelp">
+                  From Obsidian → Settings → Local REST API
+                </p>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="port" data-i18n="settings_port">Port</label>
+                  <input type="number" id="port" value="27123" min="1024" max="65535" />
+                </div>
+
+                <div class="form-group flex-grow">
+                  <label for="vaultPath" data-i18n="settings_vaultPath">Vault Path</label>
+                  <input
+                    type="text"
+                    id="vaultPath"
+                    data-i18n-placeholder="settings_vaultPathPlaceholder"
+                    placeholder="AI/{platform}"
+                  />
+                  <p class="help" data-i18n="settings_vaultPathHelp">
+                    Use {platform} to auto-organize by source (gemini, claude, chatgpt, perplexity)
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            <!-- Message Format -->
+            <section class="section">
+              <h2 data-i18n="settings_messageFormat">Message Format</h2>
+
+              <div class="form-group">
+                <label for="messageFormat" data-i18n="settings_messageFormat">Message Format</label>
+                <select id="messageFormat">
+                  <option value="callout" data-i18n="settings_format_callout">
+                    Callout (Recommended)
+                  </option>
+                  <option value="blockquote" data-i18n="settings_format_blockquote">
+                    Blockquote
+                  </option>
+                  <option value="plain" data-i18n="settings_format_plain">Plain Markdown</option>
+                </select>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="userCallout" data-i18n="settings_userCallout">User Callout</label>
+                  <input type="text" id="userCallout" value="QUESTION" />
+                </div>
+                <div class="form-group">
+                  <label for="assistantCallout" data-i18n="settings_assistantCallout"
+                    >Assistant Callout</label
+                  >
+                  <input type="text" id="assistantCallout" value="NOTE" />
+                </div>
+              </div>
+            </section>
+
+            <!-- Frontmatter -->
+            <section class="section">
+              <h2 data-i18n="settings_frontmatter">Frontmatter Fields</h2>
+              <div class="checkbox-grid">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="includeId" checked />
+                  <span data-i18n="settings_includeId">ID</span>
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" id="includeTitle" checked />
+                  <span data-i18n="settings_includeTitle">Title</span>
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" id="includeTags" checked />
+                  <span data-i18n="settings_includeTags">Tags</span>
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" id="includeSource" checked />
+                  <span data-i18n="settings_includeSource">Source & URL</span>
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" id="includeDates" checked />
+                  <span data-i18n="settings_includeDates">Dates</span>
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" id="includeMessageCount" checked />
+                  <span data-i18n="settings_includeMessageCount">Message Count</span>
+                </label>
+              </div>
+            </section>
           </div>
-        </section>
+        </details>
       </main>
 
       <footer class="actions">

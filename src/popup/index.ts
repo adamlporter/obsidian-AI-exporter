@@ -91,6 +91,7 @@ async function initialize(): Promise<void> {
     const settings = await getSettings();
     populateForm(settings);
     setupEventListeners();
+    setupToggleSwitchAccessibility();
   } catch (error) {
     showStatus(getMessage('toast_error_connectionFailed'), 'error');
     console.error('[G2O Popup] Init error:', error);
@@ -129,6 +130,9 @@ function populateForm(settings: ExtensionSettings): void {
   elements.includeSource.checked = templateOptions.includeSource ?? true;
   elements.includeDates.checked = templateOptions.includeDates ?? true;
   elements.includeMessageCount.checked = templateOptions.includeMessageCount ?? true;
+
+  // Sync aria-checked for toggle switches after setting checked state
+  syncAllAriaChecked();
 }
 
 /**
@@ -199,6 +203,27 @@ function setupApiKeyToggle(): void {
   });
 
   wrapper.appendChild(toggleBtn);
+}
+
+/**
+ * Sync aria-checked attribute for all toggle switches with role="switch"
+ */
+function syncAllAriaChecked(): void {
+  document.querySelectorAll<HTMLInputElement>('input[role="switch"]').forEach(input => {
+    input.setAttribute('aria-checked', String(input.checked));
+  });
+}
+
+/**
+ * Setup accessibility for toggle switches (W3C APG Switch Pattern)
+ * Syncs aria-checked on change events
+ */
+function setupToggleSwitchAccessibility(): void {
+  document.querySelectorAll<HTMLInputElement>('input[role="switch"]').forEach(input => {
+    input.addEventListener('change', () => {
+      input.setAttribute('aria-checked', String(input.checked));
+    });
+  });
 }
 
 /**

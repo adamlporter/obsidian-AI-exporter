@@ -41,6 +41,10 @@
     "message": "e.g., AI/{platform}",
     "description": "Placeholder for vault path input"
   },
+  "settings_advancedSettings": {
+    "message": "Advanced Settings",
+    "description": "Collapsible section title for advanced settings"
+  },
   "settings_vaultPathHelp": {
     "message": "Use {platform} to auto-organize by source (gemini, claude, chatgpt, perplexity)",
     "description": "Help text explaining template variable for vault path"
