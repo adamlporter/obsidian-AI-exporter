@@ -103,6 +103,12 @@ const DEEP_RESEARCH_LINK_SELECTORS = {
 };
 
 /**
+ * Pattern to strip Gemini-specific suffix from document.title
+ * Matches: " - Google Gemini", " | Gemini", " - Gemini", etc.
+ */
+const GEMINI_TITLE_SUFFIX_PATTERN = /\s*[-|]\s*(?:Google\s+)?Gemini\s*$/i;
+
+/**
  * Pre-computed selector strings for performance optimization
  * Avoids repeated .join(',') calls inside loops
  */
@@ -234,17 +240,23 @@ export class GeminiExtractor extends BaseExtractor {
   }
 
   /**
-   * Get conversation title from first user query or sidebar
+   * Get conversation title from document.title, first user query, or sidebar
    */
   getTitle(): string {
-    // Try to get from first user query (first line of first query)
+    // Priority 1: document.title with Gemini suffix stripped
+    const pageTitle = document.title?.replace(GEMINI_TITLE_SUFFIX_PATTERN, '').trim();
+    if (pageTitle && pageTitle.toLowerCase() !== 'gemini') {
+      return pageTitle.substring(0, MAX_CONVERSATION_TITLE_LENGTH);
+    }
+
+    // Priority 2: First user query text (existing)
     const firstQueryText = this.queryWithFallback<HTMLElement>(SELECTORS.queryTextLine);
     if (firstQueryText?.textContent) {
       const title = this.sanitizeText(firstQueryText.textContent);
       return title.substring(0, MAX_CONVERSATION_TITLE_LENGTH);
     }
 
-    // Fallback to sidebar title if available
+    // Priority 3: Sidebar title (existing)
     const sidebarTitle = this.queryWithFallback<HTMLElement>(SELECTORS.conversationTitle);
     if (sidebarTitle?.textContent) {
       return this.sanitizeText(sidebarTitle.textContent).substring(

@@ -115,6 +115,48 @@ describe('GeminiExtractor', () => {
       `);
       expect(extractor.getTitle()).toBe('Multiple spaces');
     });
+
+    it('extracts title from document.title with " - Google Gemini" suffix', () => {
+      setGeminiLocation('test123');
+      document.title = 'Test Chat - Google Gemini';
+      loadFixture('<div>Empty page</div>');
+      expect(extractor.getTitle()).toBe('Test Chat');
+    });
+
+    it('extracts title from document.title with " | Gemini" suffix', () => {
+      setGeminiLocation('test123');
+      document.title = 'Test Chat | Gemini';
+      loadFixture('<div>Empty page</div>');
+      expect(extractor.getTitle()).toBe('Test Chat');
+    });
+
+    it('skips document.title when it is just "Gemini"', () => {
+      setGeminiLocation('test123');
+      document.title = 'Gemini';
+      loadFixture(`
+        <p class="query-text-line">Query text fallback</p>
+      `);
+      expect(extractor.getTitle()).toBe('Query text fallback');
+    });
+
+    it('skips empty document.title', () => {
+      setGeminiLocation('test123');
+      document.title = '';
+      loadFixture(`
+        <p class="query-text-line">Query text fallback</p>
+      `);
+      expect(extractor.getTitle()).toBe('Query text fallback');
+    });
+
+    it('document.title takes priority over DOM selectors', () => {
+      setGeminiLocation('test123');
+      document.title = 'Page Title - Google Gemini';
+      loadFixture(`
+        <p class="query-text-line">Query text</p>
+        <div class="conversation-title">Sidebar Title</div>
+      `);
+      expect(extractor.getTitle()).toBe('Page Title');
+    });
   });
 
   describe('extractMessages', () => {
