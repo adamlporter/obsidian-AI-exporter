@@ -31,6 +31,9 @@
   "settings_vaultPathPlaceholder": {
     "message": "例: AI/{platform}"
   },
+  "settings_advancedSettings": {
+    "message": "詳細設定"
+  },
   "settings_vaultPathHelp": {
     "message": "{platform} でプラットフォームごとにフォルダ分類（gemini, claude, chatgpt, perplexity）"
   },
