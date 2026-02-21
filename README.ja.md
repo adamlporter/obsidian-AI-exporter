@@ -17,6 +17,8 @@ Google Gemini、Claude AI、ChatGPT、Perplexity の会話を Obsidian に保存
 - **追記モード**: 既存ノートには新しいメッセージのみを追加
 - **Obsidian コールアウト**: `[!QUESTION]` と `[!NOTE]` による見やすいフォーマット
 - **YAML フロントマター**: タイトル、ソース、URL、日時、タグなどのメタデータを自動生成
+- **自動スクロール**: Gemini の長い会話で全メッセージを自動的に読み込み
+- **プラットフォーム別整理**: Vault パスに `{platform}` テンプレートを使用して自動分類
 - **カスタマイズ可能**: 保存先パス、テンプレート、フロントマターの設定が可能
 - **多言語対応**: 英語・日本語 UI をサポート
 
@@ -65,7 +67,7 @@ Google Gemini、Claude AI、ChatGPT、Perplexity の会話を Obsidian に保存
 3. Chrome で拡張機能のアイコンをクリックして以下を入力:
    - **API Key**: Local REST API の API キー
    - **Port**: デフォルトは `27123`
-   - **Vault Path**: 保存先のフォルダパス（例: `AI/Gemini`）
+   - **Vault Path**: 保存先のフォルダパス（例: `AI/{platform}` でソース別に自動整理）
 
 ## 使い方
 
