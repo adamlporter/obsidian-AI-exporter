@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.0](https://github.com/sho7650/obsidian-AI-exporter/compare/v0.9.0...v0.10.0) (2026-02-21)
+
+
+### Features
+
+* redesign popup with toggle switches and collapsible advanced settings ([34c211b](https://github.com/sho7650/obsidian-AI-exporter/commit/34c211ba0ccbec71871af32fcd75d28c20a7ec81))
+* redesign popup with toggle switches and collapsible advanced settings ([e89ab95](https://github.com/sho7650/obsidian-AI-exporter/commit/e89ab95945759283e7058459b494c50371664318))
+
 ## [0.9.0](https://github.com/sho7650/obsidian-AI-exporter/compare/v0.8.1...v0.9.0) (2026-02-21)
 
 
