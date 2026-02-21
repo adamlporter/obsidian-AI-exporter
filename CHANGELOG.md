@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.2](https://github.com/sho7650/obsidian-AI-exporter/compare/v0.10.1...v0.10.2) (2026-02-21)
+
+
+### Documentation
+
+* update web store descriptions with Perplexity and new features ([c9a5e4a](https://github.com/sho7650/obsidian-AI-exporter/commit/c9a5e4a056f1d371b55229a21f8bf36a121700f9))
+* update web store descriptions with Perplexity and new features ([da9efbb](https://github.com/sho7650/obsidian-AI-exporter/commit/da9efbb720720f365e795710b099c9d393ee468a))
+
 ## [0.10.1](https://github.com/sho7650/obsidian-AI-exporter/compare/v0.10.0...v0.10.1) (2026-02-21)
 
 
