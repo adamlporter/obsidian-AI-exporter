@@ -45,8 +45,9 @@ const SELECTORS = {
     'message-content .markdown',
   ],
 
-  // Conversation title (sidebar)
+  // Conversation title (top bar + sidebar)
   conversationTitle: [
+    '[data-test-id="conversation-title"]',
     '.conversation-title.gds-title-m',
     '.conversation-title',
     '[class*="conversation-title"]',
@@ -101,12 +102,6 @@ const DEEP_RESEARCH_LINK_SELECTORS = {
   // Source domain
   sourceDomain: ['[data-test-id="domain-name"]', '.display-name'],
 };
-
-/**
- * Pattern to strip Gemini-specific suffix from document.title
- * Matches: " - Google Gemini", " | Gemini", " - Gemini", etc.
- */
-const GEMINI_TITLE_SUFFIX_PATTERN = /\s*[-|]\s*(?:Google\s+)?Gemini\s*$/i;
 
 /**
  * Pre-computed selector strings for performance optimization
@@ -240,29 +235,23 @@ export class GeminiExtractor extends BaseExtractor {
   }
 
   /**
-   * Get conversation title from document.title, first user query, or sidebar
+   * Get conversation title from top bar, first user query, or sidebar
    */
   getTitle(): string {
-    // Priority 1: document.title with Gemini suffix stripped
-    const pageTitle = document.title?.replace(GEMINI_TITLE_SUFFIX_PATTERN, '').trim();
-    if (pageTitle && pageTitle.toLowerCase() !== 'gemini') {
-      return pageTitle.substring(0, MAX_CONVERSATION_TITLE_LENGTH);
+    // Priority 1: Top bar title ([data-test-id="conversation-title"] or sidebar)
+    const topBarTitle = this.queryWithFallback<HTMLElement>(SELECTORS.conversationTitle);
+    if (topBarTitle?.textContent) {
+      const title = this.sanitizeText(topBarTitle.textContent);
+      if (title) {
+        return title.substring(0, MAX_CONVERSATION_TITLE_LENGTH);
+      }
     }
 
-    // Priority 2: First user query text (existing)
+    // Priority 2: First user query text
     const firstQueryText = this.queryWithFallback<HTMLElement>(SELECTORS.queryTextLine);
     if (firstQueryText?.textContent) {
       const title = this.sanitizeText(firstQueryText.textContent);
       return title.substring(0, MAX_CONVERSATION_TITLE_LENGTH);
-    }
-
-    // Priority 3: Sidebar title (existing)
-    const sidebarTitle = this.queryWithFallback<HTMLElement>(SELECTORS.conversationTitle);
-    if (sidebarTitle?.textContent) {
-      return this.sanitizeText(sidebarTitle.textContent).substring(
-        0,
-        MAX_CONVERSATION_TITLE_LENGTH
-      );
     }
 
     return 'Untitled Gemini Conversation';
