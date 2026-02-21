@@ -24,6 +24,21 @@ export function containsPathTraversal(path: string): boolean {
 }
 
 /**
+ * Resolve template variables in a vault path
+ * Supported variables: {platform}
+ * Unknown variables are preserved as-is (safe fallback)
+ *
+ * @example
+ * resolvePathTemplate('AI/{platform}', { platform: 'gemini' })
+ * // → 'AI/gemini'
+ */
+export function resolvePathTemplate(path: string, variables: Record<string, string>): string {
+  return path.replace(/\{(\w+)\}/g, (match, key: string) => {
+    return key in variables ? variables[key] : match;
+  });
+}
+
+/**
  * Normalize and validate a path
  */
 export function validatePath(path: string, fieldName: string): string {

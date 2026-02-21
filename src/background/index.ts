@@ -7,6 +7,7 @@ import { ObsidianApiClient } from '../lib/obsidian-api';
 import { extractErrorMessage, getErrorMessage } from '../lib/error-utils';
 import { getSettings, migrateSettings } from '../lib/storage';
 import { generateNoteContent } from '../lib/note-generator';
+import { resolvePathTemplate } from '../lib/path-utils';
 import {
   MAX_CONTENT_SIZE,
   MAX_FILENAME_LENGTH,
@@ -224,8 +225,11 @@ async function handleSave(settings: ExtensionSettings, note: ObsidianNote): Prom
   const client = new ObsidianApiClient(settings.obsidianPort, settings.obsidianApiKey);
 
   try {
-    // Construct full path
-    const fullPath = settings.vaultPath ? `${settings.vaultPath}/${note.fileName}` : note.fileName;
+    // Resolve template variables (e.g., {platform} → gemini) and construct full path
+    const resolvedPath = resolvePathTemplate(settings.vaultPath, {
+      platform: note.frontmatter.source,
+    });
+    const fullPath = resolvedPath ? `${resolvedPath}/${note.fileName}` : note.fileName;
 
     // Check if file exists for append mode detection
     const existingContent = await client.getFile(fullPath);
