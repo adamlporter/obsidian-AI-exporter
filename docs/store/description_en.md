@@ -1,45 +1,42 @@
-# Obsidian AI Exporter
+Save your AI conversations from Gemini, Claude, ChatGPT, and Perplexity to Obsidian with one click.
 
-Export your AI conversations from Google Gemini, Claude AI, ChatGPT, and Perplexity to Obsidian with one click.
+🎯 WHAT IT DOES
+This extension extracts conversations from Google Gemini (gemini.google.com), Claude AI (claude.ai), ChatGPT (chatgpt.com), and Perplexity (www.perplexity.ai) and exports them as beautifully formatted Markdown notes.
 
-## Features
+☕ THREE EXPORT OPTIONS
+• Obsidian: Send directly to your vault via Local REST API plugin
+• File: Download as a .md file to your computer
+• Clipboard: Copy formatted Markdown to paste anywhere
 
-✨ **Multi-Platform Support** - Export from Gemini, Claude, ChatGPT, and Perplexity
-📦 **Multiple Output Options** - Save to Obsidian, download as file, or copy to clipboard
-📝 **Obsidian Callouts** - Beautiful formatting with [!QUESTION] and [!NOTE]
-🔬 **Deep Research & Artifacts** - Export Gemini Deep Research and Claude Extended Thinking reports
-🔄 **Append Mode** - Only new messages are added to existing notes
-📋 **YAML Frontmatter** - Metadata including title, source, URL, dates, and tags
-📂 **Platform Organization** - Use `{platform}` template to auto-sort by AI source
-🔃 **Auto-Scroll** - Automatically load all messages in long Gemini conversations
-⚙️ **Customizable** - Configure vault path, message format, frontmatter fields, and more
-🌐 **Localized** - English and Japanese UI support
+✨ KEY FEATURES
+• One-click export from Gemini, Claude, ChatGPT, and Perplexity conversations
+• Clean Markdown formatting with YAML frontmatter
+• Obsidian callout syntax for Q&A blocks (shows correct AI name)
+• Deep Research support (Gemini) and Extended Thinking/Artifacts (Claude)
+• Append mode - only new messages are added to existing notes
+• Auto-scroll for long Gemini conversations
+• Platform organization with {platform} template variable
+• Customizable save location, message format, and frontmatter fields
+• English and Japanese UI support
+• Works entirely offline - no external servers
 
-## Requirements
+🔒 PRIVACY FIRST
+• All processing happens locally on your device
+• No data is sent to external servers
+• API key stored securely in local storage only
+• Open source: https://github.com/sho7650/obsidian-AI-exporter
 
-- [Obsidian](https://obsidian.md/) with [Local REST API](https://github.com/coddingtonbear/obsidian-local-rest-api) plugin
+💻 REQUIREMENTS
+For Obsidian integration:
+• Obsidian with "Local REST API" plugin installed and enabled
+• API key from the Local REST API plugin settings
 
-## How to Use
+File download and clipboard options work without any setup.
 
-1. Install this extension
-2. Enable the Local REST API plugin in Obsidian
-3. Copy your API key from the plugin settings
-4. Click the extension icon and configure your settings
-5. Open a conversation on any supported AI platform and click "Sync"
+🚀 HOW TO USE
+1. Open any conversation on gemini.google.com, claude.ai, chatgpt.com, or www.perplexity.ai
+2. Click the purple "Sync" button (appears on the page)
+3. Choose your export method: Obsidian, File, or Clipboard
+4. Done! Your conversation is saved as Markdown
 
-## Supported Platforms
-
-- **Google Gemini** (gemini.google.com) - Conversations and Deep Research reports
-- **Claude AI** (claude.ai) - Conversations, Extended Thinking, and Artifacts with inline citations
-- **ChatGPT** (chatgpt.com) - Conversations including custom GPTs
-- **Perplexity** (www.perplexity.ai) - Conversations
-
-## Privacy
-
-- No data collection or analytics
-- All data stays on your device
-- Only communicates with localhost (your Obsidian)
-
----
-
-Made with ❤️ for the Obsidian community
+Perfect for researchers, students, and anyone who wants to build a personal knowledge base from their AI conversations.
