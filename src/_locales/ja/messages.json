@@ -29,7 +29,10 @@
     "message": "保存先パス"
   },
   "settings_vaultPathPlaceholder": {
-    "message": "例: AI/Gemini"
+    "message": "例: AI/{platform}"
+  },
+  "settings_vaultPathHelp": {
+    "message": "{platform} でプラットフォームごとにフォルダ分類（gemini, claude, chatgpt, perplexity）"
   },
   "settings_messageFormat": {
     "message": "メッセージ形式"

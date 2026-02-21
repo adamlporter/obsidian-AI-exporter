@@ -38,8 +38,12 @@
     "description": "Label for vault path input"
   },
   "settings_vaultPathPlaceholder": {
-    "message": "e.g., AI/Gemini",
+    "message": "e.g., AI/{platform}",
     "description": "Placeholder for vault path input"
+  },
+  "settings_vaultPathHelp": {
+    "message": "Use {platform} to auto-organize by source (gemini, claude, chatgpt, perplexity)",
+    "description": "Help text explaining template variable for vault path"
   },
   "settings_messageFormat": {
     "message": "Message Format",

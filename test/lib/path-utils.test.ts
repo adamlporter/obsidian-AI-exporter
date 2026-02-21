@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { containsPathTraversal, validatePath } from '../../src/lib/path-utils';
+import { containsPathTraversal, validatePath, resolvePathTemplate } from '../../src/lib/path-utils';
 
 describe('containsPathTraversal', () => {
   it('detects ../ patterns', () => {
@@ -41,6 +41,42 @@ describe('containsPathTraversal', () => {
     expect(containsPathTraversal('.')).toBe(false);
     expect(containsPathTraversal('..')).toBe(true);
     expect(containsPathTraversal('...')).toBe(false);
+  });
+});
+
+describe('resolvePathTemplate', () => {
+  it('resolves {platform} variable', () => {
+    expect(resolvePathTemplate('AI/{platform}', { platform: 'gemini' }))
+      .toBe('AI/gemini');
+  });
+
+  it('resolves multiple variables', () => {
+    expect(resolvePathTemplate('{type}/{platform}', {
+      platform: 'claude',
+      type: 'conversation',
+    })).toBe('conversation/claude');
+  });
+
+  it('preserves unknown variables', () => {
+    expect(resolvePathTemplate('AI/{unknown}', { platform: 'gemini' }))
+      .toBe('AI/{unknown}');
+  });
+
+  it('returns path unchanged when no variables present', () => {
+    expect(resolvePathTemplate('AI/Gemini', { platform: 'gemini' }))
+      .toBe('AI/Gemini');
+  });
+
+  it('handles empty path', () => {
+    expect(resolvePathTemplate('', { platform: 'gemini' }))
+      .toBe('');
+  });
+
+  it('resolves all supported platforms', () => {
+    for (const p of ['gemini', 'claude', 'chatgpt', 'perplexity']) {
+      expect(resolvePathTemplate('AI/{platform}', { platform: p }))
+        .toBe(`AI/${p}`);
+    }
   });
 });
 
