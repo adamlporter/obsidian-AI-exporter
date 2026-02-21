@@ -6,7 +6,14 @@
 import { BaseExtractor } from './base';
 import { extractErrorMessage } from '../../lib/error-utils';
 import { sanitizeHtml } from '../../lib/sanitize';
-import { MAX_DEEP_RESEARCH_TITLE_LENGTH, MAX_CONVERSATION_TITLE_LENGTH } from '../../lib/constants';
+import {
+  MAX_DEEP_RESEARCH_TITLE_LENGTH,
+  MAX_CONVERSATION_TITLE_LENGTH,
+  SCROLL_POLL_INTERVAL,
+  SCROLL_TIMEOUT,
+  SCROLL_STABILITY_THRESHOLD,
+  SCROLL_REARM_DELAY,
+} from '../../lib/constants';
 import type {
   ExtractionResult,
   ConversationMessage,
@@ -43,6 +50,16 @@ const SELECTORS = {
     '.conversation-title.gds-title-m',
     '.conversation-title',
     '[class*="conversation-title"]',
+  ],
+
+  // Scroll container for lazy-load detection
+  // infinite-scroller (data-test-id="chat-history-container") is the actual
+  // scrollable element (overflow-y: scroll). It fires onScrolledTopPastThreshold
+  // when scrollTop crosses below a threshold (edge-triggered).
+  // #chat-history is a non-scrolling wrapper — excluded to avoid false matches.
+  scrollContainer: [
+    '[data-test-id="chat-history-container"]',
+    'infinite-scroller',
   ],
 };
 
@@ -98,8 +115,26 @@ const COMPUTED_SELECTORS = {
   sourceDomain: DEEP_RESEARCH_LINK_SELECTORS.sourceDomain.join(','),
 } as const;
 
+/**
+ * Result of the auto-scroll process
+ * Internal to gemini.ts — not exported
+ */
+interface ScrollResult {
+  /** Whether all messages loaded before timeout */
+  fullyLoaded: boolean;
+  /** Number of .conversation-container elements found after scrolling */
+  elementCount: number;
+  /** Total scroll-poll iterations performed */
+  scrollIterations: number;
+  /** Whether scrolling was unnecessary (already at top or no container) */
+  skipped: boolean;
+}
+
 export class GeminiExtractor extends BaseExtractor {
   readonly platform = 'gemini' as const;
+
+  /** Whether auto-scroll is enabled (set from settings before extract()) */
+  enableAutoScroll = false;
 
   /**
    * Check if this extractor can handle the current page
@@ -222,6 +257,113 @@ export class GeminiExtractor extends BaseExtractor {
     }
 
     return 'Untitled Gemini Conversation';
+  }
+
+  /**
+   * Count .conversation-container elements currently in the DOM
+   */
+  private countConversationElements(): number {
+    return document.querySelectorAll(
+      SELECTORS.conversationTurn.join(',')
+    ).length;
+  }
+
+  /**
+   * Wait for a specified duration
+   */
+  private delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  /**
+   * Scroll to top of chat history to trigger lazy loading of all messages.
+   *
+   * Gemini's infinite-scroller fires `onScrolledTopPastThreshold` (edge-triggered)
+   * when scrollTop crosses **below** a threshold. To re-trigger on subsequent
+   * iterations, we must first scroll **above** the threshold (re-arm) by jumping
+   * to scrollHeight, then back to 0.
+   *
+   * Verified via getEventListeners() on live Gemini page (2026-02-21):
+   *   - scroll, onInitialScroll, onScrolledTopPastThreshold
+   */
+  private async ensureAllMessagesLoaded(): Promise<ScrollResult> {
+    const container = this.queryWithFallback<HTMLElement>(SELECTORS.scrollContainer);
+
+    if (!container) {
+      console.info('[G2O] No scroll container found, skipping auto-scroll');
+      return { fullyLoaded: true, elementCount: 0, scrollIterations: 0, skipped: true };
+    }
+
+    const initialCount = this.countConversationElements();
+
+    if (container.scrollTop === 0) {
+      console.info(
+        `[G2O] scrollTop=0, scrollHeight=${container.scrollHeight}, ` +
+        `clientHeight=${container.clientHeight}, elements=${initialCount}`
+      );
+      return { fullyLoaded: true, elementCount: initialCount, scrollIterations: 0, skipped: true };
+    }
+
+    console.info(
+      `[G2O] Partial load detected — scrollTop=${container.scrollTop}, ` +
+      `elements=${initialCount}, auto-scrolling`
+    );
+
+    let previousCount = 0;
+    let stableCount = 0;
+    let iterations = 0;
+    const startTime = Date.now();
+
+    while (Date.now() - startTime < SCROLL_TIMEOUT) {
+      // Re-arm: if already at top, scroll to bottom first so the next
+      // scroll-to-0 crosses the onScrolledTopPastThreshold edge trigger.
+      if (container.scrollTop === 0) {
+        container.scrollTop = container.scrollHeight;
+        await this.delay(SCROLL_REARM_DELAY);
+      }
+
+      // Scroll to top — crosses the threshold, triggering content loading
+      container.scrollTop = 0;
+      await this.delay(SCROLL_POLL_INTERVAL);
+
+      const currentCount = this.countConversationElements();
+      iterations++;
+
+      console.debug(
+        `[G2O] Scroll iteration ${iterations}: elements=${currentCount}, ` +
+        `scrollTop=${container.scrollTop}, scrollHeight=${container.scrollHeight}`
+      );
+
+      if (currentCount === previousCount) {
+        stableCount++;
+        if (stableCount >= SCROLL_STABILITY_THRESHOLD) {
+          console.info(
+            `[G2O] DOM stabilized after ${iterations} iterations with ${currentCount} elements`
+          );
+          return {
+            fullyLoaded: true,
+            elementCount: currentCount,
+            scrollIterations: iterations,
+            skipped: false,
+          };
+        }
+      } else {
+        console.debug(`[G2O] Element count changed: ${previousCount} -> ${currentCount}`);
+        stableCount = 0;
+        previousCount = currentCount;
+      }
+    }
+
+    const finalCount = this.countConversationElements();
+    console.warn(
+      `[G2O] Auto-scroll timed out after ${SCROLL_TIMEOUT}ms with ${finalCount} elements`
+    );
+    return {
+      fullyLoaded: false,
+      elementCount: finalCount,
+      scrollIterations: iterations,
+      skipped: false,
+    };
   }
 
   /**
@@ -455,11 +597,29 @@ export class GeminiExtractor extends BaseExtractor {
 
       // Normal conversation extraction
       console.info('[G2O] Extracting normal conversation');
+
+      const scrollResult = this.enableAutoScroll
+        ? await this.ensureAllMessagesLoaded()
+        : { fullyLoaded: true, elementCount: 0, scrollIterations: 0, skipped: true };
+
       const messages = this.extractMessages();
       const conversationId = this.getConversationId() || `gemini-${Date.now()}`;
       const title = this.getTitle();
+      const result = this.buildConversationResult(messages, conversationId, title, 'gemini');
 
-      return this.buildConversationResult(messages, conversationId, title, 'gemini');
+      // Append timeout warning
+      if (!scrollResult.fullyLoaded && !scrollResult.skipped) {
+        const warning =
+          `Auto-scroll timed out after ${SCROLL_TIMEOUT / 1000}s. ` +
+          `Some earlier messages may be missing (${scrollResult.elementCount} turns loaded).`;
+        if (result.warnings) {
+          result.warnings.push(warning);
+        } else {
+          result.warnings = [warning];
+        }
+      }
+
+      return result;
     } catch (error) {
       console.error('[G2O] Extraction error:', error);
       return {

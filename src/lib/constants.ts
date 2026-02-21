@@ -114,3 +114,19 @@ export const VALID_OUTPUT_DESTINATIONS = ['obsidian', 'file', 'clipboard'] as co
  * Valid AI platform sources
  */
 export const VALID_SOURCES = ['gemini', 'claude', 'perplexity', 'chatgpt'] as const;
+
+// ============================================================
+// Auto-Scroll Configuration (Gemini)
+// ============================================================
+
+/** Interval between scroll-to-top attempts (milliseconds) */
+export const SCROLL_POLL_INTERVAL = 1000;
+
+/** Maximum time to wait for all messages to load (milliseconds) */
+export const SCROLL_TIMEOUT = 30000;
+
+/** Number of consecutive unchanged element counts to consider loading complete */
+export const SCROLL_STABILITY_THRESHOLD = 3;
+
+/** Brief pause after re-arm scroll to bottom before scrolling back to top (milliseconds) */
+export const SCROLL_REARM_DELAY = 200;
