@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.1](https://github.com/sho7650/obsidian-AI-exporter/compare/v0.8.0...v0.8.1) (2026-02-21)
+
+
+### Bug Fixes
+
+* improve Gemini title extraction using document.title ([#47](https://github.com/sho7650/obsidian-AI-exporter/issues/47)) ([0e5e0e1](https://github.com/sho7650/obsidian-AI-exporter/commit/0e5e0e19283e08a04866eb7d9e6b6ffc0f5d4bea))
+* improve Gemini title extraction with top bar selector ([f878a6b](https://github.com/sho7650/obsidian-AI-exporter/commit/f878a6ba7955eeb64fa517bfb3eb2ccbc93b5907))
+* use top bar selector for Gemini title extraction ([#47](https://github.com/sho7650/obsidian-AI-exporter/issues/47)) ([8d3cf27](https://github.com/sho7650/obsidian-AI-exporter/commit/8d3cf2798ddc57376218b49e0db492d394121dc5))
+
 ## [0.8.0](https://github.com/sho7650/obsidian-AI-exporter/compare/v0.7.4...v0.8.0) (2026-02-21)
 
 
