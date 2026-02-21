@@ -10,6 +10,7 @@ import type {
   ConversationMetadata,
 } from '../../lib/types';
 import { generateHash } from '../../lib/hash';
+import { MAX_CONVERSATION_TITLE_LENGTH } from '../../lib/constants';
 
 // Re-export for backward compatibility (function moved to lib/error-utils.ts)
 export { extractErrorMessage } from '../../lib/error-utils';
@@ -135,6 +136,32 @@ export abstract class BaseExtractor implements IConversationExtractor {
       },
       warnings: warnings.length > 0 ? warnings : undefined,
     };
+  }
+
+  /**
+   * Known platform suffixes in document.title
+   * Matches: " - Claude", " | Gemini", " - Google Gemini", " - ChatGPT", etc.
+   */
+  private static readonly TITLE_SUFFIX_PATTERN =
+    /\s*[-|]\s*(?:Google\s+)?(?:Gemini|Claude|ChatGPT|Perplexity)\s*$/i;
+
+  /**
+   * Extract conversation title from document.title, stripping platform suffixes.
+   * Returns null if document.title is empty or contains only the platform name.
+   *
+   * Useful as a fallback for platforms where document.title reflects the
+   * conversation title (Claude, ChatGPT, Perplexity). Not suitable for Gemini
+   * where document.title is always "Google Gemini".
+   */
+  protected getPageTitle(): string | null {
+    const raw = document.title?.replace(BaseExtractor.TITLE_SUFFIX_PATTERN, '').trim();
+    if (!raw) return null;
+    // Skip if the remaining text is just the platform name
+    const lower = raw.toLowerCase();
+    if (['gemini', 'google gemini', 'claude', 'chatgpt', 'perplexity'].includes(lower)) {
+      return null;
+    }
+    return raw.substring(0, MAX_CONVERSATION_TITLE_LENGTH);
   }
 
   /**

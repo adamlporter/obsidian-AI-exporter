@@ -115,6 +115,48 @@ describe('GeminiExtractor', () => {
       `);
       expect(extractor.getTitle()).toBe('Multiple spaces');
     });
+
+    it('extracts title from data-test-id="conversation-title" element', () => {
+      setGeminiLocation('test123');
+      loadFixture(`
+        <span data-test-id="conversation-title" class="gds-title-m">Top Bar Title</span>
+      `);
+      expect(extractor.getTitle()).toBe('Top Bar Title');
+    });
+
+    it('data-test-id="conversation-title" takes priority over query text', () => {
+      setGeminiLocation('test123');
+      loadFixture(`
+        <span data-test-id="conversation-title" class="gds-title-m">Top Bar Title</span>
+        <p class="query-text-line">Query text</p>
+      `);
+      expect(extractor.getTitle()).toBe('Top Bar Title');
+    });
+
+    it('falls back to query text when conversation-title is empty', () => {
+      setGeminiLocation('test123');
+      loadFixture(`
+        <span data-test-id="conversation-title" class="gds-title-m">   </span>
+        <p class="query-text-line">Query text fallback</p>
+      `);
+      expect(extractor.getTitle()).toBe('Query text fallback');
+    });
+
+    it('falls back to query text when no conversation-title element', () => {
+      setGeminiLocation('test123');
+      loadFixture(`
+        <p class="query-text-line">Query text fallback</p>
+      `);
+      expect(extractor.getTitle()).toBe('Query text fallback');
+    });
+
+    it('sanitizes whitespace in top bar title', () => {
+      setGeminiLocation('test123');
+      loadFixture(`
+        <span data-test-id="conversation-title" class="gds-title-m">  Spaced   Title  </span>
+      `);
+      expect(extractor.getTitle()).toBe('Spaced Title');
+    });
   });
 
   describe('extractMessages', () => {

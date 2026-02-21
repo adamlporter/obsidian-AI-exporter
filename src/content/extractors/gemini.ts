@@ -45,8 +45,9 @@ const SELECTORS = {
     'message-content .markdown',
   ],
 
-  // Conversation title (sidebar)
+  // Conversation title (top bar + sidebar)
   conversationTitle: [
+    '[data-test-id="conversation-title"]',
     '.conversation-title.gds-title-m',
     '.conversation-title',
     '[class*="conversation-title"]',
@@ -234,23 +235,23 @@ export class GeminiExtractor extends BaseExtractor {
   }
 
   /**
-   * Get conversation title from first user query or sidebar
+   * Get conversation title from top bar, first user query, or sidebar
    */
   getTitle(): string {
-    // Try to get from first user query (first line of first query)
+    // Priority 1: Top bar title ([data-test-id="conversation-title"] or sidebar)
+    const topBarTitle = this.queryWithFallback<HTMLElement>(SELECTORS.conversationTitle);
+    if (topBarTitle?.textContent) {
+      const title = this.sanitizeText(topBarTitle.textContent);
+      if (title) {
+        return title.substring(0, MAX_CONVERSATION_TITLE_LENGTH);
+      }
+    }
+
+    // Priority 2: First user query text
     const firstQueryText = this.queryWithFallback<HTMLElement>(SELECTORS.queryTextLine);
     if (firstQueryText?.textContent) {
       const title = this.sanitizeText(firstQueryText.textContent);
       return title.substring(0, MAX_CONVERSATION_TITLE_LENGTH);
-    }
-
-    // Fallback to sidebar title if available
-    const sidebarTitle = this.queryWithFallback<HTMLElement>(SELECTORS.conversationTitle);
-    if (sidebarTitle?.textContent) {
-      return this.sanitizeText(sidebarTitle.textContent).substring(
-        0,
-        MAX_CONVERSATION_TITLE_LENGTH
-      );
     }
 
     return 'Untitled Gemini Conversation';

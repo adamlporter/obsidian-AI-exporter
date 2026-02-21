@@ -52,6 +52,10 @@ class TestExtractor extends BaseExtractor {
   public testGenerateHashValue(content: string): string {
     return this.generateHashValue(content);
   }
+
+  public testGetPageTitle(): string | null {
+    return this.getPageTitle();
+  }
 }
 
 describe('BaseExtractor', () => {
@@ -326,6 +330,55 @@ describe('BaseExtractor', () => {
       expect(Array.from(results).every((el) => el.classList.contains('first'))).toBe(
         true
       );
+    });
+  });
+
+  describe('getPageTitle', () => {
+    it('strips " - Claude" suffix', () => {
+      document.title = 'Test Topic - Claude';
+      expect(extractor.testGetPageTitle()).toBe('Test Topic');
+    });
+
+    it('strips " - ChatGPT" suffix', () => {
+      document.title = 'Test Topic - ChatGPT';
+      expect(extractor.testGetPageTitle()).toBe('Test Topic');
+    });
+
+    it('strips " - Perplexity" suffix', () => {
+      document.title = 'Test Topic - Perplexity';
+      expect(extractor.testGetPageTitle()).toBe('Test Topic');
+    });
+
+    it('strips " - Google Gemini" suffix', () => {
+      document.title = 'Test Topic - Google Gemini';
+      expect(extractor.testGetPageTitle()).toBe('Test Topic');
+    });
+
+    it('strips " | Gemini" suffix', () => {
+      document.title = 'Test Topic | Gemini';
+      expect(extractor.testGetPageTitle()).toBe('Test Topic');
+    });
+
+    it('returns raw title when no known suffix', () => {
+      document.title = 'Some Conversation Title';
+      expect(extractor.testGetPageTitle()).toBe('Some Conversation Title');
+    });
+
+    it('returns null when title is only a platform name', () => {
+      for (const name of ['Gemini', 'Google Gemini', 'Claude', 'ChatGPT', 'Perplexity']) {
+        document.title = name;
+        expect(extractor.testGetPageTitle()).toBeNull();
+      }
+    });
+
+    it('returns null for empty title', () => {
+      document.title = '';
+      expect(extractor.testGetPageTitle()).toBeNull();
+    });
+
+    it('truncates to MAX_CONVERSATION_TITLE_LENGTH', () => {
+      document.title = 'a'.repeat(200);
+      expect(extractor.testGetPageTitle()!.length).toBe(100);
     });
   });
 
