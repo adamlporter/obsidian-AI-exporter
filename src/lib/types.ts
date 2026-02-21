@@ -161,6 +161,8 @@ export interface SyncSettings {
   vaultPath: string;
   templateOptions: TemplateOptions;
   outputOptions: OutputOptions;
+  /** Enable auto-scroll to load all messages in long conversations (e.g. Gemini) */
+  enableAutoScroll: boolean;
 }
 
 /**

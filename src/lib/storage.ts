@@ -42,6 +42,7 @@ const DEFAULT_SYNC_SETTINGS: SyncSettings = {
   vaultPath: 'AI/Gemini',
   templateOptions: DEFAULT_TEMPLATE_OPTIONS,
   outputOptions: DEFAULT_OUTPUT_OPTIONS,
+  enableAutoScroll: false,
 };
 
 const DEFAULT_SETTINGS: ExtensionSettings = {
@@ -75,6 +76,8 @@ export async function getSettings(): Promise<ExtensionSettings> {
         ...DEFAULT_OUTPUT_OPTIONS,
         ...syncResult.settings?.outputOptions,
       },
+      enableAutoScroll:
+        syncResult.settings?.enableAutoScroll ?? DEFAULT_SYNC_SETTINGS.enableAutoScroll,
     };
   } catch (error) {
     console.error('[G2O] Failed to get settings:', error);
@@ -118,6 +121,9 @@ export async function saveSettings(settings: Partial<ExtensionSettings>): Promis
         ...current.outputOptions,
         ...settings.outputOptions,
       };
+    }
+    if (settings.enableAutoScroll !== undefined) {
+      syncData.enableAutoScroll = settings.enableAutoScroll;
     }
 
     if (Object.keys(syncData).length > 0) {

@@ -375,6 +375,63 @@ export function createEmptyDeepResearchPanel(): string {
 }
 
 
+// ========== Gemini Scroll Helpers ==========
+
+/**
+ * Wrap conversation HTML in Gemini's scroll container structure
+ *
+ * Matches live Gemini DOM: infinite-scroller has data-test-id="chat-history-container"
+ * and is the actual scrollable element (overflow-y: scroll).
+ * #chat-history is a non-scrolling wrapper.
+ */
+export function createGeminiScrollableDOM(conversationHTML: string): string {
+  return `
+    <div id="chat-history" class="chat-history-scroll-container">
+      <infinite-scroller class="chat-history" data-test-id="chat-history-container">
+        ${conversationHTML}
+      </infinite-scroller>
+    </div>
+  `;
+}
+
+/**
+ * Mock scroll properties on infinite-scroller for jsdom tests
+ * Must be called AFTER loadFixture()
+ *
+ * infinite-scroller is the actual scrollable element in Gemini's DOM.
+ * It fires onScrolledTopPastThreshold (edge-triggered) when scrollTop
+ * crosses below a threshold. The auto-scroll code re-arms by scrolling
+ * to scrollHeight before scrolling back to 0.
+ *
+ * @param scrollTop - Initial scrollTop value (> 0 simulates partial load)
+ * @param onScrollToTop - Callback fired when scrollTop is set to 0
+ *                        (simulates onScrolledTopPastThreshold → content load)
+ */
+export function mockScrollContainer(
+  scrollTop: number,
+  onScrollToTop?: () => void
+): void {
+  const container = document.querySelector('infinite-scroller');
+  if (!container) return;
+
+  let currentScrollTop = scrollTop;
+
+  Object.defineProperty(container, 'scrollTop', {
+    get: () => currentScrollTop,
+    set: (value: number) => {
+      currentScrollTop = value;
+      if (value === 0 && onScrollToTop) onScrollToTop();
+    },
+    configurable: true,
+  });
+
+  // Mock scrollHeight for re-arm logic (jsdom has no layout engine)
+  Object.defineProperty(container, 'scrollHeight', {
+    get: () => 10000,
+    configurable: true,
+  });
+}
+
 // ========== Claude DOM Helpers ==========
 
 /**

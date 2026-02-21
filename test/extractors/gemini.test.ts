@@ -1,12 +1,20 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { GeminiExtractor } from '../../src/content/extractors/gemini';
 import { buildSourceMap } from '../../src/lib/source-map';
+import {
+  SCROLL_POLL_INTERVAL,
+  SCROLL_TIMEOUT,
+  SCROLL_STABILITY_THRESHOLD,
+  SCROLL_REARM_DELAY,
+} from '../../src/lib/constants';
 import {
   loadFixture,
   clearFixture,
   setGeminiLocation,
   setNonGeminiLocation,
   createGeminiConversationDOM,
+  createGeminiScrollableDOM,
+  mockScrollContainer,
   setGeminiTitle,
   resetLocation,
   createDeepResearchDOM,
@@ -798,6 +806,281 @@ describe('GeminiExtractor', () => {
 
       expect(messages).toHaveLength(2);
       expect(messages[0].content).toContain('Final fallback text');
+    });
+  });
+
+  // ========== Auto-Scroll Tests (DES-002) ==========
+  describe('ensureAllMessagesLoaded (auto-scroll)', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+      extractor.enableAutoScroll = true;
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    /**
+     * Helper to create conversation turn HTML for injection during scroll
+     */
+    function createTurnHTML(userText: string, assistantText: string, index: number): string {
+      return `
+        <div class="conversation-container" data-turn-index="${index}">
+          <user-query>
+            <div class="query-content">
+              <p class="query-text-line">${userText}</p>
+            </div>
+          </user-query>
+          <model-response>
+            <div class="response-content">
+              <div class="markdown markdown-main-panel"><p>${assistantText}</p></div>
+            </div>
+          </model-response>
+        </div>
+      `;
+    }
+
+    it('skips scroll when enableAutoScroll is false (default)', async () => {
+      extractor.enableAutoScroll = false;
+      setGeminiLocation('test123');
+      const conversationHTML = createGeminiConversationDOM([
+        { role: 'user', content: 'Hello' },
+        { role: 'assistant', content: '<p>Hi</p>' },
+      ]);
+      loadFixture(createGeminiScrollableDOM(conversationHTML));
+      // scrollTop > 0 would normally trigger auto-scroll
+      mockScrollContainer(500);
+
+      const result = await extractor.extract();
+
+      expect(result.success).toBe(true);
+      expect(result.data?.messages.length).toBe(2);
+      // No timeout warning — scroll was not attempted
+      expect(result.warnings).toBeUndefined();
+    });
+
+    it('skips scroll when scrollTop === 0 (short conversation)', async () => {
+      setGeminiLocation('test123');
+      const conversationHTML = createGeminiConversationDOM([
+        { role: 'user', content: 'Hello' },
+        { role: 'assistant', content: '<p>Hi</p>' },
+      ]);
+      loadFixture(createGeminiScrollableDOM(conversationHTML));
+      mockScrollContainer(0);
+
+      const extractPromise = extractor.extract();
+      // No timer advancement needed — scrollTop is 0, so no delay occurs
+      const result = await extractPromise;
+
+      expect(result.success).toBe(true);
+      expect(result.data?.messages.length).toBe(2);
+      // No timeout warning
+      expect(result.warnings).toBeUndefined();
+    });
+
+    it('skips scroll when no scroll container exists', async () => {
+      setGeminiLocation('test123');
+      // DOM without #chat-history — just bare conversation containers
+      const html = createGeminiConversationDOM([
+        { role: 'user', content: 'Hello' },
+        { role: 'assistant', content: '<p>Hi</p>' },
+      ]);
+      loadFixture(html);
+
+      const extractPromise = extractor.extract();
+      const result = await extractPromise;
+
+      expect(result.success).toBe(true);
+      expect(result.data?.messages.length).toBe(2);
+      expect(result.warnings).toBeUndefined();
+    });
+
+    it('stabilizes after loading all messages', async () => {
+      setGeminiLocation('test123');
+      // Start with 2 turns in scroll container
+      const initialHTML = createGeminiConversationDOM([
+        { role: 'user', content: 'Q1' },
+        { role: 'assistant', content: '<p>A1</p>' },
+        { role: 'user', content: 'Q2' },
+        { role: 'assistant', content: '<p>A2</p>' },
+      ]);
+      loadFixture(createGeminiScrollableDOM(initialHTML));
+      mockScrollContainer(1000, () => {
+        // Add 1 more turn on first 2 scrollTo calls, then stop
+        const scroller = document.querySelector('infinite-scroller');
+        if (!scroller) return;
+        const currentTurns = scroller.querySelectorAll('.conversation-container').length;
+        if (currentTurns < 4) {
+          scroller.insertAdjacentHTML(
+            'afterbegin',
+            createTurnHTML(`Q${currentTurns + 1}`, `A${currentTurns + 1}`, currentTurns)
+          );
+        }
+      });
+
+      const extractPromise = extractor.extract();
+
+      // Iteration 1: scrollTop=1000>0, no re-arm. scrollTop=0 → adds turn. (SCROLL_POLL_INTERVAL)
+      // Iteration 2: scrollTop=0, re-arm to scrollHeight. scrollTop=0 → adds turn. (REARM + POLL)
+      // Iteration 3: re-arm, scrollTop=0, no add. stable (1/3). (REARM + POLL)
+      // Iteration 4: stable (2/3)
+      // Iteration 5: stable (3/3) → done
+      const firstIteration = SCROLL_POLL_INTERVAL;
+      const rearmIteration = SCROLL_REARM_DELAY + SCROLL_POLL_INTERVAL;
+      await vi.advanceTimersByTimeAsync(firstIteration + rearmIteration * 8);
+
+      const result = await extractPromise;
+
+      expect(result.success).toBe(true);
+      expect(result.data).toBeDefined();
+      // All turns should be in result
+      expect(result.data!.messages.length).toBeGreaterThanOrEqual(4);
+      // No timeout warning
+      const timeoutWarning = result.warnings?.find(w => w.includes('Auto-scroll timed out'));
+      expect(timeoutWarning).toBeUndefined();
+    });
+
+    it('times out and adds warning when elements keep growing', async () => {
+      setGeminiLocation('test123');
+      const initialHTML = createGeminiConversationDOM([
+        { role: 'user', content: 'Q1' },
+        { role: 'assistant', content: '<p>A1</p>' },
+      ]);
+      loadFixture(createGeminiScrollableDOM(initialHTML));
+
+      let turnCounter = 1;
+      mockScrollContainer(1000, () => {
+        // Add a new turn every scroll call — never stabilizes
+        const scroller = document.querySelector('infinite-scroller');
+        if (!scroller) return;
+        turnCounter++;
+        scroller.insertAdjacentHTML(
+          'afterbegin',
+          createTurnHTML(`Q${turnCounter}`, `A${turnCounter}`, turnCounter)
+        );
+      });
+
+      const extractPromise = extractor.extract();
+
+      // Advance past the full timeout (with re-arm delay per iteration)
+      const perIteration = SCROLL_REARM_DELAY + SCROLL_POLL_INTERVAL;
+      await vi.advanceTimersByTimeAsync(SCROLL_TIMEOUT + perIteration * 2);
+
+      const result = await extractPromise;
+
+      expect(result.success).toBe(true);
+      expect(result.warnings).toBeDefined();
+      const timeoutWarning = result.warnings!.find(w => w.includes('Auto-scroll timed out'));
+      expect(timeoutWarning).toBeDefined();
+      expect(timeoutWarning).toContain(`${SCROLL_TIMEOUT / 1000}s`);
+      expect(timeoutWarning).toContain('turns loaded');
+    });
+
+    it('does not scroll when Deep Research panel is visible', async () => {
+      setGeminiLocation('test123');
+      // Deep Research panel + scroll container with scrollTop > 0
+      const deepResearchHTML = createDeepResearchDOM('Report', '<p>Content</p>');
+      const conversationHTML = createGeminiConversationDOM([
+        { role: 'user', content: 'Q1' },
+        { role: 'assistant', content: '<p>A1</p>' },
+      ]);
+      loadFixture(
+        createGeminiScrollableDOM(conversationHTML) + deepResearchHTML
+      );
+      mockScrollContainer(500);
+
+      const result = await extractor.extract();
+
+      expect(result.success).toBe(true);
+      expect(result.data?.type).toBe('deep-research');
+      // No scroll-related warnings
+      const timeoutWarning = result.warnings?.find(w => w.includes('Auto-scroll'));
+      expect(timeoutWarning).toBeUndefined();
+    });
+
+    it('extracts all messages after scroll loads additional turns (integration)', async () => {
+      setGeminiLocation('test123');
+      setGeminiTitle('Integration Test');
+      // Start with 2 turns
+      const initialHTML = createGeminiConversationDOM([
+        { role: 'user', content: 'Initial Q1' },
+        { role: 'assistant', content: '<p>Initial A1</p>' },
+        { role: 'user', content: 'Initial Q2' },
+        { role: 'assistant', content: '<p>Initial A2</p>' },
+      ]);
+      loadFixture(createGeminiScrollableDOM(initialHTML));
+
+      let addedTurns = 0;
+      mockScrollContainer(500, () => {
+        // Add 3 more turns total (1 per scroll call)
+        if (addedTurns < 3) {
+          const scroller = document.querySelector('infinite-scroller');
+          if (!scroller) return;
+          addedTurns++;
+          scroller.insertAdjacentHTML(
+            'afterbegin',
+            createTurnHTML(`Loaded Q${addedTurns}`, `Loaded A${addedTurns}`, 10 + addedTurns)
+          );
+        }
+      });
+
+      const extractPromise = extractor.extract();
+
+      // First iteration: no re-arm (scrollTop=500>0). Subsequent: re-arm to scrollHeight.
+      const firstIteration = SCROLL_POLL_INTERVAL;
+      const rearmIteration = SCROLL_REARM_DELAY + SCROLL_POLL_INTERVAL;
+      await vi.advanceTimersByTimeAsync(
+        firstIteration + rearmIteration * (3 + SCROLL_STABILITY_THRESHOLD + 2)
+      );
+
+      const result = await extractPromise;
+
+      expect(result.success).toBe(true);
+      // 2 initial turns + 3 loaded turns = 5 turns = 10 messages
+      expect(result.data!.messages.length).toBe(10);
+    });
+
+    it('merges timeout warning with existing warnings', async () => {
+      setGeminiLocation('test123');
+      // Create DOM where only assistant messages exist (triggers "No user messages found" warning)
+      const scrollableHTML = createGeminiScrollableDOM(`
+        <div class="conversation-container">
+          <model-response>
+            <div class="markdown markdown-main-panel"><p>Assistant only</p></div>
+          </model-response>
+        </div>
+      `);
+      loadFixture(scrollableHTML);
+
+      let turnCounter = 1;
+      mockScrollContainer(1000, () => {
+        // Keep adding assistant-only turns (never stabilizes)
+        const scroller = document.querySelector('infinite-scroller');
+        if (!scroller) return;
+        turnCounter++;
+        scroller.insertAdjacentHTML(
+          'afterbegin',
+          `<div class="conversation-container">
+            <model-response>
+              <div class="markdown markdown-main-panel"><p>More</p></div>
+            </model-response>
+          </div>`
+        );
+      });
+
+      const extractPromise = extractor.extract();
+
+      const perIteration = SCROLL_REARM_DELAY + SCROLL_POLL_INTERVAL;
+      await vi.advanceTimersByTimeAsync(SCROLL_TIMEOUT + perIteration * 2);
+
+      const result = await extractPromise;
+
+      expect(result.success).toBe(true);
+      expect(result.warnings).toBeDefined();
+      // Should have at least 2 warnings: "No user messages found" + timeout
+      expect(result.warnings!.length).toBeGreaterThanOrEqual(2);
+      expect(result.warnings!.some(w => w.includes('No user messages found'))).toBe(true);
+      expect(result.warnings!.some(w => w.includes('Auto-scroll timed out'))).toBe(true);
     });
   });
 });
