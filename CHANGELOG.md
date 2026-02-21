@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0](https://github.com/sho7650/obsidian-AI-exporter/compare/v0.7.4...v0.8.0) (2026-02-21)
+
+
+### Features
+
+* add auto-scroll for Gemini long conversations with settings toggle ([4d28e2d](https://github.com/sho7650/obsidian-AI-exporter/commit/4d28e2da5858c7324d201efd7788ce4c1c2109eb))
+* add auto-scroll for Gemini long conversations with settings toggle ([a587fd8](https://github.com/sho7650/obsidian-AI-exporter/commit/a587fd8a602a56cbadde3bfb2b785cf4529b920f))
+
+
+### Styles
+
+* fix prettier formatting in gemini extractor ([24c4793](https://github.com/sho7650/obsidian-AI-exporter/commit/24c4793c37e7d2739bff12bcaffbcc2bb7d08e4a))
+
 ## [0.7.4](https://github.com/sho7650/obsidian-AI-exporter/compare/v0.7.3...v0.7.4) (2026-02-20)
 
 
