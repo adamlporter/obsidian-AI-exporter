@@ -12,9 +12,6 @@ import type {
 import { generateHash } from '../../lib/hash';
 import { MAX_CONVERSATION_TITLE_LENGTH } from '../../lib/constants';
 
-// Re-export for backward compatibility (function moved to lib/error-utils.ts)
-export { extractErrorMessage } from '../../lib/error-utils';
-
 /**
  * Abstract base class for conversation extractors
  * Provides common functionality for all AI platform extractors
