@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.3](https://github.com/sho7650/obsidian-AI-exporter/compare/v0.10.2...v0.10.3) (2026-02-22)
+
+
+### Code Refactoring
+
+* replace innerHTML with safe DOM API and optimize hot-path patterns ([aa76785](https://github.com/sho7650/obsidian-AI-exporter/commit/aa7678535a382ec270df0dafd79fcef1cf53caa9))
+* replace innerHTML with safe DOM API and optimize hot-path patterns ([5586dd4](https://github.com/sho7650/obsidian-AI-exporter/commit/5586dd4abd7318eee5c859ac96f09e416f20d24a))
+
 ## [0.10.2](https://github.com/sho7650/obsidian-AI-exporter/compare/v0.10.1...v0.10.2) (2026-02-21)
 
 
