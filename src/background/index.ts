@@ -278,6 +278,7 @@ async function handleGetFile(
 
     return { success: true, content };
   } catch (error) {
+    console.error('[G2O Background] Get file failed:', error);
     return { success: false, error: getErrorMessage(error) };
   }
 }

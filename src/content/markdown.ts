@@ -19,6 +19,14 @@ import { MAX_FILENAME_BASE_LENGTH, FILENAME_ID_SUFFIX_LENGTH } from '../lib/cons
 // Deep Research Link Processing Functions (Obsidian Footnote Mode)
 // ============================================================
 
+/** Pre-compiled regex for source-footnote wrapped citations */
+const CITATION_PATTERN_WRAPPED =
+  /<source-footnote[^>]*>[\s\S]*?<sup[^>]*?data-turn-source-index="(\d+)"[^>]*?>[\s\S]*?<\/sup>[\s\S]*?<\/source-footnote>/gi;
+
+/** Pre-compiled regex for standalone sup citations (fallback) */
+const CITATION_PATTERN_STANDALONE =
+  /<sup[^>]*?data-turn-source-index="(\d+)"[^>]*?>[\s\S]*?<\/sup>/gi;
+
 /**
  * Sanitize URL to remove dangerous schemes
  */
@@ -55,36 +63,32 @@ export function convertInlineCitationsToFootnoteRefs(
   sourceMap: Map<number, DeepResearchSource>
 ): string {
   // Pattern 1: source-footnote wrapped
-  let result = html.replace(
-    /<source-footnote[^>]*>[\s\S]*?<sup[^>]*?data-turn-source-index="(\d+)"[^>]*?>[\s\S]*?<\/sup>[\s\S]*?<\/source-footnote>/gi,
-    (_match, indexStr) => {
-      const index = parseInt(indexStr, 10);
-      const source = sourceMap.get(index);
-      if (source) {
-        // Return placeholder span with content (Turndown filters empty elements)
-        // The custom Turndown rule will convert this to [^N]
-        return `<span data-footnote-ref="${index}">REF</span>`;
-      }
-      // Source not found: log warning and remove marker silently
-      console.warn(`[G2O] Citation reference ${index} not found in source map`);
-      return '';
+  CITATION_PATTERN_WRAPPED.lastIndex = 0;
+  let result = html.replace(CITATION_PATTERN_WRAPPED, (_match, indexStr) => {
+    const index = parseInt(indexStr, 10);
+    const source = sourceMap.get(index);
+    if (source) {
+      // Return placeholder span with content (Turndown filters empty elements)
+      // The custom Turndown rule will convert this to [^N]
+      return `<span data-footnote-ref="${index}">REF</span>`;
     }
-  );
+    // Source not found: log warning and remove marker silently
+    console.warn(`[G2O] Citation reference ${index} not found in source map`);
+    return '';
+  });
 
   // Pattern 2: standalone sup element (fallback)
-  result = result.replace(
-    /<sup[^>]*?data-turn-source-index="(\d+)"[^>]*?>[\s\S]*?<\/sup>/gi,
-    (_match, indexStr) => {
-      const index = parseInt(indexStr, 10);
-      const source = sourceMap.get(index);
-      if (source) {
-        return `<span data-footnote-ref="${index}">REF</span>`;
-      }
-      // Source not found: log warning and remove marker silently
-      console.warn(`[G2O] Citation reference ${index} not found in source map`);
-      return '';
+  CITATION_PATTERN_STANDALONE.lastIndex = 0;
+  result = result.replace(CITATION_PATTERN_STANDALONE, (_match, indexStr) => {
+    const index = parseInt(indexStr, 10);
+    const source = sourceMap.get(index);
+    if (source) {
+      return `<span data-footnote-ref="${index}">REF</span>`;
     }
-  );
+    // Source not found: log warning and remove marker silently
+    console.warn(`[G2O] Citation reference ${index} not found in source map`);
+    return '';
+  });
 
   return result;
 }

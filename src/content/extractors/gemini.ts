@@ -108,6 +108,7 @@ const DEEP_RESEARCH_LINK_SELECTORS = {
  * Avoids repeated .join(',') calls inside loops
  */
 const COMPUTED_SELECTORS = {
+  conversationTurn: SELECTORS.conversationTurn.join(','),
   sourceListItem: DEEP_RESEARCH_LINK_SELECTORS.sourceListItem.join(','),
   sourceTitle: DEEP_RESEARCH_LINK_SELECTORS.sourceTitle.join(','),
   sourceDomain: DEEP_RESEARCH_LINK_SELECTORS.sourceDomain.join(','),
@@ -261,7 +262,7 @@ export class GeminiExtractor extends BaseExtractor {
    * Count .conversation-container elements currently in the DOM
    */
   private countConversationElements(): number {
-    return document.querySelectorAll(SELECTORS.conversationTurn.join(',')).length;
+    return document.querySelectorAll(COMPUTED_SELECTORS.conversationTurn).length;
   }
 
   /**

@@ -169,10 +169,17 @@ export function injectSyncButton(onClick: () => void): HTMLButtonElement {
 
   const button = document.createElement('button');
   button.id = 'g2o-sync-button';
-  button.innerHTML = `
-    <span class="icon">📥</span>
-    <span class="text">${getMessage('ui_syncButton')}</span>
-  `;
+
+  const icon = document.createElement('span');
+  icon.className = 'icon';
+  icon.textContent = '📥';
+
+  const text = document.createElement('span');
+  text.className = 'text';
+  text.textContent = getMessage('ui_syncButton');
+
+  button.appendChild(icon);
+  button.appendChild(text);
 
   button.addEventListener('click', onClick);
   document.body.appendChild(button);
@@ -193,11 +200,20 @@ export function setButtonLoading(loading: boolean): void {
   const text = button.querySelector('.text');
 
   if (loading) {
-    if (icon) icon.outerHTML = '<div class="spinner"></div>';
+    if (icon) {
+      const spinner = document.createElement('div');
+      spinner.className = 'spinner';
+      icon.replaceWith(spinner);
+    }
     if (text) text.textContent = getMessage('ui_syncing');
   } else {
     const spinner = button.querySelector('.spinner');
-    if (spinner) spinner.outerHTML = '<span class="icon">📥</span>';
+    if (spinner) {
+      const newIcon = document.createElement('span');
+      newIcon.className = 'icon';
+      newIcon.textContent = '📥';
+      spinner.replaceWith(newIcon);
+    }
     if (text) text.textContent = getMessage('ui_syncButton');
   }
 }
@@ -226,14 +242,24 @@ export function showToast(
 
   const toast = document.createElement('div');
   toast.className = `g2o-toast ${type}`;
-  toast.innerHTML = `
-    <span class="icon">${TOAST_ICONS[type]}</span>
-    <span class="message">${escapeHtml(message)}</span>
-    <button class="close" aria-label="Close">&times;</button>
-  `;
 
-  const closeBtn = toast.querySelector('.close');
-  closeBtn?.addEventListener('click', () => toast.remove());
+  const toastIcon = document.createElement('span');
+  toastIcon.className = 'icon';
+  toastIcon.textContent = TOAST_ICONS[type];
+
+  const toastMessage = document.createElement('span');
+  toastMessage.className = 'message';
+  toastMessage.textContent = message;
+
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'close';
+  closeBtn.setAttribute('aria-label', 'Close');
+  closeBtn.textContent = '\u00d7';
+  closeBtn.addEventListener('click', () => toast.remove());
+
+  toast.appendChild(toastIcon);
+  toast.appendChild(toastMessage);
+  toast.appendChild(closeBtn);
 
   document.body.appendChild(toast);
 
@@ -244,15 +270,6 @@ export function showToast(
       setTimeout(() => toast.remove(), 300);
     }, duration);
   }
-}
-
-/**
- * Escape HTML to prevent XSS
- */
-function escapeHtml(text: string): string {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
 }
 
 /**
