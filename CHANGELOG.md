@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.4](https://github.com/sho7650/obsidian-AI-exporter/compare/v0.10.3...v0.10.4) (2026-02-23)
+
+
+### Bug Fixes
+
+* use MAX_DEEP_RESEARCH_TITLE_LENGTH in Claude getDeepResearchTitle ([3ee6002](https://github.com/sho7650/obsidian-AI-exporter/commit/3ee600297a09d3d68f73b41dd8a9cfa0f3965385))
+
+
+### Code Refactoring
+
+* add template method extract() with hooks to BaseExtractor ([b61bb97](https://github.com/sho7650/obsidian-AI-exporter/commit/b61bb97e89d3f080b1f139777d26fbe766b63971))
+* deduplicate citation callback and API key guard ([4071894](https://github.com/sho7650/obsidian-AI-exporter/commit/407189467ddc0c0a9abb3f1bc71d02ed43f984ae))
+* extract AIPlatform type alias ([e8b5e6f](https://github.com/sho7650/obsidian-AI-exporter/commit/e8b5e6fc9d8ba50577bfeed4b84d47e3bab9f34e))
+* reduce extractor code complexity and redundancy ([dedc58e](https://github.com/sho7650/obsidian-AI-exporter/commit/dedc58e770ca48c498c12d28023a78765368f424))
+* simplify extractor subclasses using template method ([3ee6002](https://github.com/sho7650/obsidian-AI-exporter/commit/3ee600297a09d3d68f73b41dd8a9cfa0f3965385))
+
+
+### Tests
+
+* add template method and utility tests to BaseExtractor ([01ce497](https://github.com/sho7650/obsidian-AI-exporter/commit/01ce4970fb2e6de1bd4eaedca7134b10df55018f))
+
 ## [0.10.3](https://github.com/sho7650/obsidian-AI-exporter/compare/v0.10.2...v0.10.3) (2026-02-22)
 
 
