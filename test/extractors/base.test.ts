@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { BaseExtractor } from '../../src/content/extractors/base';
 import type {
   ExtractionResult,
@@ -10,8 +10,11 @@ import type {
 class TestExtractor extends BaseExtractor {
   readonly platform = 'gemini' as const;
 
+  // Allow tests to control canExtract behavior
+  canExtractValue = true;
+
   canExtract(): boolean {
-    return true;
+    return this.canExtractValue;
   }
 
   getConversationId(): string | null {
@@ -24,10 +27,6 @@ class TestExtractor extends BaseExtractor {
 
   extractMessages(): ConversationMessage[] {
     return [];
-  }
-
-  async extract(): Promise<ExtractionResult> {
-    return { success: true, data: undefined as unknown as ConversationData };
   }
 
   // Expose protected methods for testing
@@ -55,6 +54,24 @@ class TestExtractor extends BaseExtractor {
 
   public testGetPageTitle(): string | null {
     return this.getPageTitle();
+  }
+
+  public testSortByDomPosition(
+    elements: Array<{ element: Element; type: 'user' | 'assistant' }>
+  ): void {
+    this.sortByDomPosition(elements);
+  }
+
+  public testBuildMessagesFromElements(
+    elements: Array<{ element: Element; type: 'user' | 'assistant' }>,
+    extractUser: (el: Element) => string,
+    extractAssistant: (el: Element) => string
+  ): ConversationMessage[] {
+    return this.buildMessagesFromElements(elements, extractUser, extractAssistant);
+  }
+
+  public get testPlatformLabel(): string {
+    return this.platformLabel;
   }
 }
 
@@ -397,6 +414,174 @@ describe('BaseExtractor', () => {
     it('returns 8-character hex string', () => {
       const hash = extractor.testGenerateHashValue('any content');
       expect(hash).toMatch(/^[0-9a-f]{8}$/);
+    });
+  });
+
+  describe('platformLabel', () => {
+    it('returns correct label for gemini', () => {
+      expect(extractor.testPlatformLabel).toBe('Gemini');
+    });
+  });
+
+  describe('extract (template method)', () => {
+    it('returns error when canExtract is false', async () => {
+      extractor.canExtractValue = false;
+      const result = await extractor.extract();
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Not on a Gemini page');
+    });
+
+    it('returns no-messages error when extractMessages returns empty', async () => {
+      const result = await extractor.extract();
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('No messages found');
+    });
+
+    it('catches exceptions and returns error result', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      extractor.extractMessages = () => {
+        throw new Error('DOM crashed');
+      };
+
+      const result = await extractor.extract();
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('DOM crashed');
+
+      consoleSpy.mockRestore();
+    });
+
+    it('calls hooks in correct order', async () => {
+      const callOrder: string[] = [];
+
+      // Make extractMessages return data so we reach all hooks
+      extractor.extractMessages = () => [
+        { id: 'user-0', role: 'user', content: 'Hello', index: 0 },
+        { id: 'assistant-0', role: 'assistant', content: 'Hi', index: 1 },
+      ];
+
+      // Spy on the template method hook points via prototype
+      const origBeforeExtract = extractor['onBeforeExtract'].bind(extractor);
+      extractor['onBeforeExtract'] = async () => {
+        callOrder.push('onBeforeExtract');
+        return origBeforeExtract();
+      };
+
+      const origAfterExtract = extractor['onAfterExtract'].bind(extractor);
+      extractor['onAfterExtract'] = (result: ExtractionResult) => {
+        callOrder.push('onAfterExtract');
+        return origAfterExtract(result);
+      };
+
+      const result = await extractor.extract();
+      expect(result.success).toBe(true);
+      expect(callOrder).toEqual(['onBeforeExtract', 'onAfterExtract']);
+    });
+  });
+
+  describe('sortByDomPosition', () => {
+    it('sorts elements into DOM order', () => {
+      document.body.innerHTML = `
+        <div class="first">First</div>
+        <div class="second">Second</div>
+        <div class="third">Third</div>
+      `;
+      const first = document.querySelector('.first')!;
+      const second = document.querySelector('.second')!;
+      const third = document.querySelector('.third')!;
+
+      // Deliberately out of order
+      const elements: Array<{ element: Element; type: 'user' | 'assistant' }> = [
+        { element: third, type: 'assistant' },
+        { element: first, type: 'user' },
+        { element: second, type: 'assistant' },
+      ];
+
+      extractor.testSortByDomPosition(elements);
+
+      expect(elements[0].element).toBe(first);
+      expect(elements[1].element).toBe(second);
+      expect(elements[2].element).toBe(third);
+    });
+  });
+
+  describe('buildMessagesFromElements', () => {
+    it('builds messages from elements with correct roles and content', () => {
+      document.body.innerHTML = `
+        <div class="user">Hello</div>
+        <div class="assistant"><p>Hi there</p></div>
+      `;
+      const userEl = document.querySelector('.user')!;
+      const assistantEl = document.querySelector('.assistant')!;
+
+      const elements: Array<{ element: Element; type: 'user' | 'assistant' }> = [
+        { element: userEl, type: 'user' },
+        { element: assistantEl, type: 'assistant' },
+      ];
+
+      const messages = extractor.testBuildMessagesFromElements(
+        elements,
+        (el) => el.textContent || '',
+        (el) => el.innerHTML
+      );
+
+      expect(messages).toHaveLength(2);
+      expect(messages[0].role).toBe('user');
+      expect(messages[0].content).toBe('Hello');
+      expect(messages[0].htmlContent).toBeUndefined();
+      expect(messages[1].role).toBe('assistant');
+      expect(messages[1].content).toBe('<p>Hi there</p>');
+      expect(messages[1].htmlContent).toBe('<p>Hi there</p>');
+    });
+
+    it('skips elements with empty content', () => {
+      document.body.innerHTML = `
+        <div class="user"></div>
+        <div class="assistant"><p>Response</p></div>
+      `;
+      const userEl = document.querySelector('.user')!;
+      const assistantEl = document.querySelector('.assistant')!;
+
+      const elements: Array<{ element: Element; type: 'user' | 'assistant' }> = [
+        { element: userEl, type: 'user' },
+        { element: assistantEl, type: 'assistant' },
+      ];
+
+      const messages = extractor.testBuildMessagesFromElements(
+        elements,
+        () => '',
+        (el) => el.innerHTML
+      );
+
+      expect(messages).toHaveLength(1);
+      expect(messages[0].role).toBe('assistant');
+      expect(messages[0].index).toBe(0);
+    });
+
+    it('assigns correct sequential index to messages', () => {
+      document.body.innerHTML = `
+        <div class="a">A</div>
+        <div class="b">B</div>
+        <div class="c">C</div>
+      `;
+
+      const elements: Array<{ element: Element; type: 'user' | 'assistant' }> = [
+        { element: document.querySelector('.a')!, type: 'user' },
+        { element: document.querySelector('.b')!, type: 'assistant' },
+        { element: document.querySelector('.c')!, type: 'user' },
+      ];
+
+      const messages = extractor.testBuildMessagesFromElements(
+        elements,
+        (el) => el.textContent || '',
+        (el) => el.textContent || ''
+      );
+
+      expect(messages[0].index).toBe(0);
+      expect(messages[1].index).toBe(1);
+      expect(messages[2].index).toBe(2);
+      expect(messages[0].id).toBe('user-0');
+      expect(messages[1].id).toBe('assistant-1');
+      expect(messages[2].id).toBe('user-2');
     });
   });
 });

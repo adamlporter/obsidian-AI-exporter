@@ -481,7 +481,7 @@ describe('background/index', () => {
       await vi.waitFor(() => expect(sendResponse).toHaveBeenCalled());
       expect(sendResponse).toHaveBeenCalledWith({
         success: false,
-        error: 'API key not configured. Please check settings.',
+        error: 'API key not configured',
       });
     });
   });
