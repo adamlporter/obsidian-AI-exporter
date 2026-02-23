@@ -8,9 +8,8 @@
  */
 
 import { BaseExtractor } from './base';
-import { extractErrorMessage } from '../../lib/error-utils';
 import { sanitizeHtml } from '../../lib/sanitize';
-import type { ConversationMessage, ExtractionResult } from '../../lib/types';
+import type { ConversationMessage } from '../../lib/types';
 import { MAX_CONVERSATION_TITLE_LENGTH } from '../../lib/constants';
 
 /**
@@ -224,37 +223,5 @@ export class ChatGPTExtractor extends BaseExtractor {
     return html
       .replace(/href="([^"]+)\?utm_source=chatgpt\.com"/g, (_, url) => `href="${url}"`)
       .replace(/href="([^"]+)&utm_source=chatgpt\.com"/g, (_, url) => `href="${url}"`);
-  }
-
-  // ========== Main Entry Point ==========
-
-  /**
-   * Main extraction method
-   *
-   * Extracts normal conversation
-   * (Deep Research is treated as normal conversation)
-   */
-  async extract(): Promise<ExtractionResult> {
-    try {
-      if (!this.canExtract()) {
-        return {
-          success: false,
-          error: 'Not on a ChatGPT page',
-        };
-      }
-
-      console.info('[G2O] Extracting ChatGPT conversation');
-      const messages = this.extractMessages();
-      const conversationId = this.getConversationId() || `chatgpt-${Date.now()}`;
-      const title = this.getTitle();
-
-      return this.buildConversationResult(messages, conversationId, title, 'chatgpt');
-    } catch (error) {
-      console.error('[G2O] ChatGPT extraction error:', error);
-      return {
-        success: false,
-        error: extractErrorMessage(error),
-      };
-    }
   }
 }

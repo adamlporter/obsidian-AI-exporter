@@ -8,7 +8,6 @@
  */
 
 import { BaseExtractor } from './base';
-import { extractErrorMessage } from '../../lib/error-utils';
 import { sanitizeHtml } from '../../lib/sanitize';
 import type {
   ConversationMessage,
@@ -16,7 +15,7 @@ import type {
   DeepResearchLinks,
   ExtractionResult,
 } from '../../lib/types';
-import { MAX_CONVERSATION_TITLE_LENGTH } from '../../lib/constants';
+import { MAX_CONVERSATION_TITLE_LENGTH, MAX_DEEP_RESEARCH_TITLE_LENGTH } from '../../lib/constants';
 
 /**
  * CSS Selectors for normal chat extraction
@@ -188,9 +187,20 @@ export class ClaudeExtractor extends BaseExtractor {
   getDeepResearchTitle(): string {
     const titleEl = this.queryWithFallback<HTMLElement>(DEEP_RESEARCH_SELECTORS.title);
     if (titleEl?.textContent) {
-      return this.sanitizeText(titleEl.textContent).substring(0, MAX_CONVERSATION_TITLE_LENGTH);
+      return this.sanitizeText(titleEl.textContent).substring(0, MAX_DEEP_RESEARCH_TITLE_LENGTH);
     }
     return 'Untitled Deep Research Report';
+  }
+
+  // ========== Deep Research Hook ==========
+
+  /**
+   * Intercept for Deep Research mode before normal extraction
+   */
+  protected tryExtractDeepResearch(): ExtractionResult | null {
+    if (!this.isDeepResearchVisible()) return null;
+    console.info('[G2O] Claude Deep Research panel detected, extracting report');
+    return this.buildDeepResearchResult();
   }
 
   // ========== Message Extraction ==========
@@ -202,15 +212,12 @@ export class ClaudeExtractor extends BaseExtractor {
    * @see FR-002 in design document
    */
   extractMessages(): ConversationMessage[] {
-    const messages: ConversationMessage[] = [];
-
     // Collect all message elements
     const allElements: Array<{ element: Element; type: 'user' | 'assistant' }> = [];
 
-    // Find user messages
+    // Find user messages (skip nested content inside assistant responses)
     const userMessages = this.queryAllWithFallback<HTMLElement>(SELECTORS.userMessage);
     userMessages.forEach(el => {
-      // Skip if this element is inside an assistant response (nested content)
       const assistantParent = el.closest('.font-claude-response, [class*="font-claude-response"]');
       if (!assistantParent) {
         allElements.push({ element: el, type: 'user' });
@@ -223,33 +230,13 @@ export class ClaudeExtractor extends BaseExtractor {
       allElements.push({ element: el, type: 'assistant' });
     });
 
-    // Sort by DOM position
-    allElements.sort((a, b) => {
-      const position = a.element.compareDocumentPosition(b.element);
-      if (position & Node.DOCUMENT_POSITION_FOLLOWING) return -1;
-      if (position & Node.DOCUMENT_POSITION_PRECEDING) return 1;
-      return 0;
-    });
+    this.sortByDomPosition(allElements);
 
-    // Extract content from each element
-    allElements.forEach((item, index) => {
-      const content =
-        item.type === 'user'
-          ? this.extractUserContent(item.element)
-          : this.extractAssistantContent(item.element);
-
-      if (content) {
-        messages.push({
-          id: `${item.type}-${index}`,
-          role: item.type,
-          content,
-          htmlContent: item.type === 'assistant' ? content : undefined,
-          index: messages.length,
-        });
-      }
-    });
-
-    return messages;
+    return this.buildMessagesFromElements(
+      allElements,
+      el => this.extractUserContent(el),
+      el => this.extractAssistantContent(el)
+    );
   }
 
   /**
@@ -368,92 +355,5 @@ export class ClaudeExtractor extends BaseExtractor {
   extractDeepResearchLinks(): DeepResearchLinks {
     const sources = this.extractSourceList();
     return { sources };
-  }
-
-  /**
-   * Extract Deep Research report
-   */
-  extractDeepResearch(): ExtractionResult {
-    const title = this.getDeepResearchTitle();
-    const content = this.extractDeepResearchContent();
-
-    if (!content) {
-      return {
-        success: false,
-        error: 'Deep Research content not found',
-        warnings: ['Panel is visible but content element is empty or missing'],
-      };
-    }
-
-    // Generate ID from title for consistent overwrites
-    const titleHash = this.generateHashValue(title);
-    const conversationId = `deep-research-${titleHash}`;
-
-    // Extract link information
-    const links = this.extractDeepResearchLinks();
-
-    const messages = [
-      {
-        id: 'report-0',
-        role: 'assistant' as const,
-        content,
-        htmlContent: content,
-        index: 0,
-      },
-    ];
-
-    return {
-      success: true,
-      data: {
-        id: conversationId,
-        title,
-        url: window.location.href,
-        source: 'claude',
-        type: 'deep-research',
-        links,
-        messages,
-        extractedAt: new Date(),
-        metadata: this.buildMetadata(messages),
-      },
-    };
-  }
-
-  // ========== Main Entry Point ==========
-
-  /**
-   * Main extraction method
-   *
-   * Routes to Deep Research or normal chat extraction
-   * based on page state
-   */
-  async extract(): Promise<ExtractionResult> {
-    try {
-      if (!this.canExtract()) {
-        return {
-          success: false,
-          error: 'Not on a Claude page',
-        };
-      }
-
-      // Route: Deep Research panel visible -> extract report
-      if (this.isDeepResearchVisible()) {
-        console.info('[G2O] Claude Deep Research panel detected, extracting report');
-        return this.extractDeepResearch();
-      }
-
-      // Normal conversation extraction
-      console.info('[G2O] Extracting Claude conversation');
-      const messages = this.extractMessages();
-      const conversationId = this.getConversationId() || `claude-${Date.now()}`;
-      const title = this.getTitle();
-
-      return this.buildConversationResult(messages, conversationId, title, 'claude');
-    } catch (error) {
-      console.error('[G2O] Claude extraction error:', error);
-      return {
-        success: false,
-        error: extractErrorMessage(error),
-      };
-    }
   }
 }
