@@ -3,6 +3,11 @@
  */
 
 /**
+ * Supported AI platform identifiers
+ */
+export type AIPlatform = 'gemini' | 'claude' | 'perplexity' | 'chatgpt';
+
+/**
  * Represents a single message in a conversation
  */
 export interface ConversationMessage {
@@ -27,7 +32,7 @@ export interface ConversationData {
   id: string;
   title: string;
   url: string;
-  source: 'gemini' | 'claude' | 'perplexity' | 'chatgpt';
+  source: AIPlatform;
   type?: 'conversation' | 'deep-research';
   /** Deep Research link information (optional) */
   links?: DeepResearchLinks;
@@ -245,7 +250,7 @@ export interface ValidationResult {
  * Interface for AI platform extractors
  */
 export interface IConversationExtractor {
-  readonly platform: 'gemini' | 'claude' | 'perplexity' | 'chatgpt';
+  readonly platform: AIPlatform;
   canExtract(): boolean;
   extract(): Promise<ExtractionResult>;
   getConversationId(): string | null;

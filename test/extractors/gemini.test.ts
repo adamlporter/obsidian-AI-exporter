@@ -351,7 +351,7 @@ describe('GeminiExtractor', () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toBe('DOM parsing failed');
-      expect(consoleSpy).toHaveBeenCalledWith('[G2O] Extraction error:', expect.any(Error));
+      expect(consoleSpy).toHaveBeenCalledWith('[G2O] Gemini extraction error:', expect.any(Error));
 
       consoleSpy.mockRestore();
     });
@@ -424,12 +424,12 @@ describe('GeminiExtractor', () => {
       });
     });
 
-    describe('extractDeepResearch', () => {
-      it('returns successful result with report data', () => {
+    describe('extractDeepResearch (via extract)', () => {
+      it('returns successful result with report data', async () => {
         setGeminiLocation('test123');
         loadFixture(createDeepResearchDOM('Test Report', '<h1>Title</h1><p>Content</p>'));
 
-        const result = extractor.extractDeepResearch();
+        const result = await extractor.extract();
 
         expect(result.success).toBe(true);
         expect(result.data?.type).toBe('deep-research');
@@ -439,24 +439,24 @@ describe('GeminiExtractor', () => {
         expect(result.data?.messages[0].role).toBe('assistant');
       });
 
-      it('returns error when content is empty', () => {
+      it('returns error when content is empty', async () => {
         setGeminiLocation('test123');
         loadFixture(createEmptyDeepResearchPanel());
 
-        const result = extractor.extractDeepResearch();
+        const result = await extractor.extract();
 
         expect(result.success).toBe(false);
         expect(result.error).toContain('content not found');
       });
 
-      it('generates consistent ID from title for overwrite', () => {
+      it('generates consistent ID from title for overwrite', async () => {
         setGeminiLocation('test123');
         loadFixture(createDeepResearchDOM('Same Title', '<p>Content 1</p>'));
-        const result1 = extractor.extractDeepResearch();
+        const result1 = await extractor.extract();
 
         clearFixture();
         loadFixture(createDeepResearchDOM('Same Title', '<p>Content 2</p>'));
-        const result2 = extractor.extractDeepResearch();
+        const result2 = await extractor.extract();
 
         expect(result1.data?.id).toBe(result2.data?.id);
       });
@@ -571,24 +571,24 @@ describe('GeminiExtractor', () => {
         });
       });
 
-      describe('extractDeepResearch with links', () => {
-        it('includes links in extraction result', () => {
+      describe('extractDeepResearch with links (via extract)', () => {
+        it('includes links in extraction result', async () => {
           setGeminiLocation('test123');
           const content = `<p>Content${createInlineCitation(0)}</p>`;
           loadFixture(createDeepResearchDOMWithLinks('Test Report', content, sampleSources));
 
-          const result = extractor.extractDeepResearch();
+          const result = await extractor.extract();
 
           expect(result.success).toBe(true);
           expect(result.data?.links).toBeDefined();
           expect(result.data?.links?.sources).toHaveLength(3);
         });
 
-        it('handles missing links gracefully', () => {
+        it('handles missing links gracefully', async () => {
           setGeminiLocation('test123');
           loadFixture(createDeepResearchDOM('Test', '<p>No links</p>'));
 
-          const result = extractor.extractDeepResearch();
+          const result = await extractor.extract();
 
           expect(result.success).toBe(true);
           expect(result.data?.links).toBeDefined();

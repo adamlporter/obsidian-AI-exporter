@@ -8,9 +8,8 @@
  */
 
 import { BaseExtractor } from './base';
-import { extractErrorMessage } from '../../lib/error-utils';
 import { sanitizeHtml } from '../../lib/sanitize';
-import type { ConversationMessage, ExtractionResult } from '../../lib/types';
+import type { ConversationMessage } from '../../lib/types';
 import { MAX_CONVERSATION_TITLE_LENGTH } from '../../lib/constants';
 
 /**
@@ -177,37 +176,5 @@ export class PerplexityExtractor extends BaseExtractor {
     }
 
     return '';
-  }
-
-  // ========== Main Entry Point ==========
-
-  /**
-   * Main extraction method
-   *
-   * Extracts normal conversation
-   * (Deep Research is treated as normal conversation)
-   */
-  async extract(): Promise<ExtractionResult> {
-    try {
-      if (!this.canExtract()) {
-        return {
-          success: false,
-          error: 'Not on a Perplexity page',
-        };
-      }
-
-      console.info('[G2O] Extracting Perplexity conversation');
-      const messages = this.extractMessages();
-      const conversationId = this.getConversationId() || `perplexity-${Date.now()}`;
-      const title = this.getTitle();
-
-      return this.buildConversationResult(messages, conversationId, title, 'perplexity');
-    } catch (error) {
-      console.error('[G2O] Perplexity extraction error:', error);
-      return {
-        success: false,
-        error: extractErrorMessage(error),
-      };
-    }
   }
 }

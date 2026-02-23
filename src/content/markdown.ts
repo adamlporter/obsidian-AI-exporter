@@ -44,6 +44,27 @@ export function sanitizeUrl(url: string): string {
 }
 
 /**
+ * Create a citation replacer callback for use with String.replace()
+ * Shared logic for both wrapped and standalone citation patterns.
+ */
+function createCitationReplacer(
+  sourceMap: Map<number, DeepResearchSource>
+): (_match: string, indexStr: string) => string {
+  return (_match: string, indexStr: string): string => {
+    const index = parseInt(indexStr, 10);
+    const source = sourceMap.get(index);
+    if (source) {
+      // Return placeholder span with content (Turndown filters empty elements)
+      // The custom Turndown rule will convert this to [^N]
+      return `<span data-footnote-ref="${index}">REF</span>`;
+    }
+    // Source not found: log warning and remove marker silently
+    console.warn(`[G2O] Citation reference ${index} not found in source map`);
+    return '';
+  };
+}
+
+/**
  * Convert inline citations to footnote reference placeholders
  *
  * Before: <source-footnote><sup data-turn-source-index="N">...</sup></source-footnote>
@@ -62,33 +83,15 @@ export function convertInlineCitationsToFootnoteRefs(
   html: string,
   sourceMap: Map<number, DeepResearchSource>
 ): string {
+  const replacer = createCitationReplacer(sourceMap);
+
   // Pattern 1: source-footnote wrapped
   CITATION_PATTERN_WRAPPED.lastIndex = 0;
-  let result = html.replace(CITATION_PATTERN_WRAPPED, (_match, indexStr) => {
-    const index = parseInt(indexStr, 10);
-    const source = sourceMap.get(index);
-    if (source) {
-      // Return placeholder span with content (Turndown filters empty elements)
-      // The custom Turndown rule will convert this to [^N]
-      return `<span data-footnote-ref="${index}">REF</span>`;
-    }
-    // Source not found: log warning and remove marker silently
-    console.warn(`[G2O] Citation reference ${index} not found in source map`);
-    return '';
-  });
+  let result = html.replace(CITATION_PATTERN_WRAPPED, replacer);
 
   // Pattern 2: standalone sup element (fallback)
   CITATION_PATTERN_STANDALONE.lastIndex = 0;
-  result = result.replace(CITATION_PATTERN_STANDALONE, (_match, indexStr) => {
-    const index = parseInt(indexStr, 10);
-    const source = sourceMap.get(index);
-    if (source) {
-      return `<span data-footnote-ref="${index}">REF</span>`;
-    }
-    // Source not found: log warning and remove marker silently
-    console.warn(`[G2O] Citation reference ${index} not found in source map`);
-    return '';
-  });
+  result = result.replace(CITATION_PATTERN_STANDALONE, replacer);
 
   return result;
 }

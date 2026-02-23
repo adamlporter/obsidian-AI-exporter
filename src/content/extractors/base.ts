@@ -3,12 +3,15 @@
  */
 
 import type {
+  AIPlatform,
   IConversationExtractor,
   ExtractionResult,
   ValidationResult,
   ConversationMessage,
   ConversationMetadata,
+  DeepResearchLinks,
 } from '../../lib/types';
+import { extractErrorMessage } from '../../lib/error-utils';
 import { generateHash } from '../../lib/hash';
 import { MAX_CONVERSATION_TITLE_LENGTH } from '../../lib/constants';
 
@@ -17,13 +20,222 @@ import { MAX_CONVERSATION_TITLE_LENGTH } from '../../lib/constants';
  * Provides common functionality for all AI platform extractors
  */
 export abstract class BaseExtractor implements IConversationExtractor {
-  abstract readonly platform: 'gemini' | 'claude' | 'perplexity' | 'chatgpt';
+  abstract readonly platform: AIPlatform;
 
   abstract canExtract(): boolean;
-  abstract extract(): Promise<ExtractionResult>;
   abstract getConversationId(): string | null;
   abstract getTitle(): string;
   abstract extractMessages(): ConversationMessage[];
+
+  // ========== Platform Label ==========
+
+  /** Platform display labels for log/error messages */
+  private static readonly PLATFORM_LABELS: Record<string, string> = {
+    gemini: 'Gemini',
+    claude: 'Claude',
+    chatgpt: 'ChatGPT',
+    perplexity: 'Perplexity',
+  };
+
+  /**
+   * Human-readable platform name for log and error messages
+   */
+  protected get platformLabel(): string {
+    return BaseExtractor.PLATFORM_LABELS[this.platform] ?? this.platform;
+  }
+
+  // ========== Template Method ==========
+
+  /**
+   * Main extraction method (template method pattern)
+   *
+   * Subclasses customize behavior via hook methods:
+   * - tryExtractDeepResearch() — intercept for Deep Research mode
+   * - onBeforeExtract() — pre-extraction setup (e.g., auto-scroll)
+   * - onAfterExtract() — post-extraction mutation (e.g., append warnings)
+   */
+  async extract(): Promise<ExtractionResult> {
+    try {
+      if (!this.canExtract()) {
+        return {
+          success: false,
+          error: `Not on a ${this.platformLabel} page`,
+        };
+      }
+
+      // Hook: try deep research extraction first
+      const deepResearchResult = this.tryExtractDeepResearch();
+      if (deepResearchResult) {
+        return deepResearchResult;
+      }
+
+      // Hook: pre-extraction (e.g., auto-scroll)
+      await this.onBeforeExtract();
+
+      // Normal conversation extraction
+      console.info(`[G2O] Extracting ${this.platformLabel} conversation`);
+      const messages = this.extractMessages();
+      const conversationId = this.getConversationId() || `${this.platform}-${Date.now()}`;
+      const title = this.getTitle();
+      const result = this.buildConversationResult(messages, conversationId, title, this.platform);
+
+      // Hook: post-extraction (e.g., append warnings)
+      return this.onAfterExtract(result);
+    } catch (error) {
+      console.error(`[G2O] ${this.platformLabel} extraction error:`, error);
+      return {
+        success: false,
+        error: extractErrorMessage(error),
+      };
+    }
+  }
+
+  // ========== Template Method Hooks ==========
+
+  /**
+   * Hook: attempt Deep Research extraction before normal extraction.
+   * Override in subclasses that support Deep Research.
+   * @returns ExtractionResult if Deep Research detected, null otherwise
+   */
+  protected tryExtractDeepResearch(): ExtractionResult | null {
+    return null;
+  }
+
+  /**
+   * Hook: called before normal extraction starts.
+   * Override for pre-extraction setup (e.g., Gemini auto-scroll).
+   */
+  protected async onBeforeExtract(): Promise<void> {
+    // no-op by default
+  }
+
+  /**
+   * Hook: called after normal extraction completes.
+   * Override to mutate or augment the result (e.g., append warnings).
+   */
+  protected onAfterExtract(result: ExtractionResult): ExtractionResult {
+    return result;
+  }
+
+  // ========== Deep Research Builder ==========
+
+  /**
+   * Build a Deep Research extraction result.
+   * Shared logic for Claude and Gemini Deep Research modes.
+   * Subclasses override getDeepResearchTitle(), extractDeepResearchContent(),
+   * and extractDeepResearchLinks() for platform-specific DOM access.
+   */
+  protected buildDeepResearchResult(): ExtractionResult {
+    const title = this.getDeepResearchTitle();
+    const content = this.extractDeepResearchContent();
+
+    if (!content) {
+      return {
+        success: false,
+        error: 'Deep Research content not found',
+        warnings: ['Panel is visible but content element is empty or missing'],
+      };
+    }
+
+    const titleHash = this.generateHashValue(title);
+    const conversationId = `deep-research-${titleHash}`;
+    const links = this.extractDeepResearchLinks();
+
+    const messages = [
+      {
+        id: 'report-0',
+        role: 'assistant' as const,
+        content,
+        htmlContent: content,
+        index: 0,
+      },
+    ];
+
+    return {
+      success: true,
+      data: {
+        id: conversationId,
+        title,
+        url: window.location.href,
+        source: this.platform,
+        type: 'deep-research',
+        links,
+        messages,
+        extractedAt: new Date(),
+        metadata: this.buildMetadata(messages),
+      },
+    };
+  }
+
+  /**
+   * Get Deep Research report title.
+   * Override in subclasses with platform-specific selectors.
+   */
+  protected getDeepResearchTitle(): string {
+    return 'Untitled Deep Research Report';
+  }
+
+  /**
+   * Extract Deep Research report content HTML.
+   * Override in subclasses with platform-specific selectors.
+   */
+  protected extractDeepResearchContent(): string {
+    return '';
+  }
+
+  /**
+   * Extract Deep Research link information.
+   * Override in subclasses with platform-specific selectors.
+   */
+  protected extractDeepResearchLinks(): DeepResearchLinks {
+    return { sources: [] };
+  }
+
+  // ========== DOM Sort & Message Build Utilities ==========
+
+  /**
+   * Sort elements by DOM position (document order).
+   * Mutates the array in place.
+   */
+  protected sortByDomPosition(
+    elements: Array<{ element: Element; type: 'user' | 'assistant' }>
+  ): void {
+    elements.sort((a, b) => {
+      const position = a.element.compareDocumentPosition(b.element);
+      if (position & Node.DOCUMENT_POSITION_FOLLOWING) return -1;
+      if (position & Node.DOCUMENT_POSITION_PRECEDING) return 1;
+      return 0;
+    });
+  }
+
+  /**
+   * Build ConversationMessage[] from sorted element pairs.
+   * @param elements - Sorted array of element/type pairs
+   * @param extractUser - Function to extract user message text from element
+   * @param extractAssistant - Function to extract assistant HTML from element
+   */
+  protected buildMessagesFromElements(
+    elements: Array<{ element: Element; type: 'user' | 'assistant' }>,
+    extractUser: (el: Element) => string,
+    extractAssistant: (el: Element) => string
+  ): ConversationMessage[] {
+    const messages: ConversationMessage[] = [];
+    elements.forEach((item, index) => {
+      const content =
+        item.type === 'user' ? extractUser(item.element) : extractAssistant(item.element);
+
+      if (content) {
+        messages.push({
+          id: `${item.type}-${index}`,
+          role: item.type,
+          content,
+          htmlContent: item.type === 'assistant' ? content : undefined,
+          index: messages.length,
+        });
+      }
+    });
+    return messages;
+  }
 
   /**
    * Validate extraction result quality
@@ -100,7 +312,7 @@ export abstract class BaseExtractor implements IConversationExtractor {
     messages: ConversationMessage[],
     conversationId: string,
     title: string,
-    source: 'gemini' | 'claude' | 'perplexity' | 'chatgpt'
+    source: AIPlatform
   ): ExtractionResult {
     if (messages.length === 0) {
       return {

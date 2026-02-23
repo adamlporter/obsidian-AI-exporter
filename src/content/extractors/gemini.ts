@@ -4,7 +4,6 @@
  */
 
 import { BaseExtractor } from './base';
-import { extractErrorMessage } from '../../lib/error-utils';
 import { sanitizeHtml } from '../../lib/sanitize';
 import {
   MAX_DEEP_RESEARCH_TITLE_LENGTH,
@@ -43,6 +42,7 @@ const SELECTORS = {
     '.markdown.markdown-main-panel',
     '.markdown-main-panel',
     'message-content .markdown',
+    '.model-response-text',
   ],
 
   // Conversation title (top bar + sidebar)
@@ -135,6 +135,9 @@ export class GeminiExtractor extends BaseExtractor {
   /** Whether auto-scroll is enabled (set from settings before extract()) */
   enableAutoScroll = false;
 
+  /** Stores scroll result from onBeforeExtract for onAfterExtract */
+  private lastScrollResult: ScrollResult | null = null;
+
   /**
    * Check if this extractor can handle the current page
    */
@@ -148,6 +151,45 @@ export class GeminiExtractor extends BaseExtractor {
   isDeepResearchVisible(): boolean {
     const panel = this.queryWithFallback<HTMLElement>(DEEP_RESEARCH_SELECTORS.panel);
     return panel !== null;
+  }
+
+  // ========== Template Method Hooks ==========
+
+  /**
+   * Intercept for Deep Research mode before normal extraction
+   */
+  protected tryExtractDeepResearch(): ExtractionResult | null {
+    if (!this.isDeepResearchVisible()) return null;
+    console.info('[G2O] Deep Research panel detected, extracting report');
+    return this.buildDeepResearchResult();
+  }
+
+  /**
+   * Pre-extraction: run auto-scroll to load all messages
+   */
+  protected async onBeforeExtract(): Promise<void> {
+    this.lastScrollResult = this.enableAutoScroll
+      ? await this.ensureAllMessagesLoaded()
+      : { fullyLoaded: true, elementCount: 0, scrollIterations: 0, skipped: true };
+  }
+
+  /**
+   * Post-extraction: append scroll timeout warning if needed
+   */
+  protected onAfterExtract(result: ExtractionResult): ExtractionResult {
+    const sr = this.lastScrollResult;
+    if (sr && !sr.fullyLoaded && !sr.skipped) {
+      const warning =
+        `Auto-scroll timed out after ${SCROLL_TIMEOUT / 1000}s. ` +
+        `Some earlier messages may be missing (${sr.elementCount} turns loaded).`;
+      if (result.warnings) {
+        result.warnings.push(warning);
+      } else {
+        result.warnings = [warning];
+      }
+    }
+    this.lastScrollResult = null;
+    return result;
   }
 
   /**
@@ -419,8 +461,6 @@ export class GeminiExtractor extends BaseExtractor {
    * Extract messages from document root (fallback for non-standard layouts)
    */
   private extractMessagesFromRoot(): ConversationMessage[] {
-    const messages: ConversationMessage[] = [];
-
     const userQueries = this.queryAllWithFallback<HTMLElement>(SELECTORS.userQuery);
     const modelResponses = this.queryAllWithFallback<HTMLElement>(SELECTORS.modelResponse);
 
@@ -428,38 +468,17 @@ export class GeminiExtractor extends BaseExtractor {
       `[G2O] Fallback: Found ${userQueries.length} user queries, ${modelResponses.length} model responses`
     );
 
-    // Interleave based on DOM order
     const allElements: Array<{ element: Element; type: 'user' | 'assistant' }> = [];
     userQueries.forEach(el => allElements.push({ element: el, type: 'user' }));
     modelResponses.forEach(el => allElements.push({ element: el, type: 'assistant' }));
 
-    // Sort by DOM position
-    allElements.sort((a, b) => {
-      const position = a.element.compareDocumentPosition(b.element);
-      if (position & Node.DOCUMENT_POSITION_FOLLOWING) return -1;
-      if (position & Node.DOCUMENT_POSITION_PRECEDING) return 1;
-      return 0;
-    });
+    this.sortByDomPosition(allElements);
 
-    // Extract content
-    allElements.forEach((item, index) => {
-      const content =
-        item.type === 'user'
-          ? this.extractUserQueryContent(item.element)
-          : this.extractModelResponseContent(item.element);
-
-      if (content) {
-        messages.push({
-          id: `${item.type}-${index}`,
-          role: item.type,
-          content,
-          htmlContent: item.type === 'assistant' ? content : undefined,
-          index: messages.length,
-        });
-      }
-    });
-
-    return messages;
+    return this.buildMessagesFromElements(
+      allElements,
+      el => this.extractUserQueryContent(el),
+      el => this.extractModelResponseContent(el)
+    );
   }
 
   /**
@@ -498,131 +517,11 @@ export class GeminiExtractor extends BaseExtractor {
    * All HTML is sanitized via DOMPurify to prevent XSS (NEW-01)
    */
   private extractModelResponseContent(element: Element): string {
-    // Primary: .markdown.markdown-main-panel
-    const markdownEl = element.querySelector('.markdown.markdown-main-panel');
-    if (markdownEl) {
-      return sanitizeHtml(markdownEl.innerHTML);
+    const contentEl = this.queryWithFallback<HTMLElement>(SELECTORS.modelResponseContent, element);
+    if (contentEl) {
+      return sanitizeHtml(contentEl.innerHTML);
     }
-
-    // Fallback: .markdown-main-panel
-    const mainPanel = element.querySelector('.markdown-main-panel');
-    if (mainPanel) {
-      return sanitizeHtml(mainPanel.innerHTML);
-    }
-
-    // Fallback: message-content .markdown
-    const messageContent = element.querySelector('message-content .markdown');
-    if (messageContent) {
-      return sanitizeHtml(messageContent.innerHTML);
-    }
-
-    // Fallback: .model-response-text
-    const responseText = element.querySelector('.model-response-text');
-    if (responseText) {
-      return sanitizeHtml(responseText.innerHTML);
-    }
-
     // Final fallback: element's HTML
     return sanitizeHtml(element.innerHTML);
-  }
-
-  /**
-   * Extract Deep Research report
-   */
-  extractDeepResearch(): ExtractionResult {
-    const title = this.getDeepResearchTitle();
-    const content = this.extractDeepResearchContent();
-
-    if (!content) {
-      return {
-        success: false,
-        error: 'Deep Research content not found',
-        warnings: ['Panel is visible but content element is empty or missing'],
-      };
-    }
-
-    // Generate ID from title for consistent overwrites
-    const titleHash = this.generateHashValue(title);
-    const conversationId = `deep-research-${titleHash}`;
-
-    // Extract link information
-    const links = this.extractDeepResearchLinks();
-
-    const messages = [
-      {
-        id: 'report-0',
-        role: 'assistant' as const,
-        content,
-        htmlContent: content,
-        index: 0,
-      },
-    ];
-
-    return {
-      success: true,
-      data: {
-        id: conversationId,
-        title,
-        url: window.location.href,
-        source: 'gemini',
-        type: 'deep-research',
-        links,
-        messages,
-        extractedAt: new Date(),
-        metadata: this.buildMetadata(messages),
-      },
-    };
-  }
-
-  /**
-   * Main extraction method
-   */
-  async extract(): Promise<ExtractionResult> {
-    try {
-      if (!this.canExtract()) {
-        return {
-          success: false,
-          error: 'Not on a Gemini page',
-        };
-      }
-
-      // Routing: if Deep Research panel is visible, extract the report
-      if (this.isDeepResearchVisible()) {
-        console.info('[G2O] Deep Research panel detected, extracting report');
-        return this.extractDeepResearch();
-      }
-
-      // Normal conversation extraction
-      console.info('[G2O] Extracting normal conversation');
-
-      const scrollResult = this.enableAutoScroll
-        ? await this.ensureAllMessagesLoaded()
-        : { fullyLoaded: true, elementCount: 0, scrollIterations: 0, skipped: true };
-
-      const messages = this.extractMessages();
-      const conversationId = this.getConversationId() || `gemini-${Date.now()}`;
-      const title = this.getTitle();
-      const result = this.buildConversationResult(messages, conversationId, title, 'gemini');
-
-      // Append timeout warning
-      if (!scrollResult.fullyLoaded && !scrollResult.skipped) {
-        const warning =
-          `Auto-scroll timed out after ${SCROLL_TIMEOUT / 1000}s. ` +
-          `Some earlier messages may be missing (${scrollResult.elementCount} turns loaded).`;
-        if (result.warnings) {
-          result.warnings.push(warning);
-        } else {
-          result.warnings = [warning];
-        }
-      }
-
-      return result;
-    } catch (error) {
-      console.error('[G2O] Extraction error:', error);
-      return {
-        success: false,
-        error: extractErrorMessage(error),
-      };
-    }
   }
 }
