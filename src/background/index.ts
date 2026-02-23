@@ -215,14 +215,31 @@ async function handleMessage(message: ExtensionMessage): Promise<unknown> {
 }
 
 /**
+ * Create an ObsidianApiClient if API key is configured.
+ * Returns the client or an error object.
+ */
+function createObsidianClient(settings: ExtensionSettings): ObsidianApiClient | { error: string } {
+  if (!settings.obsidianApiKey) {
+    return { error: 'API key not configured' };
+  }
+  return new ObsidianApiClient(settings.obsidianPort, settings.obsidianApiKey);
+}
+
+/**
+ * Type guard for client creation error
+ */
+function isClientError(client: ObsidianApiClient | { error: string }): client is { error: string } {
+  return 'error' in client;
+}
+
+/**
  * Save note to Obsidian vault
  */
 async function handleSave(settings: ExtensionSettings, note: ObsidianNote): Promise<SaveResponse> {
-  if (!settings.obsidianApiKey) {
-    return { success: false, error: 'API key not configured. Please check settings.' };
+  const client = createObsidianClient(settings);
+  if (isClientError(client)) {
+    return { success: false, error: client.error };
   }
-
-  const client = new ObsidianApiClient(settings.obsidianPort, settings.obsidianApiKey);
 
   try {
     // Resolve template variables (e.g., {platform} → gemini) and construct full path
@@ -262,11 +279,10 @@ async function handleGetFile(
   fileName: string,
   vaultPath?: string
 ): Promise<{ success: boolean; content?: string; error?: string }> {
-  if (!settings.obsidianApiKey) {
-    return { success: false, error: 'API key not configured' };
+  const client = createObsidianClient(settings);
+  if (isClientError(client)) {
+    return { success: false, error: client.error };
   }
-
-  const client = new ObsidianApiClient(settings.obsidianPort, settings.obsidianApiKey);
 
   try {
     const path = vaultPath ? `${vaultPath}/${fileName}` : fileName;
@@ -289,11 +305,10 @@ async function handleGetFile(
 async function handleTestConnection(
   settings: ExtensionSettings
 ): Promise<{ success: boolean; error?: string }> {
-  if (!settings.obsidianApiKey) {
-    return { success: false, error: 'API key not configured' };
+  const client = createObsidianClient(settings);
+  if (isClientError(client)) {
+    return { success: false, error: client.error };
   }
-
-  const client = new ObsidianApiClient(settings.obsidianPort, settings.obsidianApiKey);
   const result = await client.testConnection();
 
   if (!result.reachable) {
