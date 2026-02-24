@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.8](https://github.com/sho7650/obsidian-AI-exporter/compare/v0.10.7...v0.10.8) (2026-02-24)
+
+
+### Bug Fixes
+
+* preserve Gemini KaTeX math blocks as LaTeX in Obsidian output ([8dfa467](https://github.com/sho7650/obsidian-AI-exporter/commit/8dfa4674697d995cd0bf5e0dd1ce19e715f4df8d))
+* preserve Gemini KaTeX math blocks as LaTeX in Obsidian output ([ac67045](https://github.com/sho7650/obsidian-AI-exporter/commit/ac67045e63c7afee45ae49572c5bceea92c2858a))
+
 ## [0.10.7](https://github.com/sho7650/obsidian-AI-exporter/compare/v0.10.6...v0.10.7) (2026-02-24)
 
 
