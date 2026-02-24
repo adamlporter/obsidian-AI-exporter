@@ -89,6 +89,18 @@ describe('sanitizeHtml', () => {
       expect(result).toContain('data-turn-source-index="1"');
     });
 
+    it('keeps data-math attribute on div (Gemini KaTeX math blocks)', () => {
+      expect(
+        sanitizeHtml('<div data-math="\\frac{a}{b}">KaTeX content</div>')
+      ).toBe('<div data-math="\\frac{a}{b}">KaTeX content</div>');
+    });
+
+    it('keeps data-math attribute on span (Gemini KaTeX inline math)', () => {
+      expect(
+        sanitizeHtml('<span data-math="x^2">KaTeX content</span>')
+      ).toBe('<span data-math="x^2">KaTeX content</span>');
+    });
+
     it('keeps id attributes (allowed by DOMPurify profile)', () => {
       // Note: USE_PROFILES: { html: true } allows id attribute by default
       // ALLOWED_ATTR adds to the profile, doesn't restrict it

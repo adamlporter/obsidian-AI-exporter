@@ -109,6 +109,52 @@ describe('htmlToMarkdown', () => {
     });
   });
 
+  describe('math rendering', () => {
+    it('converts display math div to $$ block', () => {
+      const html = '<div data-math="\\frac{a}{b}"><span class="katex">nested spans</span></div>';
+      const result = htmlToMarkdown(html);
+      expect(result).toBe('$$\n\\frac{a}{b}\n$$');
+    });
+
+    it('converts inline math span to $ delimiters', () => {
+      const html = '<span data-math="x^2"><span class="katex">nested</span></span>';
+      const result = htmlToMarkdown(html);
+      expect(result).toBe('$x^2$');
+    });
+
+    it('falls through when data-math attribute is absent', () => {
+      const html = '<div class="math-block">plain text</div>';
+      const result = htmlToMarkdown(html);
+      expect(result).toBe('plain text');
+    });
+
+    it('falls through when data-math is empty', () => {
+      const html = '<div data-math="">fallback content</div>';
+      const result = htmlToMarkdown(html);
+      expect(result).toContain('fallback content');
+    });
+
+    it('preserves LaTeX backslash commands', () => {
+      const html = '<div data-math="\\int_0^1 \\frac{dx}{x}">katex</div>';
+      const result = htmlToMarkdown(html);
+      expect(result).toContain('\\int_0^1 \\frac{dx}{x}');
+    });
+
+    it('handles inline math within a paragraph', () => {
+      const html = '<p>The value of <span data-math="x^2">x²</span> is important.</p>';
+      const result = htmlToMarkdown(html);
+      expect(result).toBe('The value of $x^2$ is important.');
+    });
+
+    it('handles display math between paragraphs', () => {
+      const html = '<p>Before</p><div data-math="E = mc^2">katex</div><p>After</p>';
+      const result = htmlToMarkdown(html);
+      expect(result).toContain('Before');
+      expect(result).toContain('$$\nE = mc^2\n$$');
+      expect(result).toContain('After');
+    });
+  });
+
   describe('edge cases', () => {
     it('handles empty input', () => {
       expect(htmlToMarkdown('')).toBe('');

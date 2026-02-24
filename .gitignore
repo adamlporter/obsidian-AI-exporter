@@ -4,6 +4,9 @@ data/
 .serena/
 .claude/settings.local.json
 
+# Claude Code session files
+tasks/
+
 # Dependencies
 node_modules/
 
