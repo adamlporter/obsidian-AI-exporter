@@ -626,4 +626,95 @@ describe('ChatGPTExtractor', () => {
       expect(messages[0].content).toContain('Fallback assistant content');
     });
   });
+
+  // ========== Coverage Gap: extractUserContent/extractAssistantContent edge cases ==========
+  describe('Content extraction edge cases', () => {
+    it('skips user turn when no .whitespace-pre-wrap element exists', () => {
+      // Covers: chatgpt.ts line 183 (return '')
+      setChatGPTLocation('test-123');
+      loadFixture(`
+        <article data-turn-id="turn-1" data-turn="user">
+          <div data-message-author-role="user">
+            <div class="some-other-class">No whitespace-pre-wrap here</div>
+          </div>
+        </article>
+        <article data-turn-id="turn-2" data-turn="assistant">
+          <div data-message-author-role="assistant">
+            <div class="markdown prose">Assistant response</div>
+          </div>
+        </article>
+      `);
+      const messages = extractor.extractMessages();
+      // User turn should be skipped (empty content), only assistant remains
+      expect(messages).toHaveLength(1);
+      expect(messages[0].role).toBe('assistant');
+    });
+
+    it('returns empty content when both markdownContent and assistantResponse selectors fail', () => {
+      // Covers: chatgpt.ts lines 203-210, 212 (assistantResponse fallback + return '')
+      setChatGPTLocation('test-123');
+      loadFixture(`
+        <article data-turn-id="turn-1" data-turn="user">
+          <div data-message-author-role="user">
+            <div class="whitespace-pre-wrap">Test question</div>
+          </div>
+        </article>
+        <article data-turn-id="turn-2" data-turn="assistant">
+          <div data-message-author-role="assistant">
+            <div class="no-markdown-class">No matching selectors</div>
+          </div>
+        </article>
+      `);
+
+      const spy = vi.spyOn(extractor, 'queryWithFallback');
+      const messages = extractor.extractMessages();
+
+      // Assistant turn should be skipped (empty content after both fallbacks fail)
+      expect(messages).toHaveLength(1);
+      expect(messages[0].role).toBe('user');
+
+      // Verify queryWithFallback was called for assistant extraction
+      const assistantCalls = spy.mock.calls.filter(
+        call => Array.isArray(call[0]) && call[0].some((s: string) => s.includes('.markdown'))
+      );
+      expect(assistantCalls.length).toBeGreaterThanOrEqual(1);
+      spy.mockRestore();
+    });
+
+    it('removes utm_source with ampersand variant from citation URLs', () => {
+      // Covers: chatgpt.ts line 225 (ampersand regex branch)
+      // Note: jsdom encodes & as &amp; in innerHTML, so we mock innerHTML
+      // to return a string with literal & to exercise the regex callback
+      setChatGPTLocation('test-123');
+      loadFixture(`
+        <article data-turn-id="turn-1" data-turn="user">
+          <div data-message-author-role="user">
+            <div class="whitespace-pre-wrap">Test</div>
+          </div>
+        </article>
+        <article data-turn-id="turn-2" data-turn="assistant">
+          <div data-message-author-role="assistant">
+            <div class="markdown prose">
+              <p>Link: <a href="https://example.com?foo=bar">Example</a></p>
+            </div>
+          </div>
+        </article>
+      `);
+
+      // Override innerHTML to bypass DOM &amp; encoding
+      const markdownEl = document.querySelector('.markdown.prose');
+      if (markdownEl) {
+        Object.defineProperty(markdownEl, 'innerHTML', {
+          get: () => '<p>Link: <a href="https://example.com?foo=bar&utm_source=chatgpt.com">Example</a></p>',
+          configurable: true,
+        });
+      }
+
+      const messages = extractor.extractMessages();
+      expect(messages).toHaveLength(2);
+      const assistantMsg = messages.find(m => m.role === 'assistant');
+      expect(assistantMsg?.content).not.toContain('utm_source');
+      expect(assistantMsg?.content).toContain('foo=bar');
+    });
+  });
 });
