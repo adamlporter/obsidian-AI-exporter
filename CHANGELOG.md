@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.6](https://github.com/sho7650/obsidian-AI-exporter/compare/v0.10.5...v0.10.6) (2026-02-24)
+
+
+### Tests
+
+* add edge case coverage for ChatGPT and Perplexity extractors ([f2c08df](https://github.com/sho7650/obsidian-AI-exporter/commit/f2c08dfffff19076e51c129a4a7f0e8d0317834d))
+
 ## [0.10.5](https://github.com/sho7650/obsidian-AI-exporter/compare/v0.10.4...v0.10.5) (2026-02-24)
 
 
