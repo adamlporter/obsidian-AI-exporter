@@ -234,6 +234,34 @@ turndown.addRule('footnoteRef', {
   },
 });
 
+// Custom rule for display math blocks (Gemini KaTeX: <div data-math="...">)
+turndown.addRule('mathBlock', {
+  filter: node => {
+    return node.nodeName === 'DIV' && (node as HTMLElement).hasAttribute('data-math');
+  },
+  replacement: (_content, node) => {
+    const latex = (node as HTMLElement).getAttribute('data-math');
+    if (!latex) return _content;
+    return `\n$$\n${latex}\n$$\n`;
+  },
+});
+
+// Custom rule for inline math (Gemini KaTeX: <span data-math="...">)
+turndown.addRule('mathInline', {
+  filter: node => {
+    return (
+      node.nodeName === 'SPAN' &&
+      (node as HTMLElement).hasAttribute('data-math') &&
+      !(node as HTMLElement).hasAttribute('data-footnote-ref')
+    );
+  },
+  replacement: (_content, node) => {
+    const latex = (node as HTMLElement).getAttribute('data-math');
+    if (!latex) return _content;
+    return `$${latex}$`;
+  },
+});
+
 // Custom rule for tables
 turndown.addRule('tables', {
   filter: 'table',

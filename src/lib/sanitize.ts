@@ -17,8 +17,9 @@ import DOMPurify from 'dompurify';
  *   use ADD_ATTR to extend the allow-list instead
  * - FORBID_TAGS adds <style> to the deny-list (CSS injection prevention)
  *
- * The uponSanitizeAttribute hook selectively allows data-turn-source-index
- * (used by Deep Research inline citations as a 1-based index into the source list)
+ * The uponSanitizeAttribute hook selectively allows:
+ * - data-turn-source-index (Deep Research inline citations, 1-based index into source list)
+ * - data-math (Gemini KaTeX math expressions, contains LaTeX source for $$/$$ rendering)
  * while blocking all other data-* attributes.
  *
  * Note: The hook is added/removed per call to avoid cross-contamination
@@ -26,7 +27,7 @@ import DOMPurify from 'dompurify';
  */
 export function sanitizeHtml(html: string): string {
   DOMPurify.addHook('uponSanitizeAttribute', (_node, data) => {
-    if (data.attrName === 'data-turn-source-index') {
+    if (data.attrName === 'data-turn-source-index' || data.attrName === 'data-math') {
       data.forceKeepAttr = true;
     } else if (data.attrName.startsWith('data-')) {
       data.keepAttr = false;
