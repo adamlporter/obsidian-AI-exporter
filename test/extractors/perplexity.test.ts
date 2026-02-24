@@ -351,4 +351,70 @@ describe('PerplexityExtractor', () => {
       expect(result.data?.messages[0].content).toContain('日本語');
     });
   });
+
+  // ========== Coverage Gap: extractUserContent/extractAssistantContent edge cases ==========
+  describe('Content extraction edge cases', () => {
+    it('skips user query when textContent is empty', () => {
+      // Covers: perplexity.ts line 157 (return '')
+      setPerplexityLocation('test-slug');
+      loadFixture(`
+        <div class="max-w-threadContentWidth">
+          <div class="group/query">
+            <div class="bg-offset rounded-2xl">
+              <span class="select-text"></span>
+            </div>
+          </div>
+          <div id="markdown-content-0" class="markdown-content">
+            <div class="prose dark:prose-invert">
+              <p>Assistant response</p>
+            </div>
+          </div>
+        </div>
+      `);
+      const messages = extractor.extractMessages();
+      // User message should be skipped (empty content), only assistant remains
+      expect(messages).toHaveLength(1);
+      expect(messages[0].role).toBe('assistant');
+    });
+
+    it('falls back to innerHTML when .prose child is absent', () => {
+      // Covers: perplexity.ts lines 174-175 (innerHTML fallback)
+      setPerplexityLocation('test-slug');
+      loadFixture(`
+        <div class="max-w-threadContentWidth">
+          <div class="group/query">
+            <div class="bg-offset rounded-2xl">
+              <span class="select-text">Test question</span>
+            </div>
+          </div>
+          <div id="markdown-content-0" class="markdown-content">
+            <p>Direct HTML without prose wrapper</p>
+          </div>
+        </div>
+      `);
+      const messages = extractor.extractMessages();
+      expect(messages).toHaveLength(2);
+      const assistantMsg = messages.find(m => m.role === 'assistant');
+      expect(assistantMsg?.content).toContain('Direct HTML without prose wrapper');
+    });
+
+    it('skips assistant message when container has no .prose and empty innerHTML', () => {
+      // Covers: perplexity.ts line 178 (return '')
+      setPerplexityLocation('test-slug');
+      loadFixture(`
+        <div class="max-w-threadContentWidth">
+          <div class="group/query">
+            <div class="bg-offset rounded-2xl">
+              <span class="select-text">Test question</span>
+            </div>
+          </div>
+          <div id="markdown-content-0" class="markdown-content"></div>
+        </div>
+      `);
+      const messages = extractor.extractMessages();
+      // Only user message should exist, assistant skipped due to empty content
+      expect(messages).toHaveLength(1);
+      expect(messages[0].role).toBe('user');
+    });
+  });
 });
