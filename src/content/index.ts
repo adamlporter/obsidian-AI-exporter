@@ -250,7 +250,14 @@ function displaySaveResults(
   fileName: string,
   extractionWarnings?: string[]
 ): void {
-  if (saveResult.allSuccessful) {
+  // Show append-specific messages when applicable
+  if (saveResult.allSuccessful && saveResult.messagesAppended !== undefined) {
+    if (saveResult.messagesAppended > 0) {
+      showToast(`${saveResult.messagesAppended} new message(s) appended`, 'success');
+    } else {
+      showToast('No new messages to append', 'info', INFO_TOAST_DURATION);
+    }
+  } else if (saveResult.allSuccessful) {
     showSuccessToast(fileName, true);
   } else if (saveResult.anySuccessful) {
     const successList = saveResult.results

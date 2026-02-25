@@ -8,6 +8,7 @@ import { ObsidianApiClient } from '../lib/obsidian-api';
 import { getErrorMessage } from '../lib/error-utils';
 import { generateNoteContent } from '../lib/note-generator';
 import { resolvePathTemplate } from '../lib/path-utils';
+import { lookupExistingFile, buildAppendContent } from '../lib/append-utils';
 import type { ExtensionSettings, ObsidianNote, SaveResponse } from '../lib/types';
 
 /**
@@ -34,6 +35,10 @@ export function isClientError(
 
 /**
  * Save note to Obsidian vault
+ *
+ * When append mode is enabled and the file already exists,
+ * only new messages are appended while preserving existing content.
+ * Falls back to full overwrite if append fails.
  */
 export async function handleSave(
   settings: ExtensionSettings,
@@ -51,7 +56,31 @@ export async function handleSave(
     });
     const fullPath = resolvedPath ? `${resolvedPath}/${note.fileName}` : note.fileName;
 
-    // Check if file exists for append mode detection
+    // === APPEND MODE BRANCH ===
+    if (settings.enableAppendMode && note.frontmatter.type !== 'deep-research') {
+      try {
+        const lookup = await lookupExistingFile(client, fullPath, resolvedPath, note);
+        if (lookup.found) {
+          const appendResult = buildAppendContent(lookup.content, note, settings);
+          if (appendResult !== null) {
+            await client.putFile(lookup.path, appendResult.content);
+            return {
+              success: true,
+              isNewFile: false,
+              messagesAppended: appendResult.messagesAppended,
+            };
+          }
+          // No new messages to append
+          return { success: true, isNewFile: false, messagesAppended: 0 };
+        }
+        // File not found → fall through to create new
+      } catch (error) {
+        console.warn('[G2O Background] Append mode failed, falling back to overwrite:', error);
+        // Fall through to overwrite
+      }
+    }
+
+    // === EXISTING OVERWRITE FLOW ===
     const existingContent = await client.getFile(fullPath);
     const isNewFile = existingContent === null;
 

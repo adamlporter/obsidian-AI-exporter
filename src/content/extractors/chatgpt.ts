@@ -87,11 +87,15 @@ export class ChatGPTExtractor extends BaseExtractor {
    * Get conversation title
    *
    * Priority:
-   * 1. First user message content (truncated to MAX_CONVERSATION_TITLE_LENGTH)
-   * 2. Default title
+   * 1. document.title (via getPageTitle())
+   * 2. First user message content (truncated to MAX_CONVERSATION_TITLE_LENGTH)
+   * 3. Default title
    */
   getTitle(): string {
-    return this.getFirstMessageTitle(SELECTORS.userMessage, 'Untitled ChatGPT Conversation');
+    return (
+      this.getPageTitle() ??
+      this.getFirstMessageTitle(SELECTORS.userMessage, 'Untitled ChatGPT Conversation')
+    );
   }
 
   // ========== Message Extraction ==========

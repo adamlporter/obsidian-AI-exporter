@@ -161,17 +161,20 @@ export class ClaudeExtractor extends BaseExtractor {
    * Get conversation title
    *
    * Priority:
-   * 1. First user message content (truncated)
-   * 2. Deep Research h1 title
-   * 3. Default title
+   * 1. Deep Research h1 title (if Deep Research visible)
+   * 2. document.title (via getPageTitle())
+   * 3. First user message content (truncated)
+   * 4. Default title
    */
   getTitle(): string {
-    // If Deep Research, use h1 title
     if (this.isDeepResearchVisible()) {
       return this.getDeepResearchTitle();
     }
 
-    return this.getFirstMessageTitle(SELECTORS.userMessage, 'Untitled Claude Conversation');
+    return (
+      this.getPageTitle() ??
+      this.getFirstMessageTitle(SELECTORS.userMessage, 'Untitled Claude Conversation')
+    );
   }
 
   /**

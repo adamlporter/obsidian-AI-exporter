@@ -75,11 +75,15 @@ export class PerplexityExtractor extends BaseExtractor {
    * Get conversation title
    *
    * Priority:
-   * 1. First user query text (truncated to MAX_CONVERSATION_TITLE_LENGTH)
-   * 2. Default title
+   * 1. document.title (via getPageTitle())
+   * 2. First user query text (truncated to MAX_CONVERSATION_TITLE_LENGTH)
+   * 3. Default title
    */
   getTitle(): string {
-    return this.getFirstMessageTitle(SELECTORS.userQuery, 'Untitled Perplexity Conversation');
+    return (
+      this.getPageTitle() ??
+      this.getFirstMessageTitle(SELECTORS.userQuery, 'Untitled Perplexity Conversation')
+    );
   }
 
   // ========== Message Extraction ==========

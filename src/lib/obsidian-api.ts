@@ -214,6 +214,46 @@ export class ObsidianApiClient {
   }
 
   /**
+   * List files in a vault directory.
+   * Uses GET /vault/{directory}/ endpoint.
+   * Returns empty array if directory doesn't exist (404).
+   *
+   * @param directory - Directory path relative to vault root
+   * @returns Array of filenames (directories filtered out)
+   */
+  async listFiles(directory: string): Promise<string[]> {
+    try {
+      const encodedDir = encodeURIComponent(directory);
+      const response = await fetch(`${this.baseUrl}/vault/${encodedDir}/`, {
+        method: 'GET',
+        headers: {
+          ...this.getHeaders(),
+          Accept: 'application/json',
+        },
+        signal: createTimeoutSignal(DEFAULT_API_TIMEOUT),
+      });
+
+      if (response.status === 404) {
+        return [];
+      }
+
+      if (!response.ok) {
+        throw this.createError(response.status, `Failed to list files: ${response.statusText}`);
+      }
+
+      const data = (await response.json()) as { files?: string[] };
+      const files = data.files ?? [];
+      // Filter out directories (entries ending with '/')
+      return files.filter(f => !f.endsWith('/'));
+    } catch (error) {
+      if (isNetworkError(error)) {
+        throw this.createError(0, 'Request timed out. Please check your connection.');
+      }
+      throw error;
+    }
+  }
+
+  /**
    * Check if file exists in vault
    * @param path - Path relative to vault root
    */
