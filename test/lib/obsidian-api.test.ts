@@ -269,6 +269,71 @@ describe('ObsidianApiClient', () => {
     });
   });
 
+  describe('listFiles', () => {
+    it('returns file list for existing directory', async () => {
+      mockFetch.mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ files: ['note1.md', 'note2.md', 'subdir/'] }),
+      });
+
+      const files = await client.listFiles('AI/claude');
+
+      expect(files).toEqual(['note1.md', 'note2.md']);
+      expect(mockFetch).toHaveBeenCalledWith(
+        'http://127.0.0.1:27123/vault/AI%2Fclaude/',
+        expect.objectContaining({
+          method: 'GET',
+          headers: expect.objectContaining({
+            Accept: 'application/json',
+          }),
+        })
+      );
+    });
+
+    it('returns empty array for non-existent directory (404)', async () => {
+      mockFetch.mockResolvedValue({ ok: false, status: 404 });
+
+      const files = await client.listFiles('nonexistent');
+
+      expect(files).toEqual([]);
+    });
+
+    it('filters out directories from response', async () => {
+      mockFetch.mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ files: ['note.md', 'images/', 'another.md', 'docs/'] }),
+      });
+
+      const files = await client.listFiles('AI');
+
+      expect(files).toEqual(['note.md', 'another.md']);
+    });
+
+    it('throws error for server errors', async () => {
+      mockFetch.mockResolvedValue({
+        ok: false,
+        status: 500,
+        statusText: 'Internal Server Error',
+      });
+
+      await expect(client.listFiles('AI')).rejects.toEqual({
+        status: 500,
+        message: 'Failed to list files: Internal Server Error',
+      });
+    });
+
+    it('throws timeout error for network errors', async () => {
+      mockFetch.mockRejectedValue(new TypeError('Failed to fetch'));
+
+      await expect(client.listFiles('AI')).rejects.toEqual({
+        status: 0,
+        message: 'Request timed out. Please check your connection.',
+      });
+    });
+  });
+
   describe('AbortSignal.timeout fallback', () => {
     it('uses fallback when AbortSignal.timeout is not available', async () => {
       // Save original AbortSignal.timeout

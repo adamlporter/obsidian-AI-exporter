@@ -12,6 +12,7 @@ const mockClient = {
   getFile: vi.fn(),
   putFile: vi.fn(),
   fileExists: vi.fn(),
+  listFiles: vi.fn(),
 };
 
 // Default settings
@@ -48,6 +49,7 @@ vi.mock('../../src/lib/obsidian-api', () => ({
     getFile = mockClient.getFile;
     putFile = mockClient.putFile;
     fileExists = mockClient.fileExists;
+    listFiles = mockClient.listFiles;
   },
   getErrorMessage: (error: unknown) => {
     if (typeof error === 'object' && error !== null && 'message' in error) {
@@ -73,6 +75,7 @@ describe('background/index', () => {
     mockClient.testConnection.mockReset();
     mockClient.getFile.mockReset();
     mockClient.putFile.mockReset();
+    mockClient.listFiles.mockReset();
     mockGetSettings = vi.fn(() => Promise.resolve(defaultSettings));
 
     // Capture message listener when addListener is called
@@ -90,6 +93,7 @@ describe('background/index', () => {
         getFile = mockClient.getFile;
         putFile = mockClient.putFile;
         fileExists = mockClient.fileExists;
+        listFiles = mockClient.listFiles;
       },
       getErrorMessage: (error: unknown) => {
         if (typeof error === 'object' && error !== null && 'message' in error) {
@@ -1208,6 +1212,212 @@ describe('background/index', () => {
       expect(response.results[0].success).toBe(false);
       expect(response.results[0].error).toBeDefined();
       expect(response.allSuccessful).toBe(false);
+    });
+  });
+
+  // ========== Append Mode Tests ==========
+
+  describe('append mode', () => {
+    const validSender = { url: `chrome-extension://${chrome.runtime.id}/popup.html` };
+    const appendNote: ObsidianNote = {
+      fileName: 'test-abc12345.md',
+      body: [
+        '> [!QUESTION] User',
+        '> Hello',
+        '',
+        '> [!NOTE] Claude',
+        '> Hi there!',
+        '',
+        '> [!QUESTION] User',
+        '> New question',
+        '',
+        '> [!NOTE] Claude',
+        '> New answer',
+      ].join('\n'),
+      contentHash: 'abc123',
+      frontmatter: {
+        id: 'claude_abc-def',
+        title: 'Test Chat',
+        source: 'claude',
+        url: 'https://claude.ai/chat/abc-def',
+        created: '2026-01-01T00:00:00.000Z',
+        modified: '2026-01-01T00:00:00.000Z',
+        tags: ['ai-conversation', 'claude'],
+        message_count: 4,
+      },
+    };
+
+    const existingContent = [
+      '---',
+      'id: claude_abc-def',
+      'message_count: 2',
+      'modified: "2026-01-01T00:00:00.000Z"',
+      '---',
+      '> [!QUESTION] User',
+      '> Hello',
+      '',
+      '> [!NOTE] Claude',
+      '> Hi there!',
+    ].join('\n');
+
+    const appendSettings = {
+      ...defaultSettings,
+      vaultPath: 'AI/{platform}',
+      enableAutoScroll: false,
+      enableAppendMode: true,
+      outputOptions: { obsidian: true, file: false, clipboard: false },
+    };
+
+    it('appends new messages when file exists and has fewer messages', async () => {
+      mockGetSettings = vi.fn(() => Promise.resolve(appendSettings));
+      mockClient.getFile.mockResolvedValueOnce(existingContent); // direct lookup
+      mockClient.putFile.mockResolvedValue(undefined);
+
+      const sendResponse = vi.fn();
+      capturedListener(
+        { action: 'saveToObsidian', data: appendNote },
+        validSender as chrome.runtime.MessageSender,
+        sendResponse
+      );
+
+      await vi.waitFor(() => expect(sendResponse).toHaveBeenCalled());
+      const response = sendResponse.mock.calls[0][0];
+      expect(response.success).toBe(true);
+      expect(response.messagesAppended).toBe(2);
+      expect(response.isNewFile).toBe(false);
+    });
+
+    it('returns messagesAppended: 0 when no new messages', async () => {
+      mockGetSettings = vi.fn(() => Promise.resolve(appendSettings));
+      // Existing file already has 4 messages
+      const fullExisting = existingContent.replace('message_count: 2', 'message_count: 4')
+        + '\n\n> [!QUESTION] User\n> New question\n\n> [!NOTE] Claude\n> New answer';
+      mockClient.getFile.mockResolvedValueOnce(fullExisting);
+
+      const sendResponse = vi.fn();
+      capturedListener(
+        { action: 'saveToObsidian', data: appendNote },
+        validSender as chrome.runtime.MessageSender,
+        sendResponse
+      );
+
+      await vi.waitFor(() => expect(sendResponse).toHaveBeenCalled());
+      const response = sendResponse.mock.calls[0][0];
+      expect(response.success).toBe(true);
+      expect(response.messagesAppended).toBe(0);
+    });
+
+    it('falls back to overwrite when append mode is off', async () => {
+      mockGetSettings = vi.fn(() =>
+        Promise.resolve({ ...appendSettings, enableAppendMode: false })
+      );
+      mockClient.getFile.mockResolvedValue(null);
+      mockClient.putFile.mockResolvedValue(undefined);
+
+      const sendResponse = vi.fn();
+      capturedListener(
+        { action: 'saveToObsidian', data: appendNote },
+        validSender as chrome.runtime.MessageSender,
+        sendResponse
+      );
+
+      await vi.waitFor(() => expect(sendResponse).toHaveBeenCalled());
+      const response = sendResponse.mock.calls[0][0];
+      expect(response.success).toBe(true);
+      expect(response.isNewFile).toBe(true);
+      expect(response.messagesAppended).toBeUndefined();
+    });
+
+    it('creates new file when existing file not found in append mode', async () => {
+      mockGetSettings = vi.fn(() => Promise.resolve(appendSettings));
+      mockClient.getFile.mockResolvedValue(null); // no file found
+      mockClient.listFiles.mockResolvedValue([]); // empty directory
+      mockClient.putFile.mockResolvedValue(undefined);
+
+      const sendResponse = vi.fn();
+      capturedListener(
+        { action: 'saveToObsidian', data: appendNote },
+        validSender as chrome.runtime.MessageSender,
+        sendResponse
+      );
+
+      await vi.waitFor(() => expect(sendResponse).toHaveBeenCalled());
+      const response = sendResponse.mock.calls[0][0];
+      expect(response.success).toBe(true);
+      expect(response.isNewFile).toBe(true);
+    });
+
+    it('skips append mode for deep-research type', async () => {
+      mockGetSettings = vi.fn(() => Promise.resolve(appendSettings));
+      const deepResearchNote = {
+        ...appendNote,
+        frontmatter: { ...appendNote.frontmatter, type: 'deep-research' },
+      };
+      mockClient.getFile.mockResolvedValue(null);
+      mockClient.putFile.mockResolvedValue(undefined);
+
+      const sendResponse = vi.fn();
+      capturedListener(
+        { action: 'saveToObsidian', data: deepResearchNote },
+        validSender as chrome.runtime.MessageSender,
+        sendResponse
+      );
+
+      await vi.waitFor(() => expect(sendResponse).toHaveBeenCalled());
+      const response = sendResponse.mock.calls[0][0];
+      expect(response.success).toBe(true);
+      expect(response.isNewFile).toBe(true);
+      // Should NOT have messagesAppended (went through overwrite path)
+      expect(response.messagesAppended).toBeUndefined();
+    });
+
+    it('falls back to overwrite when append throws error', async () => {
+      mockGetSettings = vi.fn(() => Promise.resolve(appendSettings));
+      // First getFile call (append lookup) throws, but catch block falls through
+      mockClient.getFile
+        .mockRejectedValueOnce(new Error('Network error')) // append lookup fails
+        .mockResolvedValueOnce(null); // overwrite path: file doesn't exist
+      mockClient.putFile.mockResolvedValue(undefined);
+
+      const sendResponse = vi.fn();
+      capturedListener(
+        { action: 'saveToObsidian', data: appendNote },
+        validSender as chrome.runtime.MessageSender,
+        sendResponse
+      );
+
+      await vi.waitFor(() => expect(sendResponse).toHaveBeenCalled());
+      const response = sendResponse.mock.calls[0][0];
+      expect(response.success).toBe(true);
+      expect(response.isNewFile).toBe(true);
+    });
+
+    it('uses ID scan when direct path has wrong ID', async () => {
+      mockGetSettings = vi.fn(() => Promise.resolve(appendSettings));
+      // Return different content based on path
+      mockClient.getFile.mockImplementation((path: string) => {
+        if (path === 'AI/claude/test-abc12345.md') {
+          return Promise.resolve('---\nid: different_id\n---\nBody');
+        }
+        if (path === 'AI/claude/old-title-abc12345.md') {
+          return Promise.resolve(existingContent);
+        }
+        return Promise.resolve(null);
+      });
+      mockClient.listFiles.mockResolvedValue(['old-title-abc12345.md']);
+      mockClient.putFile.mockResolvedValue(undefined);
+
+      const sendResponse = vi.fn();
+      capturedListener(
+        { action: 'saveToObsidian', data: appendNote },
+        validSender as chrome.runtime.MessageSender,
+        sendResponse
+      );
+
+      await vi.waitFor(() => expect(sendResponse).toHaveBeenCalled());
+      const response = sendResponse.mock.calls[0][0];
+      expect(response.success).toBe(true);
+      expect(response.messagesAppended).toBe(2);
     });
   });
 });

@@ -77,6 +77,7 @@ const elements = {
   includeDates: getElement<HTMLInputElement>('includeDates'),
   includeMessageCount: getElement<HTMLInputElement>('includeMessageCount'),
   enableAutoScroll: getElement<HTMLInputElement>('enableAutoScroll'),
+  enableAppendMode: getElement<HTMLInputElement>('enableAppendMode'),
   testBtn: getElement<HTMLButtonElement>('testBtn'),
   saveBtn: getElement<HTMLButtonElement>('saveBtn'),
   status: getElement<HTMLDivElement>('status'),
@@ -110,6 +111,7 @@ function populateForm(settings: ExtensionSettings): void {
 
   // Extraction options
   elements.enableAutoScroll.checked = settings.enableAutoScroll ?? false;
+  elements.enableAppendMode.checked = settings.enableAppendMode ?? false;
 
   // Update Obsidian settings section visibility
   updateObsidianSettingsVisibility();
@@ -278,6 +280,7 @@ function collectSettings(): ExtensionSettings {
     templateOptions,
     outputOptions,
     enableAutoScroll: elements.enableAutoScroll.checked,
+    enableAppendMode: elements.enableAppendMode.checked,
   };
 }
 

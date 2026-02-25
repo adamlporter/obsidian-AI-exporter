@@ -61,18 +61,19 @@ async function ensureOffscreenDocument(): Promise<void> {
 }
 
 /**
- * Save to Obsidian and return OutputResult
+ * Save to Obsidian and return OutputResult with optional messagesAppended
  */
 async function handleSaveToObsidian(
   note: ObsidianNote,
   settings: ExtensionSettings
-): Promise<OutputResult> {
+): Promise<OutputResult & { messagesAppended?: number }> {
   try {
     const result = await handleSave(settings, note);
     return {
       destination: 'obsidian',
       success: result.success,
       error: result.error,
+      messagesAppended: result.messagesAppended,
     };
   } catch (error) {
     return {
@@ -229,9 +230,19 @@ export async function handleMultiOutput(
     }
   });
 
+  // Extract messagesAppended from obsidian result (append mode)
+  let messagesAppended: number | undefined;
+  settled.forEach((result, index) => {
+    if (result.status === 'fulfilled' && outputs[index] === 'obsidian') {
+      const obsidianResult = result.value as OutputResult & { messagesAppended?: number };
+      messagesAppended = obsidianResult.messagesAppended;
+    }
+  });
+
   return {
     results,
     allSuccessful: results.every(r => r.success),
     anySuccessful: results.some(r => r.success),
+    messagesAppended,
   };
 }

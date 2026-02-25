@@ -147,6 +147,8 @@ export interface MultiOutputResponse {
   allSuccessful: boolean;
   /** Whether at least one output succeeded */
   anySuccessful: boolean;
+  /** Number of messages appended (append mode only) */
+  messagesAppended?: number;
 }
 
 /**
@@ -168,6 +170,8 @@ export interface SyncSettings {
   outputOptions: OutputOptions;
   /** Enable auto-scroll to load all messages in long conversations (e.g. Gemini) */
   enableAutoScroll: boolean;
+  /** Enable append mode to only add new messages to existing notes */
+  enableAppendMode: boolean;
 }
 
 /**
