@@ -130,7 +130,7 @@ interface ScrollResult {
 }
 
 export class GeminiExtractor extends BaseExtractor {
-  readonly platform = 'gemini' as const;
+  readonly platform = 'gemini';
 
   /** Whether auto-scroll is enabled (set from settings before extract()) */
   enableAutoScroll = false;

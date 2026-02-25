@@ -1,13 +1,9 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import {
   htmlToMarkdown,
   generateFileName,
   generateContentHash,
   conversationToNote,
-  sanitizeUrl,
-  convertInlineCitationsToFootnoteRefs,
-  generateReferencesSection,
-  removeSourcesCarousel,
   convertDeepResearchContent,
 } from '../../src/content/markdown';
 import type { ConversationData, TemplateOptions, DeepResearchLinks } from '../../src/lib/types';
@@ -375,180 +371,9 @@ describe('conversationToNote', () => {
 // ============================================================
 // Deep Research Link Processing Tests
 // ============================================================
-
-describe('sanitizeUrl', () => {
-  it('returns valid URLs unchanged', () => {
-    expect(sanitizeUrl('https://example.com')).toBe('https://example.com');
-    expect(sanitizeUrl('http://example.org/path')).toBe('http://example.org/path');
-  });
-
-  it('rejects javascript: URLs', () => {
-    expect(sanitizeUrl('javascript:alert(1)')).toBe('');
-    expect(sanitizeUrl('JAVASCRIPT:alert(1)')).toBe('');
-  });
-
-  it('rejects data: URLs', () => {
-    expect(sanitizeUrl('data:text/html,<script>alert(1)</script>')).toBe('');
-  });
-
-  it('rejects vbscript: URLs', () => {
-    expect(sanitizeUrl('vbscript:msgbox("XSS")')).toBe('');
-  });
-
-  it('handles whitespace', () => {
-    expect(sanitizeUrl('  javascript:alert(1)  ')).toBe('');
-    expect(sanitizeUrl('  https://example.com  ')).toBe('  https://example.com  ');
-  });
-});
-
-describe('convertInlineCitationsToFootnoteRefs', () => {
-  // Helper to create source map (data-turn-source-index is 1-based)
-  const createSourceMap = () => {
-    const map = new Map<number, { index: number; url: string; title: string; domain: string }>();
-    map.set(1, { index: 0, url: 'https://example.com/a', title: 'Article A', domain: 'example.com' });
-    map.set(2, { index: 1, url: 'https://example.org/b', title: 'Article B', domain: 'example.org' });
-    map.set(5, { index: 4, url: 'https://test.net/c', title: 'Article C', domain: 'test.net' });
-    return map;
-  };
-
-  // v3.0: Outputs placeholder spans with content that Turndown rule converts to [^N]
-
-  it('converts source-footnote wrapped citations to placeholder spans', () => {
-    const html =
-      'Text<source-footnote><sup class="superscript" data-turn-source-index="1"></sup></source-footnote>more';
-    const result = convertInlineCitationsToFootnoteRefs(html, createSourceMap());
-    expect(result).toBe('Text<span data-footnote-ref="1">REF</span>more');
-  });
-
-  it('converts standalone sup citations to placeholder spans', () => {
-    const html = 'Text<sup data-turn-source-index="5"></sup>more';
-    const result = convertInlineCitationsToFootnoteRefs(html, createSourceMap());
-    expect(result).toBe('Text<span data-footnote-ref="5">REF</span>more');
-  });
-
-  it('handles multiple citations', () => {
-    const html =
-      'First<sup data-turn-source-index="1"></sup> second<sup data-turn-source-index="2"></sup>';
-    const result = convertInlineCitationsToFootnoteRefs(html, createSourceMap());
-    expect(result).toBe('First<span data-footnote-ref="1">REF</span> second<span data-footnote-ref="2">REF</span>');
-  });
-
-  it('preserves non-citation content', () => {
-    const html = '<p>No citations here</p>';
-    const result = convertInlineCitationsToFootnoteRefs(html, createSourceMap());
-    expect(result).toBe('<p>No citations here</p>');
-  });
-
-  it('removes citation when source not found in map', () => {
-    const html = 'Text<sup data-turn-source-index="99"></sup>more';
-    const result = convertInlineCitationsToFootnoteRefs(html, createSourceMap());
-    expect(result).toBe('Textmore');
-  });
-
-  it('handles duplicate citations with same data-turn-source-index', () => {
-    const html =
-      'First<sup data-turn-source-index="1"></sup> second<sup data-turn-source-index="1"></sup>';
-    const result = convertInlineCitationsToFootnoteRefs(html, createSourceMap());
-    // Both use the same index from data-turn-source-index
-    expect(result).toBe('First<span data-footnote-ref="1">REF</span> second<span data-footnote-ref="1">REF</span>');
-  });
-
-  it('preserves original data-turn-source-index values (non-sequential)', () => {
-    const html = 'A<sup data-turn-source-index="1"></sup>B<sup data-turn-source-index="5"></sup>';
-    const result = convertInlineCitationsToFootnoteRefs(html, createSourceMap());
-    // Index 5 is preserved as-is, not renumbered to 2
-    expect(result).toBe('A<span data-footnote-ref="1">REF</span>B<span data-footnote-ref="5">REF</span>');
-  });
-
-  // ========== Coverage Gap: source-footnote wrapper with missing source (DES-005 3.6) ==========
-  it('warns and removes source-footnote wrapper when source index not in map', () => {
-    // Covers: markdown.ts lines 73-74 (Pattern 1, source not found)
-    // Existing test at line 351 covers Pattern 2 (standalone sup).
-    // This test specifically covers Pattern 1 (source-footnote wrapped).
-    const html = 'Text<source-footnote class="ng-star-inserted"><sup class="superscript" data-turn-source-index="99"></sup></source-footnote>more';
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
-    const result = convertInlineCitationsToFootnoteRefs(html, createSourceMap());
-
-    expect(result).toBe('Textmore');
-    expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining('Citation reference 99 not found')
-    );
-    warnSpy.mockRestore();
-  });
-});
-
-// Note: replacePlaceholdersWithFootnoteRefs is no longer needed in v3.0
-// The Turndown custom rule now handles conversion of <span data-footnote-ref> to [^N] directly
-
-describe('generateReferencesSection', () => {
-  it('generates empty string for empty sources', () => {
-    expect(generateReferencesSection([])).toBe('');
-  });
-
-  it('generates References section with footnote definitions', () => {
-    const sources = [
-      { index: 0, url: 'https://a.com', title: 'Article A', domain: 'a.com' },
-      { index: 1, url: 'https://b.com', title: 'Article B', domain: 'b.com' },
-    ];
-    const result = generateReferencesSection(sources);
-
-    expect(result).toContain('# References');
-    expect(result).toContain('[^1]: [Article A](https://a.com)');
-    expect(result).toContain('[^2]: [Article B](https://b.com)');
-  });
-
-  it('handles invalid URLs by showing title only', () => {
-    const sources = [
-      { index: 0, url: 'javascript:alert(1)', title: 'Bad', domain: 'bad.com' },
-    ];
-    const result = generateReferencesSection(sources);
-
-    expect(result).toContain('[^1]: Bad');
-    expect(result).not.toContain('javascript:');
-  });
-
-  it('uses 1-based index for footnote numbers', () => {
-    const sources = [
-      { index: 0, url: 'https://first.com', title: 'First', domain: 'first.com' },
-    ];
-    const result = generateReferencesSection(sources);
-
-    expect(result).toContain('[^1]:'); // Not [^0]
-  });
-
-  it('includes all sources even if unreferenced in text', () => {
-    const sources = [
-      { index: 0, url: 'https://a.com', title: 'A', domain: 'a.com' },
-      { index: 1, url: 'https://b.com', title: 'B', domain: 'b.com' },
-      { index: 2, url: 'https://c.com', title: 'C', domain: 'c.com' },
-    ];
-    const result = generateReferencesSection(sources);
-
-    expect(result).toContain('[^1]: [A](https://a.com)');
-    expect(result).toContain('[^2]: [B](https://b.com)');
-    expect(result).toContain('[^3]: [C](https://c.com)');
-  });
-});
-
-describe('removeSourcesCarousel', () => {
-  it('removes sources-carousel-inline elements', () => {
-    const html = '<p>Content</p><sources-carousel-inline>carousel content</sources-carousel-inline>';
-    expect(removeSourcesCarousel(html)).toBe('<p>Content</p>');
-  });
-
-  it('handles nested content in carousel', () => {
-    const html = '<div><sources-carousel-inline><div>nested</div></sources-carousel-inline></div>';
-    expect(removeSourcesCarousel(html)).toBe('<div></div>');
-  });
-
-  it('preserves content without carousel', () => {
-    const html = '<p>Just content</p>';
-    expect(removeSourcesCarousel(html)).toBe('<p>Just content</p>');
-  });
-});
-
-// v3.0: Obsidian native footnote format with References section
+// Internal helpers (sanitizeUrl, convertInlineCitationsToFootnoteRefs,
+// generateReferencesSection, removeSourcesCarousel) are tested indirectly
+// through convertDeepResearchContent integration tests below.
 
 describe('convertDeepResearchContent', () => {
   it('converts citations to footnotes with References section', () => {
@@ -632,6 +457,28 @@ describe('convertDeepResearchContent', () => {
     expect(result).toContain('[^1]: [A](https://a.com)');
     expect(result).toContain('[^2]: [B](https://b.com)');
     expect(result).toContain('[^3]: [C](https://c.com)');
+  });
+
+  it('rejects dangerous URL schemes in source references', () => {
+    const html = '<p>Text</p>';
+    const links: DeepResearchLinks = {
+      sources: [
+        { index: 0, url: 'javascript:alert(1)', title: 'XSS', domain: 'bad.com' },
+        { index: 1, url: 'data:text/html,<script>alert(1)</script>', title: 'Data', domain: 'bad.com' },
+        { index: 2, url: 'https://safe.com', title: 'Safe', domain: 'safe.com' },
+      ],
+    };
+
+    const result = convertDeepResearchContent(html, links);
+
+    // Dangerous URLs must not appear in output
+    expect(result).not.toContain('javascript:');
+    expect(result).not.toContain('data:text');
+    // Safe URL preserved
+    expect(result).toContain('[^3]: [Safe](https://safe.com)');
+    // Dangerous sources show title only (no link)
+    expect(result).toContain('[^1]: XSS');
+    expect(result).toContain('[^2]: Data');
   });
 });
 

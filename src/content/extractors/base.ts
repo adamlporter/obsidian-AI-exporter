@@ -374,6 +374,21 @@ export abstract class BaseExtractor implements IConversationExtractor {
   }
 
   /**
+   * Get conversation title from first message element matching the given selectors.
+   * Shared pattern for ChatGPT, Claude, and Perplexity extractors.
+   *
+   * @param selectors - CSS selectors to find the first message element
+   * @param fallbackTitle - Title to return if no element is found
+   */
+  protected getFirstMessageTitle(selectors: string[], fallbackTitle: string): string {
+    const el = this.queryWithFallback<HTMLElement>(selectors);
+    if (el?.textContent) {
+      return this.sanitizeText(el.textContent).substring(0, MAX_CONVERSATION_TITLE_LENGTH);
+    }
+    return fallbackTitle;
+  }
+
+  /**
    * Generate a hash from content for deduplication
    */
   protected generateHashValue(content: string): string {

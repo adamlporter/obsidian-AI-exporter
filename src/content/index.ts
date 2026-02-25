@@ -55,10 +55,10 @@ const MUTATION_DEBOUNCE_DELAY = 100;
 
 /** Platform-specific main content container selectors for optimized observation */
 const PLATFORM_ROOT_SELECTORS: Record<string, string[]> = {
-  'gemini.google.com': ['main', '#app-container', 'body'],
-  'claude.ai': ['main', '#__next', 'body'],
-  'chatgpt.com': ['main', '#__next', 'body'],
-  'www.perplexity.ai': ['main', '#__next', 'body'],
+  'gemini.google.com': ['main', '#app-container'],
+  'claude.ai': ['main', '#__next'],
+  'chatgpt.com': ['main', '#__next'],
+  'www.perplexity.ai': ['main', '#__next'],
 };
 
 /** Conversation container selectors to detect when content is ready */
@@ -76,7 +76,7 @@ function getObservationRoot(): Element {
   if (selectors) {
     for (const selector of selectors) {
       const element = document.querySelector(selector);
-      if (element && selector !== 'body') {
+      if (element) {
         console.debug(`[G2O] Using optimized observation root: ${selector}`);
         return element;
       }

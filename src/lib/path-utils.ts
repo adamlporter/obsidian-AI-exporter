@@ -37,14 +37,3 @@ export function resolvePathTemplate(path: string, variables: Record<string, stri
     return key in variables ? variables[key] : match;
   });
 }
-
-/**
- * Normalize and validate a path
- */
-export function validatePath(path: string, fieldName: string): string {
-  if (containsPathTraversal(path)) {
-    throw new Error(`Invalid ${fieldName}: path traversal detected`);
-  }
-  // Trim whitespace and normalize leading/trailing slashes
-  return path.trim().replace(/^\/+|\/+$/g, '');
-}

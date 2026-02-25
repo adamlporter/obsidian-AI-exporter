@@ -30,7 +30,7 @@ const CITATION_PATTERN_STANDALONE =
 /**
  * Sanitize URL to remove dangerous schemes
  */
-export function sanitizeUrl(url: string): string {
+function sanitizeUrl(url: string): string {
   const dangerousSchemes = ['javascript:', 'data:', 'vbscript:', 'blob:'];
   const lowerUrl = url.toLowerCase().trim();
 
@@ -79,7 +79,7 @@ function createCitationReplacer(
  * @param html HTML content to convert
  * @param sourceMap Map built from buildSourceMap()
  */
-export function convertInlineCitationsToFootnoteRefs(
+function convertInlineCitationsToFootnoteRefs(
   html: string,
   sourceMap: Map<number, DeepResearchSource>
 ): string {
@@ -109,7 +109,7 @@ export function convertInlineCitationsToFootnoteRefs(
  * @param sources All sources from the source list (includes unreferenced sources)
  * @returns Markdown string for References section
  */
-export function generateReferencesSection(sources: DeepResearchSource[]): string {
+function generateReferencesSection(sources: DeepResearchSource[]): string {
   if (sources.length === 0) {
     return '';
   }
@@ -136,7 +136,7 @@ export function generateReferencesSection(sources: DeepResearchSource[]): string
 /**
  * Remove sources-carousel-inline elements
  */
-export function removeSourcesCarousel(html: string): string {
+function removeSourcesCarousel(html: string): string {
   return html.replace(/<sources-carousel-inline[\s\S]*?<\/sources-carousel-inline>/gi, '');
 }
 
