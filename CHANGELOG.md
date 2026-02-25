@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.0](https://github.com/sho7650/obsidian-AI-exporter/compare/v0.10.9...v0.11.0) (2026-02-25)
+
+
+### Features
+
+* add append mode to preserve existing notes and append only new messages ([ae34366](https://github.com/sho7650/obsidian-AI-exporter/commit/ae34366f577bff7e1ab9e0eca1fa40763238fed7))
+* add append mode to preserve existing notes and append only new messages ([77db89c](https://github.com/sho7650/obsidian-AI-exporter/commit/77db89c34909252abe9950d0d8b0caba39ccbb1b))
+
 ## [0.10.9](https://github.com/sho7650/obsidian-AI-exporter/compare/v0.10.8...v0.10.9) (2026-02-25)
 
 
