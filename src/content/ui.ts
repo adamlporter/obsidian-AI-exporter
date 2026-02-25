@@ -141,6 +141,7 @@ const STYLES = `
 `;
 
 let styleInjected = false;
+let currentToast: HTMLDivElement | null = null;
 
 /**
  * Inject CSS styles into the page
@@ -237,11 +238,15 @@ export function showToast(
 ): void {
   injectStyles();
 
-  // Remove any existing toasts
-  document.querySelectorAll('.g2o-toast').forEach(t => t.remove());
+  // Remove existing toast if present
+  if (currentToast) {
+    currentToast.remove();
+    currentToast = null;
+  }
 
   const toast = document.createElement('div');
   toast.className = `g2o-toast ${type}`;
+  currentToast = toast;
 
   const toastIcon = document.createElement('span');
   toastIcon.className = 'icon';
@@ -255,7 +260,10 @@ export function showToast(
   closeBtn.className = 'close';
   closeBtn.setAttribute('aria-label', 'Close');
   closeBtn.textContent = '\u00d7';
-  closeBtn.addEventListener('click', () => toast.remove());
+  closeBtn.addEventListener('click', () => {
+    toast.remove();
+    currentToast = null;
+  });
 
   toast.appendChild(toastIcon);
   toast.appendChild(toastMessage);
@@ -267,7 +275,10 @@ export function showToast(
   if (duration > 0) {
     setTimeout(() => {
       toast.style.animation = 'g2o-slideIn 0.3s ease reverse';
-      setTimeout(() => toast.remove(), 300);
+      setTimeout(() => {
+        toast.remove();
+        currentToast = null;
+      }, 300);
     }, duration);
   }
 }

@@ -10,7 +10,6 @@
 import { BaseExtractor } from './base';
 import { sanitizeHtml } from '../../lib/sanitize';
 import type { ConversationMessage } from '../../lib/types';
-import { MAX_CONVERSATION_TITLE_LENGTH } from '../../lib/constants';
 
 /**
  * CSS Selectors for ChatGPT chat extraction
@@ -44,12 +43,6 @@ const SELECTORS = {
     '.markdown.prose', // Semantic (HIGH)
     '.markdown-new-styling', // Style (MEDIUM)
   ],
-
-  // Message ID attribute
-  messageId: [
-    '[data-message-id]', // data attribute (HIGH)
-    '[data-turn-id]', // data attribute (HIGH)
-  ],
 };
 
 /**
@@ -59,7 +52,7 @@ const SELECTORS = {
  * @see src/lib/types.ts
  */
 export class ChatGPTExtractor extends BaseExtractor {
-  readonly platform = 'chatgpt' as const;
+  readonly platform = 'chatgpt';
 
   // ========== Platform Detection ==========
 
@@ -98,14 +91,7 @@ export class ChatGPTExtractor extends BaseExtractor {
    * 2. Default title
    */
   getTitle(): string {
-    // Try first user message
-    const firstUserContent = this.queryWithFallback<HTMLElement>(SELECTORS.userMessage);
-    if (firstUserContent?.textContent) {
-      const title = this.sanitizeText(firstUserContent.textContent);
-      return title.substring(0, MAX_CONVERSATION_TITLE_LENGTH);
-    }
-
-    return 'Untitled ChatGPT Conversation';
+    return this.getFirstMessageTitle(SELECTORS.userMessage, 'Untitled ChatGPT Conversation');
   }
 
   // ========== Message Extraction ==========

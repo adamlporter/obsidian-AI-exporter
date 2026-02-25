@@ -15,7 +15,7 @@ import type {
   DeepResearchLinks,
   ExtractionResult,
 } from '../../lib/types';
-import { MAX_CONVERSATION_TITLE_LENGTH, MAX_DEEP_RESEARCH_TITLE_LENGTH } from '../../lib/constants';
+import { MAX_DEEP_RESEARCH_TITLE_LENGTH } from '../../lib/constants';
 
 /**
  * CSS Selectors for normal chat extraction
@@ -118,7 +118,7 @@ const JOINED_SELECTORS = {
  * @see src/lib/types.ts
  */
 export class ClaudeExtractor extends BaseExtractor {
-  readonly platform = 'claude' as const;
+  readonly platform = 'claude';
 
   // ========== Platform Detection ==========
 
@@ -171,14 +171,7 @@ export class ClaudeExtractor extends BaseExtractor {
       return this.getDeepResearchTitle();
     }
 
-    // Try first user message
-    const firstUserContent = this.queryWithFallback<HTMLElement>(SELECTORS.userMessage);
-    if (firstUserContent?.textContent) {
-      const title = this.sanitizeText(firstUserContent.textContent);
-      return title.substring(0, MAX_CONVERSATION_TITLE_LENGTH);
-    }
-
-    return 'Untitled Claude Conversation';
+    return this.getFirstMessageTitle(SELECTORS.userMessage, 'Untitled Claude Conversation');
   }
 
   /**

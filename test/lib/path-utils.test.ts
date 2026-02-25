@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { containsPathTraversal, validatePath, resolvePathTemplate } from '../../src/lib/path-utils';
+import { containsPathTraversal, resolvePathTemplate } from '../../src/lib/path-utils';
 
 describe('containsPathTraversal', () => {
   it('detects ../ patterns', () => {
@@ -80,21 +80,5 @@ describe('resolvePathTemplate', () => {
   });
 });
 
-describe('validatePath', () => {
-  it('throws on path traversal', () => {
-    expect(() => validatePath('../etc', 'test')).toThrow('path traversal detected');
-    expect(() => validatePath('/etc/passwd', 'test')).toThrow('path traversal detected');
-  });
 
-  it('returns normalized path', () => {
-    expect(validatePath('  AI/Gemini  ', 'test')).toBe('AI/Gemini');
-    // Note: paths starting with / are detected as absolute paths (path traversal)
-    // Only trailing slashes are normalized
-    expect(validatePath('AI/Gemini/', 'test')).toBe('AI/Gemini');
-  });
-
-  it('handles empty path', () => {
-    expect(validatePath('', 'test')).toBe('');
-  });
-});
 

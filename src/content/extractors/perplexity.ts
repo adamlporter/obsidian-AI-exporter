@@ -10,7 +10,6 @@
 import { BaseExtractor } from './base';
 import { sanitizeHtml } from '../../lib/sanitize';
 import type { ConversationMessage } from '../../lib/types';
-import { MAX_CONVERSATION_TITLE_LENGTH } from '../../lib/constants';
 
 /**
  * CSS Selectors for Perplexity chat extraction
@@ -45,7 +44,7 @@ const SELECTORS = {
  * @see src/lib/types.ts
  */
 export class PerplexityExtractor extends BaseExtractor {
-  readonly platform = 'perplexity' as const;
+  readonly platform = 'perplexity';
 
   // ========== Platform Detection ==========
 
@@ -68,7 +67,7 @@ export class PerplexityExtractor extends BaseExtractor {
    * @returns Full slug string or null if not found
    */
   getConversationId(): string | null {
-    const match = window.location.pathname.match(/\/search\/(.+)$/);
+    const match = window.location.pathname.match(/\/search\/([^/]+)$/);
     return match ? match[1] : null;
   }
 
@@ -80,13 +79,7 @@ export class PerplexityExtractor extends BaseExtractor {
    * 2. Default title
    */
   getTitle(): string {
-    const firstQuery = this.queryWithFallback<HTMLElement>(SELECTORS.userQuery);
-    if (firstQuery?.textContent) {
-      const title = this.sanitizeText(firstQuery.textContent);
-      return title.substring(0, MAX_CONVERSATION_TITLE_LENGTH);
-    }
-
-    return 'Untitled Perplexity Conversation';
+    return this.getFirstMessageTitle(SELECTORS.userQuery, 'Untitled Perplexity Conversation');
   }
 
   // ========== Message Extraction ==========

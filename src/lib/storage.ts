@@ -93,7 +93,9 @@ export async function getSettings(): Promise<ExtensionSettings> {
  */
 export async function saveSettings(settings: Partial<ExtensionSettings>): Promise<void> {
   try {
-    const current = await getSettings();
+    // Read sync storage once upfront (replaces separate getSettings() + sync.get calls)
+    const syncResult = await chrome.storage.sync.get('settings');
+    const currentSync = syncResult.settings ?? {};
 
     // Save secure data to local storage
     if (settings.obsidianApiKey !== undefined) {
@@ -112,13 +114,15 @@ export async function saveSettings(settings: Partial<ExtensionSettings>): Promis
     }
     if (settings.templateOptions !== undefined) {
       syncData.templateOptions = {
-        ...current.templateOptions,
+        ...DEFAULT_TEMPLATE_OPTIONS,
+        ...currentSync.templateOptions,
         ...settings.templateOptions,
       };
     }
     if (settings.outputOptions !== undefined) {
       syncData.outputOptions = {
-        ...current.outputOptions,
+        ...DEFAULT_OUTPUT_OPTIONS,
+        ...currentSync.outputOptions,
         ...settings.outputOptions,
       };
     }
@@ -127,9 +131,8 @@ export async function saveSettings(settings: Partial<ExtensionSettings>): Promis
     }
 
     if (Object.keys(syncData).length > 0) {
-      const currentSync = await chrome.storage.sync.get('settings');
       await chrome.storage.sync.set({
-        settings: { ...currentSync.settings, ...syncData },
+        settings: { ...currentSync, ...syncData },
       });
     }
   } catch (error) {
