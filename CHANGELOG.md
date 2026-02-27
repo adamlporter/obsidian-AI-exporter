@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.2](https://github.com/sho7650/obsidian-AI-exporter/compare/v0.11.1...v0.11.2) (2026-02-27)
+
+
+### Bug Fixes
+
+* escape angle brackets in Markdown output ([#83](https://github.com/sho7650/obsidian-AI-exporter/issues/83)) ([#87](https://github.com/sho7650/obsidian-AI-exporter/issues/87)) ([a9fb81e](https://github.com/sho7650/obsidian-AI-exporter/commit/a9fb81ed185fd8bd7938df496882579afe5d82d0))
+
 ## [0.11.1](https://github.com/sho7650/obsidian-AI-exporter/compare/v0.11.0...v0.11.1) (2026-02-27)
 
 
